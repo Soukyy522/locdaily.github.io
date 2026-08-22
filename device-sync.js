@@ -7,7 +7,8 @@
    Topology  : 1 room -> banyak device (A, B, C, D, ...)
    ============================================================= */
 
-const VERSION="2.0.0";
+const VERSION="3.0.0";
+const SERVICE_ID="LocDailyMarSync";
 const CONFIG_KEY="ldmDeviceSync:config:v2";
 const DEVICE_ID_KEY="ldmDeviceSync:deviceId";
 const DEVICE_NAME_KEY="ldmDeviceSync:deviceName";
@@ -55,8 +56,59 @@ let lastStatus="disconnected";
 function safeParse(raw,fallback){try{const v=JSON.parse(raw);return v==null?fallback:v}catch{return fallback}}
 function canonicalKey(k){return ALIAS_TO_CANONICAL[k]||k}
 function isSyncKey(k){return SYNC_KEYS.has(canonicalKey(k))&&!BLOCKED_KEYS.has(k)}
-function normalizeServerBase(v){let s=String(v||defaultServerBase()).trim().replace(/\/+$/,'');return s}
-function defaultServerBase(){return (location.protocol==='http:'||location.protocol==='https:')?location.origin:'http://127.0.0.1:8787'}
+function normalizeServerBase(v){
+  return String(v||defaultServerBase()).trim().replace(/\/+$/,'');
+}
+
+/*
+ * FIX HTTP 404
+ * Versi lama memakai location.origin. Jika halaman dibuka dari Live Server
+ * :5500, request /sync/create ikut terkirim ke :5500 dan pasti 404.
+ */
+function defaultServerBase(){
+  const protocol=String(location.protocol||'');
+  const host=String(location.hostname||'').trim();
+
+  if(
+    (protocol==='http:'||protocol==='https:')
+    &&
+    String(location.port||'')==='8787'
+  ){
+    return location.origin;
+  }
+
+  if(host){
+    return 'http://'+host+':8787';
+  }
+
+  return 'http://127.0.0.1:8787';
+}
+
+function serverCandidates(preferred){
+  const list=[];
+
+  const add=(value)=>{
+    if(!value)return;
+    const base=normalizeServerBase(value);
+    if(base&&!list.includes(base))list.push(base);
+  };
+
+  add(preferred);
+  add(getConfig().serverBase);
+
+  if(location.protocol==='http:'||location.protocol==='https:'){
+    add(location.origin);
+  }
+
+  if(location.hostname){
+    add('http://'+location.hostname+':8787');
+  }
+
+  add('http://127.0.0.1:8787');
+  add('http://localhost:8787');
+
+  return list;
+}
 function normalizeRoom(v){return String(v||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,8)}
 function displayRoom(v){const s=normalizeRoom(v);return s.length>4?s.slice(0,4)+'-'+s.slice(4):s}
 function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}
@@ -149,11 +201,178 @@ Storage.prototype.removeItem=function(key){
 };
 
 async function jsonFetch(url,options={}){
-  const ctl=new AbortController();const timer=setTimeout(()=>ctl.abort(),10000);
-  try{const res=await fetch(url,{...options,signal:ctl.signal,headers:{'Content-Type':'application/json',...(options.headers||{})}});let data={};try{data=await res.json()}catch{}if(!res.ok)throw new Error(data.message||('HTTP '+res.status));return data}finally{clearTimeout(timer)}
+  const ctl=new AbortController();
+  const timer=setTimeout(()=>ctl.abort(),10000);
+
+  try{
+    const headers={...(options.headers||{})};
+
+    if(options.body!==undefined&&!headers['Content-Type']){
+      headers['Content-Type']='application/json';
+    }
+
+    const response=await fetch(url,{
+      ...options,
+      signal:ctl.signal,
+      headers
+    });
+
+    const text=await response.text();
+    let data={};
+
+    if(text){
+      try{
+        data=JSON.parse(text);
+      }catch{
+        data={raw:text.slice(0,240)};
+      }
+    }
+
+    if(!response.ok){
+      const error=new Error(
+        data.message
+        ||
+        (
+          response.status===404
+            ? 'HTTP 404: endpoint Sync tidak ditemukan. Alamat kemungkinan menunjuk ke Live Server/hosting biasa, bukan sync-server.js.'
+            : 'HTTP '+response.status
+        )
+      );
+
+      error.status=response.status;
+      error.url=url;
+      error.response=data;
+      throw error;
+    }
+
+    return data;
+  }catch(error){
+    if(error?.name==='AbortError'){
+      const timeoutError=new Error('Timeout saat menghubungi Sync Server.');
+      timeoutError.code='SYNC_TIMEOUT';
+      timeoutError.url=url;
+      throw timeoutError;
+    }
+
+    throw error;
+  }finally{
+    clearTimeout(timer);
+  }
 }
+
+async function probeServer(serverBase){
+  const base=normalizeServerBase(serverBase);
+
+  try{
+    const result=await jsonFetch(
+      base+'/sync/health',
+      {method:'GET'}
+    );
+
+    if(
+      result.ok!==true
+      ||
+      result.service!==SERVICE_ID
+    ){
+      const error=new Error(
+        'Alamat merespons tetapi bukan LocDailyMar Sync Server.'
+      );
+      error.code='WRONG_SYNC_SERVER';
+      throw error;
+    }
+
+    return {
+      ok:true,
+      base,
+      version:String(result.version||'')
+    };
+  }catch(error){
+    return {
+      ok:false,
+      base,
+      error
+    };
+  }
+}
+
+async function resolveServerBase(preferred){
+  const failures=[];
+
+  notify('connecting',{
+    message:'Mendeteksi Sync Server...'
+  });
+
+  for(const candidate of serverCandidates(preferred)){
+    const probe=await probeServer(candidate);
+
+    if(probe.ok){
+      healthOk=true;
+
+      const input=document.getElementById('ldmSyncServer');
+      if(input)input.value=probe.base;
+
+      notify(lastStatus,{
+        serverVersion:probe.version,
+        resolvedServerBase:probe.base
+      });
+
+      return probe.base;
+    }
+
+    failures.push({
+      base:candidate,
+      message:probe.error?.message||'Gagal'
+    });
+  }
+
+  healthOk=false;
+
+  const error=new Error(
+    'Sync Server tidak ditemukan. Jalankan "node sync-server.js" lalu gunakan alamat port 8787 yang ditampilkan server.'
+  );
+
+  error.code='SYNC_SERVER_NOT_FOUND';
+  error.failures=failures;
+
+  notify('error',{
+    message:error.message,
+    failures
+  });
+
+  throw error;
+}
+
 async function checkHealth(serverBase){
-  try{const res=await jsonFetch(normalizeServerBase(serverBase)+'/sync/health',{method:'GET'});healthOk=!!res.ok;notify(lastStatus,{serverVersion:res.version||''});return res}catch(e){healthOk=false;notify('error',{message:'Sync Server tidak dapat dihubungi: '+e.message});throw e}
+  const base=await resolveServerBase(
+    serverBase||defaultServerBase()
+  );
+
+  const result=await jsonFetch(
+    base+'/sync/health',
+    {method:'GET'}
+  );
+
+  if(
+    result.ok!==true
+    ||
+    result.service!==SERVICE_ID
+  ){
+    throw new Error(
+      'Alamat bukan LocDailyMar Sync Server.'
+    );
+  }
+
+  healthOk=true;
+
+  notify(lastStatus,{
+    serverVersion:result.version||'',
+    resolvedServerBase:base
+  });
+
+  return {
+    ...result,
+    serverBase:base
+  };
 }
 async function postOp(operation){const c=getConfig();if(!c.room||!c.serverBase)throw new Error('Belum terhubung');return jsonFetch(normalizeServerBase(c.serverBase)+'/sync/op',{method:'POST',body:JSON.stringify({room:c.room,deviceId:getDeviceId(),deviceName:getDeviceName(),operation})})}
 async function flushOutbox(){
@@ -184,22 +403,177 @@ function openStream(){
 }
 
 async function createRoom(serverBase,deviceName){
-  const base=normalizeServerBase(serverBase||defaultServerBase());setDeviceName(deviceName||getDeviceName());notify('connecting',{message:'Membuat grup sync...'});await checkHealth(base);
-  const data=await jsonFetch(base+'/sync/create',{method:'POST',body:JSON.stringify({deviceId:getDeviceId(),deviceName:getDeviceName(),snapshot:collectSnapshot()})});
-  const room=normalizeRoom(data.room);saveConfig({room,serverBase:base,creator:true,connectedAt:Date.now()});saveOutbox([]);applySnapshot(data.snapshot||{},true);openStream();return room;
+  setDeviceName(deviceName||getDeviceName());
+  notify('connecting',{message:'Mendeteksi server dan membuat grup...'});
+
+  const health=await checkHealth(serverBase||defaultServerBase());
+  const base=health.serverBase;
+
+  const data=await jsonFetch(
+    base+'/sync/create',
+    {
+      method:'POST',
+      body:JSON.stringify({
+        deviceId:getDeviceId(),
+        deviceName:getDeviceName(),
+        snapshot:collectSnapshot()
+      })
+    }
+  );
+
+  const room=normalizeRoom(data.room);
+
+  if(room.length!==8){
+    throw new Error('Kode grup dari server tidak valid.');
+  }
+
+  saveConfig({
+    room,
+    serverBase:base,
+    creator:true,
+    connectedAt:Date.now()
+  });
+
+  saveOutbox([]);
+  applySnapshot(data.snapshot||{},true);
+  lastSyncAt=Date.now();
+  openStream();
+
+  return room;
 }
 async function joinRoom(room,serverBase,deviceName){
-  const base=normalizeServerBase(serverBase||defaultServerBase()),r=normalizeRoom(room);if(r.length!==8)throw new Error('Kode grup harus 8 karakter.');setDeviceName(deviceName||getDeviceName());notify('connecting',{message:'Bergabung ke grup sync...'});await checkHealth(base);
-  const old=getConfig();if(old.room&&old.room!==r)saveOutbox([]);
-  const data=await jsonFetch(base+'/sync/join',{method:'POST',body:JSON.stringify({room:r,deviceId:getDeviceId(),deviceName:getDeviceName()})});
-  saveConfig({room:r,serverBase:base,creator:data.creatorDevice===getDeviceId(),connectedAt:Date.now()});clearOutboxForOtherRooms(r);applySnapshot(data.snapshot||{},true);lastSyncAt=Date.now();openStream();return data;
+  const r=normalizeRoom(room);
+
+  if(r.length!==8){
+    throw new Error('Kode grup harus 8 karakter.');
+  }
+
+  setDeviceName(deviceName||getDeviceName());
+  notify('connecting',{message:'Mendeteksi server dan bergabung ke grup...'});
+
+  const health=await checkHealth(serverBase||defaultServerBase());
+  const base=health.serverBase;
+
+  const old=getConfig();
+  if(old.room&&old.room!==r)saveOutbox([]);
+
+  const data=await jsonFetch(
+    base+'/sync/join',
+    {
+      method:'POST',
+      body:JSON.stringify({
+        room:r,
+        deviceId:getDeviceId(),
+        deviceName:getDeviceName()
+      })
+    }
+  );
+
+  saveConfig({
+    room:r,
+    serverBase:base,
+    creator:data.creatorDevice===getDeviceId(),
+    connectedAt:Date.now()
+  });
+
+  clearOutboxForOtherRooms(r);
+  applySnapshot(data.snapshot||{},true);
+  lastSyncAt=Date.now();
+  openStream();
+
+  return data;
 }
 async function resume(){
-  const c=getConfig();if(!c.room||!c.serverBase){notify('disconnected');return}
-  setDeviceName(getDeviceName());notify('connecting',{message:'Memulihkan koneksi...'});
-  try{await checkHealth(c.serverBase);const data=await jsonFetch(normalizeServerBase(c.serverBase)+'/sync/join',{method:'POST',body:JSON.stringify({room:c.room,deviceId:getDeviceId(),deviceName:getDeviceName(),resume:true})});applySnapshot(data.snapshot||{},true);lastSyncAt=Date.now();openStream()}catch(e){notify('reconnecting',{message:e.message});scheduleReconnect()}
+  const c=getConfig();
+
+  if(!c.room){
+    notify('disconnected');
+    return;
+  }
+
+  setDeviceName(getDeviceName());
+  notify('connecting',{message:'Memulihkan koneksi...'});
+
+  try{
+    const health=await checkHealth(
+      c.serverBase||defaultServerBase()
+    );
+
+    const base=health.serverBase;
+
+    if(base!==c.serverBase){
+      saveConfig({
+        ...c,
+        serverBase:base
+      });
+    }
+
+    const data=await jsonFetch(
+      base+'/sync/join',
+      {
+        method:'POST',
+        body:JSON.stringify({
+          room:c.room,
+          deviceId:getDeviceId(),
+          deviceName:getDeviceName(),
+          resume:true
+        })
+      }
+    );
+
+    applySnapshot(data.snapshot||{},true);
+    lastSyncAt=Date.now();
+    openStream();
+  }catch(error){
+    notify('reconnecting',{
+      message:error.message
+    });
+    scheduleReconnect();
+  }
 }
-async function forceResync(){const c=getConfig();if(!c.room)throw new Error('Belum terhubung');notify('connecting',{message:'Mengambil data terbaru...'});const data=await jsonFetch(normalizeServerBase(c.serverBase)+'/sync/join',{method:'POST',body:JSON.stringify({room:c.room,deviceId:getDeviceId(),deviceName:getDeviceName(),resume:true})});applySnapshot(data.snapshot||{},true);lastSyncAt=Date.now();openStream();return data}
+async function forceResync(){
+  const c=getConfig();
+
+  if(!c.room){
+    throw new Error('Belum terhubung');
+  }
+
+  notify('connecting',{
+    message:'Mengambil data terbaru...'
+  });
+
+  const health=await checkHealth(
+    c.serverBase||defaultServerBase()
+  );
+
+  const base=health.serverBase;
+
+  if(base!==c.serverBase){
+    saveConfig({
+      ...c,
+      serverBase:base
+    });
+  }
+
+  const data=await jsonFetch(
+    base+'/sync/join',
+    {
+      method:'POST',
+      body:JSON.stringify({
+        room:c.room,
+        deviceId:getDeviceId(),
+        deviceName:getDeviceName(),
+        resume:true
+      })
+    }
+  );
+
+  applySnapshot(data.snapshot||{},true);
+  lastSyncAt=Date.now();
+  openStream();
+
+  return data;
+}
 function disconnect(forget=true){if(reconnectTimer){clearTimeout(reconnectTimer);reconnectTimer=null}closeStream();lastPresence={onlineCount:0,connections:0,devices:[]};if(forget){clearConfig();saveOutbox([])}notify('disconnected')}
 
 /* ================= Dashboard UI ================= */
@@ -236,7 +610,14 @@ function installUI(){
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:10px;">
       <div><label style="display:block;font-size:.63rem;font-weight:700;color:var(--label-color);margin-bottom:4px;">Nama Device Ini</label><input id="ldmDeviceName" maxlength="40" style="width:100%;padding:8px 9px;border:1px solid var(--border-color);border-radius:8px;background:var(--input-bg);color:var(--text-color);" placeholder="Contoh: Kasir Depan"></div>
-      <div><label style="display:block;font-size:.63rem;font-weight:700;color:var(--label-color);margin-bottom:4px;">Alamat Sync Server</label><input id="ldmSyncServer" style="width:100%;padding:8px 9px;border:1px solid var(--border-color);border-radius:8px;background:var(--input-bg);color:var(--text-color);" placeholder="http://192.168.1.10:8787"></div>
+      <div>
+        <label style="display:block;font-size:.63rem;font-weight:700;color:var(--label-color);margin-bottom:4px;">Alamat Sync Server</label>
+        <div style="display:flex;gap:6px;">
+          <input id="ldmSyncServer" style="min-width:0;flex:1;padding:8px 9px;border:1px solid var(--border-color);border-radius:8px;background:var(--input-bg);color:var(--text-color);" placeholder="http://192.168.1.10:8787">
+          <button type="button" class="btn-copy-code" style="white-space:nowrap;" onclick="LDMDeviceSyncUI.testServer()">Tes Server</button>
+        </div>
+        <div id="ldmServerHint" style="font-size:.56rem;color:var(--label-color);line-height:1.45;margin-top:4px;">Jika Live Server memberi HTTP 404, sistem otomatis mencoba Sync Server di port 8787.</div>
+      </div>
     </div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
@@ -248,7 +629,8 @@ function installUI(){
 
     <div style="margin-top:11px;border:1px solid var(--border-color);border-radius:10px;overflow:hidden;"><div style="padding:8px 9px;background:var(--bg-primary);font-size:.66rem;font-weight:800;color:var(--heading-color);">Device Online</div><div id="ldmDeviceList"><div style="padding:10px;color:var(--label-color);font-size:.68rem;text-align:center;">Belum ada device online.</div></div></div>
 
-    <div style="margin-top:10px;padding:9px 10px;border-radius:8px;background:rgba(2,132,199,.08);font-size:.61rem;line-height:1.55;color:var(--label-color);">Data bisnis yang sync: transaksi/laporan, barang, harga, stok, promo, absensi, stock opname, PO, Goods Receipt, Closing Shift, End of Day, audit, tema dan struk. Password, daftar akun, session login, serta draft transaksi tidak dikirim.</div>
+    <div style="margin-top:10px;padding:9px 10px;border-radius:8px;background:rgba(217,119,6,.10);border:1px solid rgba(217,119,6,.22);font-size:.61rem;line-height:1.55;color:var(--label-color);"><strong style="color:var(--heading-color);">Perbaikan HTTP 404:</strong> jalankan <code>node sync-server.js</code>. Paling aman buka aplikasi dari alamat yang ditampilkan server, misalnya <code>http://192.168.1.10:8787/dashboard.html</code>. Jangan jadikan Live Server :5500 sebagai Sync Server.</div>
+    <div style="margin-top:8px;padding:9px 10px;border-radius:8px;background:rgba(2,132,199,.08);font-size:.61rem;line-height:1.55;color:var(--label-color);">Data bisnis yang sync: transaksi/laporan, barang, harga, stok, promo, absensi, stock opname, PO, Goods Receipt, Closing Shift, End of Day, audit, tema dan struk. Password, daftar akun, session login, serta draft transaksi tidak dikirim.</div>
 
     <div style="display:flex;gap:7px;margin-top:12px;flex-wrap:wrap;"><button id="ldmForceSync" class="btn-modal-ok" style="display:none;background:#0284c7;" onclick="LDMDeviceSyncUI.forceSync()">↻ Sinkronkan Sekarang</button><button id="ldmDisconnect" class="btn-modal-ok" style="display:none;background:#dc2626;" onclick="LDMDeviceSyncUI.disconnect()">Putuskan Device Ini</button><button class="btn-modal-ok" onclick="LDMDeviceSyncUI.close()">Tutup</button></div>
   </div>`;
@@ -259,10 +641,149 @@ function installUI(){
 function openModal(){installUI();const m=document.getElementById('ldmDeviceSyncModal');if(m)m.style.display='flex';const c=getConfig();const s=document.getElementById('ldmSyncServer');if(s)s.value=c.serverBase||defaultServerBase();const n=document.getElementById('ldmDeviceName');if(n)n.value=getDeviceName();renderStatus({status:lastStatus,config:c,presence:lastPresence})}
 function closeModal(){const m=document.getElementById('ldmDeviceSyncModal');if(m)m.style.display='none'}
 async function copyCode(){const r=getConfig().room;if(!r)return;const v=displayRoom(r);try{await navigator.clipboard.writeText(v);window.tampilkanAlertCustom?.('Tersalin','Kode grup berhasil disalin.','success')}catch{window.prompt('Salin kode grup:',v)}}
-function uiError(e){window.tampilkanAlertCustom?.('Sync Device',e.message||String(e),'warning');notify('error',{message:e.message||String(e)})}
+function uiError(error){
+  let message=error?.message||String(error);
 
-window.LDMDeviceSync={version:VERSION,createRoom,joinRoom,resume,forceResync,disconnect,getConfig,getDeviceId,getDeviceName,setDeviceName,collectSnapshot,syncKeys:[...SYNC_KEYS]};
-window.LDMDeviceSyncUI={open:openModal,close:closeModal,renderStatus,async createRoom(){try{const room=await createRoom(uiBase(),uiName());showRoom(room)}catch(e){uiError(e)}},async joinRoom(){try{const input=document.getElementById('ldmJoinCode'),room=normalizeRoom(input?.value);if(room.length!==8)throw new Error('Masukkan kode grup 8 karakter.');await joinRoom(room,uiBase(),uiName());showRoom(room)}catch(e){uiError(e)}},async forceSync(){try{await forceResync();window.tampilkanAlertCustom?.('Sinkron','Data terbaru berhasil diambil dari grup.','success')}catch(e){uiError(e)}},disconnect(){disconnect(true);renderStatus({status:'disconnected',config:{},presence:{onlineCount:0,devices:[],connections:0}})},copyCode};
+  if(error?.status===404){
+    message=
+      'HTTP 404: alamat tersebut bukan Sync Server. Jalankan "node sync-server.js" dan gunakan alamat port 8787.';
+  }
+
+  if(error?.code==='SYNC_SERVER_NOT_FOUND'){
+    message=
+      'Sync Server belum ditemukan. Pastikan sync-server.js berjalan dan firewall mengizinkan port 8787.';
+  }
+
+  window.tampilkanAlertCustom?.(
+    'Sync Device',
+    message,
+    'warning'
+  );
+
+  notify('error',{
+    message
+  });
+}
+
+window.LDMDeviceSync={
+  version:VERSION,
+  createRoom,
+  joinRoom,
+  resume,
+  forceResync,
+  disconnect,
+  getConfig,
+  getDeviceId,
+  getDeviceName,
+  setDeviceName,
+  collectSnapshot,
+  probeServer,
+  resolveServerBase,
+  syncKeys:[...SYNC_KEYS]
+};
+
+window.LDMDeviceSyncUI={
+  open:openModal,
+  close:closeModal,
+  renderStatus,
+
+  async testServer(){
+    try{
+      const base=await resolveServerBase(uiBase());
+
+      const hint=document.getElementById('ldmServerHint');
+      if(hint){
+        hint.innerHTML=
+          '✅ Sync Server ditemukan: <strong>'+
+          esc(base)+
+          '</strong>';
+      }
+
+      window.tampilkanAlertCustom?.(
+        'Sync Device',
+        'Sync Server berhasil ditemukan di '+base,
+        'success'
+      );
+    }catch(error){
+      uiError(error);
+    }
+  },
+
+  async createRoom(){
+    try{
+      const room=await createRoom(
+        uiBase(),
+        uiName()
+      );
+
+      showRoom(room);
+
+      window.tampilkanAlertCustom?.(
+        'Grup Sync Dibuat',
+        'Grup '+displayRoom(room)+' berhasil dibuat.',
+        'success'
+      );
+    }catch(error){
+      uiError(error);
+    }
+  },
+
+  async joinRoom(){
+    try{
+      const input=document.getElementById('ldmJoinCode');
+      const room=normalizeRoom(input?.value);
+
+      if(room.length!==8){
+        throw new Error('Masukkan kode grup 8 karakter.');
+      }
+
+      await joinRoom(
+        room,
+        uiBase(),
+        uiName()
+      );
+
+      showRoom(room);
+
+      window.tampilkanAlertCustom?.(
+        'Device Terhubung',
+        'Device berhasil bergabung ke grup '+displayRoom(room)+'.',
+        'success'
+      );
+    }catch(error){
+      uiError(error);
+    }
+  },
+
+  async forceSync(){
+    try{
+      await forceResync();
+      window.tampilkanAlertCustom?.(
+        'Sinkron',
+        'Data terbaru berhasil diambil dari grup.',
+        'success'
+      );
+    }catch(error){
+      uiError(error);
+    }
+  },
+
+  disconnect(){
+    disconnect(true);
+
+    renderStatus({
+      status:'disconnected',
+      config:{},
+      presence:{
+        onlineCount:0,
+        devices:[],
+        connections:0
+      }
+    });
+  },
+
+  copyCode
+};
 
 document.addEventListener('DOMContentLoaded',()=>{installUI();setTimeout(()=>resume(),120)});
 })();
