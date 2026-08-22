@@ -667,6 +667,14 @@
             text-align: right;
         }
 
+        .eod-blind-value {
+            display: inline-block;
+            min-width: 58px;
+            letter-spacing: .08em;
+            color: #94a3b8 !important;
+            font-weight: 800;
+        }
+
         .positive {
             color: #16a34a !important;
         }
@@ -921,7 +929,7 @@
             <a href="stock-opname.html" class="nav-item"><span>📋</span> Stock Opname</a>
             <a href="laporan.html" class="nav-item"><span>📋</span> Laporan</a>
             <a href="shift-closing.html" class="nav-item" data-role-access="owner,admin,kasir"><span>🔒</span> Closing Shift</a>
-            <a href="end-of-day.html" class="nav-item active" data-role-access="owner,admin"><span>🌙</span> End of Day</a>
+            <a href="eod.html" class="nav-item active" data-role-access="owner,admin"><span>🌙</span> End of Day</a>
         </nav>
 
         <main class="main-content">
@@ -1934,7 +1942,89 @@ function renderFullDay(c){
     badge.className =
         "badge ok";
 }
-function renderAccounts(c){const body=accountBody;if(!c.accounts.length){body.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--label-color)">Belum ada aktivitas.</td></tr>';return}body.innerHTML=c.accounts.map(a=>`<tr><td><strong>${esc(a.name)}</strong></td><td>${a.count}</td><td>${rp(a.sales)}</td><td>${a.logs.map(l=>`<span class="badge shift">${esc(l.shift||'-')}</span>`).join(' ')||'-'}</td><td><span class="badge ${a.closed?'ok':'wait'}">${a.closed?'Sudah Closing':'Belum Closing'}</span></td></tr>`).join('')}
+function renderAccounts(c){
+    const body =
+        accountBody;
+
+    if (!c.accounts.length) {
+        body.innerHTML =
+            '<tr><td colspan="5" style="text-align:center;color:var(--label-color)">Belum ada aktivitas.</td></tr>';
+
+        return;
+    }
+
+    body.innerHTML =
+        c.accounts
+            .map(
+                a => {
+                    /*
+                     * BLIND CLOSING PER AKUN:
+                     *
+                     * Penjualan POS milik akun yang sedang aktif
+                     * bertransaksi disembunyikan sampai akun tersebut
+                     * benar-benar memiliki Closing Shift.
+                     *
+                     * Akun A sudah closing  -> penjualan A tampil.
+                     * Akun B belum closing  -> penjualan B tetap ???.
+                     *
+                     * Jadi tidak perlu menunggu akun lain untuk membuka
+                     * nilai akun yang sudah menyelesaikan Closing Shift.
+                     */
+                    const penjualanPOS =
+                        a.closed
+                            ? rp(
+                                a.sales
+                            )
+                            : "???";
+
+                    const closingShift =
+                        a.logs
+                            .map(
+                                l =>
+                                    `<span class="badge shift">${esc(l.shift || "-")}</span>`
+                            )
+                            .join(
+                                " "
+                            )
+                        ||
+                        "-";
+
+                    return `
+                        <tr>
+                            <td>
+                                <strong>${esc(a.name)}</strong>
+                            </td>
+
+                            <td>
+                                ${a.count}
+                            </td>
+
+                            <td>
+                                <strong
+                                    class="${a.closed ? "" : "eod-blind-value"}"
+                                    title="${a.closed ? "Penjualan POS sudah dibuka setelah Closing Shift." : "Penjualan POS disembunyikan sampai akun ini melakukan Closing Shift."}"
+                                >
+                                    ${penjualanPOS}
+                                </strong>
+                            </td>
+
+                            <td>
+                                ${closingShift}
+                            </td>
+
+                            <td>
+                                <span class="badge ${a.closed ? "ok" : "wait"}">
+                                    ${a.closed ? "Sudah Closing" : "Belum Closing"}
+                                </span>
+                            </td>
+                        </tr>
+                    `;
+                }
+            )
+            .join(
+                ""
+            );
+}
 function renderStatus(c){
     statusBox.className =
         "status " +
