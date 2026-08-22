@@ -1,0 +1,3531 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laporan - LocDailyMar POS</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0d2240">
+    <link rel="stylesheet" href="style.css">
+
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('Service Worker terdaftar!', reg))
+            .catch(err => console.log('Gagal mendaftarkan Service Worker', err));
+        });
+      }
+    </script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Caveat&family=Fira+Code&family=Fredoka:wght@600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono&family=Lato:wght@400;700&family=Lobster&family=Merriweather:wght@400;700&family=Montserrat:wght@400;600;700&family=Nunito:wght@400;600;700&family=Open+Sans:wght@400;600;700&family=Oswald:wght@500;700&family=Pacifico&family=Playfair+Display:wght@600;700&family=Poppins:wght@400;500;600;700&family=Raleway:wght@400;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-primary: #f4f6f9;
+            --bg-secondary: #ffffff;
+            --text-color: #334155;
+            --heading-color: #0f172a;
+            --border-color: #e2e8f0;
+            --input-bg: #ffffff;
+            --app-font: 'Poppins', sans-serif;
+            --brand-font: 'Poppins', sans-serif;
+            --nav-desktop-bg: #0d2240;
+            --accent-color: #ffc107;
+        }
+
+        /* TEMA GELAP GLOBAL */
+        body.dark-mode {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --text-color: #e2e8f0;
+            --heading-color: #f8fafc;
+            --border-color: #334155;
+            --input-bg: #0f172a;
+            --nav-desktop-bg: #1e293b;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: var(--app-font); }
+        body { background-color: var(--bg-primary); min-height: 100vh; color: var(--text-color); transition: background-color 0.3s ease; }
+
+        .app-layout { display: flex; flex-direction: column; min-height: 100vh; }
+
+        /* Tombol Garis 3 (Hamburger Menu) di HP */
+        .btn-toggle-menu {
+            display: inline-flex;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            padding: 4px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+            transition: 0.2s;
+        }
+        .btn-toggle-menu:hover { background: rgba(255, 255, 255, 0.35); }
+
+        /* Overlay Layar Gelap saat Menu Terbuka di HP */
+        .nav-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(2px);
+            z-index: 998;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .nav-overlay.active {
+            display: block;
+            opacity: 1;
+        }
+
+        .nav-bar { 
+            position: fixed; 
+            top: 0; 
+            left: -260px; /* Sembunyi ke kiri layar pada versi HP */
+            width: 250px; 
+            height: 100vh;
+            background: var(--nav-desktop-bg); 
+            display: flex; 
+            flex-direction: column;
+            justify-content: flex-start; 
+            padding: 20px 15px; 
+            z-index: 999; 
+            box-shadow: 2px 0 10px rgba(0,0,0,0.2); 
+            transition: left 0.3s ease, background 0.3s ease;
+            gap: 8px;
+        }
+        .nav-bar.active {
+            left: 0; /* Bergeser muncul dari kiri */
+        }
+
+        .nav-header-mobile {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+            font-weight: 700;
+            font-size: 1.1rem;
+            padding-bottom: 12px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .btn-close-menu {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+
+        .nav-item { 
+            text-decoration: none; 
+            color: #94a3b8; 
+            font-size: 0.9rem; 
+            font-weight: 600; 
+            display: flex; 
+            flex-direction: row; 
+            align-items: center; 
+            gap: 12px; 
+            position: relative; 
+            padding: 10px 14px;
+            border-radius: 10px;
+            transition: color 0.3s ease, background 0.3s ease;
+            width: 100%;
+            justify-content: flex-start;
+        }
+        .nav-item span { font-size: 1.2rem; }
+        .nav-item.active { 
+            background: var(--accent-color); 
+            color: #0d2240; 
+            font-weight: 700; 
+        }
+
+        .nav-badge {
+            position: absolute;
+            top: 10px;
+            right: 12px;
+            background: #ef4444;
+            color: white;
+            font-size: 0.6rem;
+            font-weight: 700;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid white;
+        }
+
+        .main-content { padding: 12px; padding-bottom: 75px; flex: 1; }
+
+        .header-app { 
+            background: #0d2240; 
+            color: white; 
+            padding: 12px 16px; 
+            border-radius: 12px; 
+            margin-bottom: 12px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            transition: background 0.3s ease;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .header-brand-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .header-logo-img {
+            max-height: 40px;
+            max-width: 100px;
+            object-fit: contain;
+        }
+        .header-title-box h2 { 
+            font-size: 1.05rem; 
+            font-weight: 700; 
+            font-family: var(--brand-font);
+            margin: 0;
+            line-height: 1.2;
+        }
+        .header-title-box p {
+            font-size: 0.72rem;
+            opacity: 0.9;
+        }
+
+        .btn-header-action {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .btn-header-action:hover { background: rgba(255, 255, 255, 0.35); }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        .stat-card {
+            background: var(--bg-secondary);
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .stat-title { font-size: 0.7rem; color: #64748b; font-weight: 600; }
+        .stat-value { font-size: 1.05rem; color: var(--heading-color); font-weight: 700; }
+
+        .box-card { 
+            background: var(--bg-secondary); 
+            padding: 14px; 
+            border-radius: 12px; 
+            border: 1px solid var(--border-color); 
+            margin-bottom: 12px; 
+        }
+
+        .filter-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .filter-input {
+            width: 100%;
+            padding: 7px 10px;
+            border: 1.5px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 0.78rem;
+            outline: none;
+            background: var(--input-bg);
+            color: var(--text-color);
+        }
+        .filter-input:focus { border-color: #0284c7; }
+
+        .search-box {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1.5px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 0.82rem;
+            outline: none;
+            margin-bottom: 12px;
+            background: var(--input-bg);
+            color: var(--text-color);
+            transition: border-color 0.2s;
+        }
+        .search-box:focus { border-color: #0284c7; }
+
+        .action-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn-export {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-export:hover { background: #059669; }
+
+        .btn-reset {
+            background: #fee2e2;
+            color: #ef4444;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.78rem; }
+        th { background: var(--bg-primary); color: var(--text-color); padding: 8px 6px; font-weight: 700; border-bottom: 2px solid var(--border-color); white-space: nowrap; }
+        td { padding: 8px 6px; border-bottom: 1px solid var(--border-color); color: var(--text-color); word-break: break-word; }
+        
+        .badge-method { padding: 2px 6px; border-radius: 4px; font-size: 0.68rem; font-weight: 600; display: inline-block; white-space: nowrap; }
+        .badge-tunai { background: #dcfce7; color: #15803d; }
+        .badge-nontunai { background: #e0f2fe; color: #0369a1; }
+        .badge-split { background: #f3e8ff; color: #7e22ce; }
+
+        .tr-clickable { cursor: pointer; transition: background 0.2s; }
+        .tr-clickable:hover { background-color: var(--bg-primary); }
+
+        .badge-view { background: var(--bg-primary); color: var(--text-color); padding: 2px 6px; border-radius: 4px; font-size: 0.68rem; font-weight: 600; display: inline-block; white-space: nowrap; }
+
+        .pagination-container { display: flex; justify-content: center; align-items: center; gap: 4px; margin-top: 12px; flex-wrap: wrap; }
+        .btn-page { padding: 5px 10px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.75rem; font-weight: 600; color: var(--text-color); cursor: pointer; transition: all 0.2s; }
+        .btn-page:hover { background: var(--bg-primary); }
+        .btn-page.active { background: #0d2240; color: white; border-color: #0d2240; }
+        .btn-page:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        /* POPUP & MODAL BASE STYLING */
+        .popup { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(13, 34, 64, 0.7); backdrop-filter: blur(3px); justify-content: center; align-items: center; padding: 15px; z-index: 1000; }
+        .popup-box { background: var(--bg-secondary); color: var(--text-color); width: 100%; max-width: 340px; padding: 20px; border-radius: 16px; text-align: center; border: 1px solid var(--border-color); box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15); }
+        .popup-box .icon { font-size: 2.2rem; margin-bottom: 4px; }
+        .popup-box h3 { color: var(--heading-color); font-size: 1rem; margin-top: 4px; font-weight: 700; }
+        .popup-box p { color: var(--text-color); font-size: 0.8rem; font-weight: 500; margin-top: 4px; word-break: break-word; }
+
+        .popup-input { width: 100%; padding: 10px; border: 1.5px solid var(--border-color); border-radius: 8px; margin: 12px 0 4px 0; font-size: 0.85rem; text-align: center; outline: none; background: var(--input-bg); color: var(--text-color); }
+        .popup-input:focus { border-color: #0284c7; }
+
+        .modal-buttons { display: flex; gap: 8px; margin-top: 14px; }
+        .btn-popup-primary { width: 100%; padding: 10px; background: #0d2240; color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; margin-top: 12px; font-size: 0.85rem; }
+        .btn-confirm-yes { flex: 1; padding: 10px; background: #10b981; color: white; border: none; border-radius: 8px; font-weight: 700; font-size: 0.8rem; cursor: pointer; }
+        .btn-confirm-no { flex: 1; padding: 10px; background: #ef4444; color: white; border: none; border-radius: 8px; font-weight: 700; font-size: 0.8rem; cursor: pointer; }
+
+        .popup-card { background: var(--bg-secondary); color: var(--text-color); width: 100%; max-width: 420px; border-radius: 16px; padding: 16px; border: 1px solid var(--border-color); box-shadow: 0 10px 25px rgba(0,0,0,0.2); max-height: 85vh; overflow-y: auto; }
+        .popup-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px dashed var(--border-color); padding-bottom: 10px; margin-bottom: 12px; }
+        .popup-header h3 { font-size: 1rem; color: var(--heading-color); font-weight: 700; }
+        .btn-close { background: var(--bg-primary); border: none; font-size: 1rem; padding: 4px 8px; border-radius: 50%; cursor: pointer; color: var(--text-color); }
+
+        .detail-row { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.8rem; }
+        .detail-row.bold { font-weight: 700; color: var(--heading-color); }
+        
+        .item-list-box { background: var(--bg-primary); border-radius: 10px; padding: 10px; margin: 10px 0; border: 1px solid var(--border-color); }
+        .item-row { display: flex; flex-direction: column; font-size: 0.8rem; margin-bottom: 6px; gap: 2px; border-bottom: 1px dashed var(--border-color); padding-bottom: 4px; }
+        .item-row:last-child { border-bottom: none; padding-bottom: 0; }
+        .item-main-info { display: flex; justify-content: space-between; font-weight: 600; }
+        .item-sub-info { font-size: 0.72rem; color: #ef4444; text-align: left; font-style: italic; }
+
+        .btn-print { width: 100%; padding: 10px; background: #0d2240; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; margin-top: 8px; font-size: 0.85rem; }
+        .btn-delete-single { width: 100%; padding: 10px; background: #fee2e2; color: #ef4444; border: 1px solid #fca5a5; border-radius: 8px; font-weight: 700; cursor: pointer; margin-top: 6px; font-size: 0.8rem; display: none; }
+
+        /* CSS MODAL EDIT TAMPILAN & STRUK */
+        .modal { 
+            display: none; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(0,0,0,0.6); 
+            backdrop-filter: blur(4px);
+            z-index: 999; 
+            justify-content: center; 
+            align-items: center; 
+            padding: 15px; 
+        }
+        .modal-content { 
+            background: var(--bg-secondary); 
+            color: var(--text-color);
+            padding: 20px; 
+            border-radius: 18px; 
+            width: 100%; 
+            max-width: 520px; 
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 30px rgba(0,0,0,0.3); 
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+        .modal-header-title { 
+            font-weight: 700; 
+            color: var(--heading-color); 
+            font-size: 1.1rem; 
+            margin-bottom: 14px; 
+            border-bottom: 1px solid var(--border-color); 
+            padding-bottom: 10px; 
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .setting-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 12px 14px;
+            margin-bottom: 12px;
+        }
+        .form-section-title {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: #0284c7;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .form-row { margin-bottom: 10px; }
+        .form-row:last-child { margin-bottom: 0; }
+        .form-row label { font-size: 0.72rem; font-weight: 700; color: #64748b; display: block; margin-bottom: 4px; text-transform: uppercase; }
+        .form-row input[type="text"], .form-row input[type="password"], .form-row textarea, .form-row select, .form-row input[type="file"] { 
+            width: 100%; 
+            padding: 8px 10px; 
+            border: 1px solid var(--border-color); 
+            background: var(--input-bg);
+            color: var(--text-color);
+            border-radius: 8px; 
+            font-size: 0.82rem; 
+            outline: none; 
+        }
+
+        /* TOGGLE SWITCH DARK MODE */
+        .toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+        }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #cbd5e1;
+            transition: .3s;
+            border-radius: 24px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+        input:checked + .slider { background-color: #0284c7; }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        /* COLOR PICKER GRID */
+        .color-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .color-picker-item { 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            background: var(--bg-secondary);
+            padding: 6px 10px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+        .color-picker-item input[type="color"] { width: 28px; height: 28px; border: none; border-radius: 6px; cursor: pointer; background: transparent; }
+
+        /* LOGO PREVIEW */
+        .preview-logo-box {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 6px;
+        }
+        .preview-logo-img {
+            max-height: 36px;
+            max-width: 90px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+        }
+        .btn-remove-logo {
+            background: #fecaca;
+            color: #dc2626;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.68rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .modal-footer { display: flex; gap: 8px; margin-top: 15px; }
+        .btn-modal { flex: 1; padding: 10px; border: none; border-radius: 8px; font-weight: 600; font-size: 0.8rem; cursor: pointer; text-align: center; }
+        .btn-modal-cancel { background: #e2e8f0; color: #475569; }
+        .btn-modal-save { background: #0d2240; color: white; }
+
+        /* PREVIEW STRUK BOX */
+        .preview-struk-container {
+            background: #ffffff;
+            color: #000000;
+            font-family: monospace;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px dashed #cbd5e1;
+            font-size: 0.72rem;
+            margin-top: 6px;
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.05);
+        }
+        .preview-struk-header, .preview-struk-footer { text-align: center; }
+        .preview-struk-line { border-bottom: 1px dashed #000; margin: 6px 0; }
+        .preview-struk-row { display: flex; justify-content: space-between; margin: 2px 0; }
+
+        @media (min-width: 768px) {
+            .app-layout { flex-direction: row; }
+            .btn-toggle-menu { display: none !important; }
+            .nav-overlay { display: none !important; }
+            .nav-header-mobile { display: none; }
+            .nav-bar { 
+                position: relative; 
+                left: 0;
+                width: 250px; 
+                height: auto;
+                min-height: 100vh;
+                flex-direction: column; 
+                justify-content: flex-start; 
+                padding: 30px 15px; 
+                border-top: none; 
+                border-right: 1px solid var(--border-color); 
+                gap: 10px; 
+                background: var(--nav-desktop-bg); 
+                box-shadow: none;
+            }
+            .nav-item { flex-direction: row; gap: 15px; padding: 12px 18px; border-radius: 12px; color: #94a3b8; font-size: 0.95rem; width: 100%; justify-content: flex-start; }
+            .nav-item.active { background: #ffc107; color: #0d2240; }
+            .nav-badge { top: 12px; right: 15px; }
+            .main-content { padding: 30px; padding-bottom: 30px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Overlay Layar Gelap saat Menu Terbuka di HP -->
+    <div class="nav-overlay" id="navOverlay" onclick="toggleMobileMenu()"></div>
+
+    <div class="app-layout">
+        <div class="nav-bar" id="navBar">
+            <div class="nav-header-mobile">
+                <span>📌 Menu Navigasi</span>
+                <button class="btn-close-menu" onclick="toggleMobileMenu()">✕</button>
+            </div>
+            <a href="dashboard.html" class="nav-item"><span>📊</span> Dashboard</a>
+            <a href="absensi.html" class="nav-item"><span>📝</span> Absensi</a>
+            <a href="kasir.html" class="nav-item" onclick="return verifikasiAksesKasir(event)"><span>💵</span> Kasir</a>
+            <a href="barang.html" class="nav-item"><span>📦</span> Barang<div class="nav-badge" id="navBadge">!</div></a>
+            <a href="Purchase-Order.html" class="nav-item" data-role-access="owner,admin"><span>🛒</span> Purchase Order</a>
+            <a href="goods.receipt.html" class="nav-item" data-role-access="owner,admin"><span>📥</span> Goods Receipt</a>
+            <a href="stock-opname.html" class="nav-item"><span>📋</span> Stock Opname</a>
+            <a href="laporan.html" data-role-access="owner,admin,kasir" class="nav-item active"><span>📋</span> Laporan</a>
+            <a href="shift-closing.html" class="nav-item"><span>🔒</span> Closing Shift</a>
+        </div>
+
+        <div class="main-content">
+            <div class="header-app" id="headerApp">
+                <div class="header-brand-container">
+                    <button class="btn-toggle-menu" onclick="toggleMobileMenu()" title="Buka Menu">☰</button>
+                    <img id="imgLogoToko" class="header-logo-img" alt="Logo Toko" style="display: none;">
+                    <div class="header-title-box">
+                        <h2 id="txtJudulToko">LocDailyMar</h2>
+                        <p id="txtSubJudulToko"></p>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <!-- Tombol Pengaturan Struk & Ganti Password hanya aktif untuk Owner -->
+                    <button id="btnGantiPassOwner" class="btn-header-action" onclick="bukaModalGantiPass()" style="display: none;">🔑 Ganti Password</button>
+                    <button id="btnSettingStruk" class="btn-header-action" onclick="bukaModalStruk()" style="display: none;">🧾 Pengaturan Struk</button>
+                </div>
+            </div>
+
+            <div
+    id="roleReportNotice"
+    style="
+        margin-bottom:10px;
+        padding:8px 12px;
+        border-radius:8px;
+        background:var(--bg-secondary);
+        color:var(--label-color);
+        font-size:.75rem;
+    "
+></div>
+
+            <div class="summary-grid">
+                <div class="stat-card">
+                    <span class="stat-title">Total Penjualan</span>
+                    <span class="stat-value" id="statOmset">Rp 0</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-title">Jumlah Transaksi</span>
+                    <span class="stat-value" id="statCount">0 TRX</span>
+                </div>
+            </div>
+
+            <div class="box-card">
+                <div class="action-header">
+                    <h3 style="font-size: 0.88rem; color:var(--text-color);">Riwayat Transaksi</h3>
+                    <div style="display: flex; gap: 6px;">
+                        <button class="btn-export" onclick="exportDataCSV()">📥 Export CSV</button>
+                        <button id="btnResetLaporan" class="btn-reset" onclick="bukaModalPasswordReset()">Reset Laporan</button>
+                    </div>
+                </div>
+
+                <div class="filter-grid">
+                    <div>
+                        <label style="font-size: 0.65rem; color: #64748b; font-weight: 600;">Dari Tanggal:</label>
+                        <input type="date" id="filterStartDate" class="filter-input" onchange="onSearchInput()">
+                    </div>
+                    <div>
+                        <label style="font-size: 0.65rem; color: #64748b; font-weight: 600;">Sampai Tanggal:</label>
+                        <input type="date" id="filterEndDate" class="filter-input" onchange="onSearchInput()">
+                    </div>
+                </div>
+
+                <input type="text" id="inputSearch" class="search-box" placeholder="🔍 Cari TRX, tanggal, barang..." oninput="onSearchInput()">
+
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Waktu</th>
+                                <th>Kasir</th>
+                                <th>Total</th>
+                                <th>Bayar</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelLaporan"></tbody>
+                    </table>
+                </div>
+
+                <div class="pagination-container" id="paginationBox"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL EDIT TAMPILAN & TEMA GLOBAL -->
+    <div class="modal" id="modalEditHeader">
+        <div class="modal-content">
+            <div class="modal-header-title">
+                <span>🎨 Pengaturan Tampilan & Tema Toko</span>
+            </div>
+
+            <div class="setting-card">
+                <div class="form-section-title">🌙 1. Mode Tampilan Global</div>
+                <div class="toggle-row">
+                    <span style="font-size:0.82rem; font-weight:600;">Aktifkan Mode Gelap (Dark Mode)</span>
+                    <label class="switch">
+                        <input type="checkbox" id="toggleDarkMode" onchange="previewRealtimeTheme()">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="setting-card">
+                <div class="form-section-title">🏢 2. Identitas & Logo Toko</div>
+                
+                <div class="form-row">
+                    <label>Upload Logo Perusahaan (Opsional)</label>
+                    <input type="file" id="inputLogoFile" accept="image/*" onchange="previewUploadLogo(event)">
+                    <div class="preview-logo-box" id="previewLogoContainer" style="display: none;">
+                        <img id="imgPreviewModal" class="preview-logo-img" alt="Preview Logo">
+                        <button type="button" class="btn-remove-logo" onclick="hapusLogoKustom()">Hapus Logo</button>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <label>Judul Perusahaan / Toko</label>
+                    <input type="text" id="inputJudulToko" placeholder="Contoh: LocDailyMar" oninput="previewRealtimeTheme()">
+                </div>
+
+                <div class="form-row">
+                    <label>Sub Judul / Kategori</label>
+                    <input type="text" id="inputSubJudulToko" placeholder="Contoh: Frozen Food" oninput="previewRealtimeTheme()">
+                </div>
+            </div>
+
+            <div class="setting-card">
+                <div class="form-section-title">🔤 3. Kustomisasi Font Aplikasi</div>
+
+                <div class="form-row">
+                    <label>Font Judul & Brand Logo</label>
+                    <select id="selectBrandFontFamily" class="font-selector-list" onchange="previewRealtimeTheme()"></select>
+                </div>
+
+                <div class="form-row">
+                    <label>Font Seluruh Aplikasi</label>
+                    <select id="selectFontFamily" class="font-selector-list" onchange="previewRealtimeTheme()"></select>
+                </div>
+            </div>
+
+            <div class="setting-card">
+                <div class="form-section-title">🎨 4. Skema Warna Header & Tema</div>
+
+                <div class="color-grid" style="margin-bottom: 10px;">
+                    <div class="form-row">
+                        <label>Latar Utama</label>
+                        <div class="color-picker-item">
+                            <span style="font-size: 0.72rem; color: #64748b;">Aplikasi</span>
+                            <input type="color" id="inputBgPrimary" value="#f4f6f9" oninput="previewRealtimeTheme()">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <label>Latar Kartu</label>
+                        <div class="color-picker-item">
+                            <span style="font-size: 0.72rem; color: #64748b;">Kartu/Box</span>
+                            <input type="color" id="inputBgSecondary" value="#ffffff" oninput="previewRealtimeTheme()">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="color-grid">
+                    <div class="form-row">
+                        <label>Warna Judul</label>
+                        <div class="color-picker-item">
+                            <span style="font-size: 0.72rem; color: #64748b;">Teks Judul</span>
+                            <input type="color" id="inputWarnaJudul" value="#ffffff" oninput="previewRealtimeTheme()">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <label>Warna Outlined</label>
+                        <div class="color-picker-item">
+                            <span style="font-size: 0.72rem; color: #64748b;">Shadow Teks</span>
+                            <input type="color" id="inputWarnaOutline" value="#d99b00" oninput="previewRealtimeTheme()">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <label>Warna Sub Judul</label>
+                        <div class="color-picker-item">
+                            <span style="font-size: 0.72rem; color: #64748b;">Sub Judul</span>
+                            <input type="color" id="inputWarnaSubJudul" value="#ffc107" oninput="previewRealtimeTheme()">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <label>Background Banner</label>
+                        <div class="color-picker-item">
+                            <span style="font-size: 0.72rem; color: #64748b;">Header Banner</span>
+                            <input type="color" id="inputWarnaBgHeader" value="#0d2240" oninput="previewRealtimeTheme()">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-modal btn-modal-cancel" onclick="batalEditHeader()">Batal</button>
+                <button class="btn-modal btn-modal-save" onclick="simpanHeaderToko()">Simpan Perubahan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL KHUSUS PENGATURAN STRUK -->
+    <div class="modal" id="modalEditStruk">
+        <div class="modal-content">
+            <div class="modal-header-title">
+                <span>🧾 Kustomisasi Teks Struk Belanja</span>
+            </div>
+
+            <div class="setting-card">
+                <div class="form-section-title">✏️ Pengaturan Teks Struk Manual</div>
+                
+                <div class="form-row">
+                    <label>Nama Toko / Header Struk</label>
+                    <input type="text" id="inputStrukNamaToko" placeholder="Contoh: LocDailyMar POS" oninput="updateLivePreviewStruk()">
+                </div>
+
+                <div class="form-row">
+                    <label>Sub Header (Alamat / No. HP / Keterangan)</label>
+                    <textarea id="inputStrukSubHeader" rows="2" placeholder="Contoh: Jl. Ahmad Yani No. 12&#10;Telp: 0812-3456-7890" oninput="updateLivePreviewStruk()"></textarea>
+                </div>
+
+                <div class="form-row">
+                    <label>Pesan Footer / Penutup Struk</label>
+                    <textarea id="inputStrukFooter" rows="2" placeholder="Contoh: -- Terima Kasih atas Kunjungan Anda --&#10;Barang yang dibeli tidak dapat ditukar" oninput="updateLivePreviewStruk()"></textarea>
+                </div>
+            </div>
+
+            <div class="setting-card">
+                <div class="form-section-title">👁️ Live Preview Tampilan Struk</div>
+                <div class="preview-struk-container">
+                    <div class="preview-struk-header">
+                        <h4 id="previewStrukNama" style="font-size:0.85rem; font-weight:700; margin:0;">LocDailyMar POS</h4>
+                        <p id="previewStrukSubHeader" style="margin:2px 0; color:#334155; font-size:0.7rem;"></p>
+                        <p style="margin-top:4px; font-size:0.68rem; color:#64748b;">02/08/2026, 12:00:00<br><b>Kasir: Owner</b></p>
+                    </div>
+                    <div class="preview-struk-line"></div>
+                    <div class="preview-struk-row"><span>Contoh Produk A</span><span>1 Pcs</span></div>
+                    <div class="preview-struk-row" style="color: #ef4444; font-size: 0.65rem;"><span> Potongan Harga</span><span>-Rp 5.000</span></div>
+                    <div class="preview-struk-row"><span>Contoh Produk B</span><span>2 Pcs</span></div>
+                    <div class="preview-struk-line"></div>
+                    <div class="preview-struk-row" style="color: #ef4444; font-size: 0.68rem;"><span>Total Potongan:</span><span>-Rp 5.000</span></div>
+                    <div class="preview-struk-row"><span>Total:</span><span>Rp 45.000</span></div>
+                    <div class="preview-struk-row"><span>Bayar:</span><span>Rp 50.000</span></div>
+                    <div class="preview-struk-row"><span>Kembali:</span><span>Rp 5.000</span></div>
+                    <div class="preview-struk-line"></div>
+                    <div class="preview-struk-footer" id="previewStrukFooter" style="color:#334155; font-size:0.7rem;"></div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-modal btn-modal-cancel" onclick="tutupModalStruk()">Batal</button>
+                <button class="btn-modal btn-modal-save" onclick="simpanPengaturanStruk()">Simpan Struk</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL KHUSUS GANTI PASSWORD (OWNER ONLY) -->
+    <div class="modal" id="modalGantiPass">
+        <div class="modal-content">
+            <div class="modal-header-title">
+                <span>🔑 Ganti Password Otentikasi</span>
+            </div>
+
+            <div class="setting-card">
+                <div class="form-section-title">🔒 Kredensial Baru</div>
+                <div class="form-row">
+                    <label>Password Otentikasi Baru</label>
+                    <input type="password" id="inputPassBaru" placeholder="Masukkan password baru">
+                </div>
+                <div class="form-row">
+                    <label>Konfirmasi Password Baru</label>
+                    <input type="password" id="inputPassBaruConfirm" placeholder="Ulangi password baru">
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-modal btn-modal-cancel" onclick="tutupModalGantiPass()">Batal</button>
+                <button class="btn-modal btn-modal-save" onclick="simpanPasswordBaru()">Simpan Password</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Detail Transaksi -->
+    <div class="popup" id="popupDetail">
+        <div class="popup-card">
+            <div class="popup-header">
+                <div>
+                    <h3 id="advID">TRX-0000</h3>
+                    <small id="advTanggal" style="color:#64748b; font-size:0.72rem;"></small>
+                </div>
+                <button class="btn-close" onclick="tutupDetail()">✕</button>
+            </div>
+
+            <div class="detail-row">
+                <span style="color:#64748b;">Kasir / Operator</span>
+                <span class="bold" id="advKasir">Owner</span>
+            </div>
+
+            <label style="font-size: 0.7rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-top:8px; display:block;">Rincian Item</label>
+            <div class="item-list-box" id="advItemList"></div>
+
+            <div class="detail-row" id="rowAdvTotalDiskon" style="display:none; color:#ef4444;">
+                <span>Total Potongan Harga</span>
+                <span class="bold" id="advTotalDiskon">-Rp 0</span>
+            </div>
+            <div class="detail-row">
+                <span style="color:#64748b;">Total Belanja</span>
+                <span class="bold" id="advTotal">Rp 0</span>
+            </div>
+            
+            <!-- Rincian Pembayaran (Mendukung Pembayaran Biasa & Split Payment) -->
+            <div id="boxMetodePembayaran">
+                <div class="detail-row" id="rowSingleBayar">
+                    <span style="color:#64748b;" id="labelBayar">Dibayar</span>
+                    <span id="advBayar">Rp 0</span>
+                </div>
+                <div class="detail-row" id="rowSplitCash" style="display:none;">
+                    <span style="color:#64748b;">Tunai</span>
+                    <span id="advSplitCash">Rp 0</span>
+                </div>
+                <div class="detail-row" id="rowSplitQris" style="display:none;">
+                    <span style="color:#64748b;">Non Tunai</span>
+                    <span id="advSplitQris">Rp 0</span>
+                </div>
+            </div>
+
+            <div class="detail-row">
+                <span style="color:#64748b;">Kembalian</span>
+                <span style="color:#10b981; font-weight:700;" id="advKembali">Rp 0</span>
+            </div>
+
+            <button class="btn-print" onclick="cetakStruk()">🖨️ Cetak Struk Transaksi</button>
+            <button id="btnHapusSatu" class="btn-delete-single" onclick="konfirmasiHapusSatu()">🗑️ Hapus Transaksi Ini</button>
+        </div>
+    </div>
+
+    <!-- Modal Popups Otentikasi & Konfirmasi -->
+    <div class="popup" id="modalPasswordOwner">
+        <div class="popup-box">
+            <div class="icon">🔒</div>
+            <h3>Otentikasi Keamanan</h3>
+            <p>Masukkan password untuk reset seluruh laporan:</p>
+            <input type="password" id="inputPassOwner" class="popup-input" placeholder="Password Otentikasi">
+            <div class="modal-buttons">
+                <button class="btn-confirm-yes" onclick="verifikasiPasswordReset()">Lanjut</button>
+                <button class="btn-confirm-no" onclick="tutupModal('modalPasswordOwner')">Batal</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="popup" id="modalConfirmReset">
+        <div class="popup-box">
+            <div class="icon">⚠️</div>
+            <h3>Konfirmasi Reset</h3>
+            <p>Apakah Anda yakin ingin menghapus <b>seluruh data laporan transaksi</b>?</p>
+            <div class="modal-buttons">
+                <button class="btn-confirm-yes" onclick="eksekusiResetSemua()">Ya, Hapus Semua</button>
+                <button class="btn-confirm-no" onclick="tutupModal('modalConfirmReset')">Batal</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="popup" id="modalPasswordHapusSatu">
+        <div class="popup-box">
+            <div class="icon">🔒</div>
+            <h3>Otentikasi Keamanan</h3>
+            <p>Masukkan password untuk menghapus transaksi ini:</p>
+            <input type="password" id="inputPassHapusSatu" class="popup-input" placeholder="Password Otentikasi">
+            <div class="modal-buttons">
+                <button class="btn-confirm-yes" onclick="verifikasiHapusSatu()">Lanjut</button>
+                <button class="btn-confirm-no" onclick="tutupModal('modalPasswordHapusSatu')">Batal</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="popup" id="modalConfirmHapusSatu">
+        <div class="popup-box">
+            <div class="icon">🗑️</div>
+            <h3>Hapus Transaksi</h3>
+            <p id="teksConfirmHapusSatu">Apakah Anda yakin ingin menghapus transaksi ini?</p>
+            <div class="modal-buttons">
+                <button class="btn-confirm-yes" onclick="eksekusiHapusSatu()">Ya, Hapus</button>
+                <button class="btn-confirm-no" onclick="tutupModal('modalConfirmHapusSatu')">Batal</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="popup" id="modalInfo">
+        <div class="popup-box">
+            <div class="icon" id="infoIcon">ℹ️</div>
+            <h3 id="infoTitle">Informasi</h3>
+            <p id="infoMessage">Pesan informasi</p>
+            <button class="btn-popup-primary" id="btnInfoOk" onclick="tutupModal('modalInfo')">OK</button>
+        </div>
+    </div>
+
+    <script>
+        /* FUNGSI UTAMA PROTEKSI AKSES ABSENSI & KASIR */
+        function proteksiHalamanLaporan() {
+
+    const session =
+        requireRole([
+            "owner",
+            "admin",
+            "kasir"
+        ]);
+
+
+    if (!session) {
+
+        return false;
+
+    }
+
+
+    return true;
+
+}
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function() {
+
+        if (
+            !proteksiHalamanLaporan()
+        ) {
+
+            return;
+
+        }
+
+
+        filterAksesPengaturanStruk();
+
+        populateFontSelectors();
+
+        muatHeaderToko();
+
+        cekPeringatanStok();
+
+        loadLaporan();
+
+        batasiTampilanOmzetLaporan();
+
+    }
+);
+
+        /* FUNGSI TOGGLE HAMBURGER MENU PADA PERANGKAT MOBILE */
+        function toggleMobileMenu() {
+            const navBar = document.getElementById("navBar");
+            const navOverlay = document.getElementById("navOverlay");
+            if (navBar && navOverlay) {
+                navBar.classList.toggle("active");
+                navOverlay.classList.toggle("active");
+            }
+        }
+
+        let dataLaporan = [];
+        let filteredData = [];
+        let selectedIndex = null;
+        let currentPage = 1;
+        const itemsPerPage = 10;
+
+        /* LOGIKA TEMA & EDIT TAMPILAN */
+        let tempLogoBase64 = null;
+        let backupConfigBeforeEdit = null;
+
+        function getTanggalWITA(dateObj = new Date()) {
+            const formatter = new Intl.DateTimeFormat('id-ID', {
+                timeZone: 'Asia/Makassar',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            });
+            const [{ value: day },,{ value: month },,{ value: year }] = formatter.formatToParts(dateObj);
+            return `${year}-${month}-${day}`;
+        }
+
+        function verifikasiAksesKasir(e) {
+            const session =
+    requireLogin();
+
+if (!session) {
+    return;
+}
+
+const loggedUser =
+    session.username;
+            const logAbsensi = JSON.parse(localStorage.getItem("dataAbsensi")) || [];
+            const tglToday = getTanggalWITA();
+
+            const userTodayLogs = logAbsensi.filter(a => a.username && a.username.toLowerCase() === loggedUser.toLowerCase() && a.tanggal === tglToday);
+            const sudahAbsenMasuk = userTodayLogs.some(a => a.jenis === "Masuk" || a.jenis === "Hadir");
+
+            if (!sudahAbsenMasuk) {
+                if (e) e.preventDefault();
+                tampilkanNotifikasi("Peringatan Absensi", "Kamu belum melakukan Absensi masuk hari ini, segera absen terlebih dahulu", "⚠️");
+                return false;
+            }
+            return true;
+        }
+
+        const fontCollection = [
+            { label: "Poppins (Default - Modern)", value: "'Poppins', sans-serif" },
+            { label: "Inter (Clean & Minimalis)", value: "'Inter', sans-serif" },
+            { label: "Montserrat (Elegan / Bold)", value: "'Montserrat', sans-serif" },
+            { label: "Roboto (Standar Android)", value: "'Roboto', sans-serif" },
+            { label: "Open Sans (Simpel & Jelas)", value: "'Open Sans', sans-serif" },
+            { label: "Lato (Seimbang & Ramah)", value: "'Lato', sans-serif" },
+            { label: "Nunito (Membulat Halus)", value: "'Nunito', sans-serif" },
+            { label: "Raleway (Tipis / Modern)", value: "'Raleway', sans-serif" },
+            { label: "Fredoka (Ceria / Membulat)", value: "'Fredoka', cursive" },
+            { label: "Oswald (Tinggi & Tegas)", value: "'Oswald', sans-serif" },
+            { label: "Lobster (Gaya Retro Bold)", value: "'Lobster', cursive" },
+            { label: "Pacifico (Tulisan Tangan Kasual)", value: "'Pacifico', cursive" },
+            { label: "Caveat (Tulisan Tangan Unik)", value: "'Caveat', cursive" },
+            { label: "Playfair Display (Mewah & Klasik)", value: "'Playfair Display', serif" },
+            { label: "Merriweather (Serif Formal)", value: "'Merriweather', serif" },
+            { label: "Fira Code (Monospace Code)", value: "'Fira Code', monospace" },
+            { label: "JetBrains Mono (Monospace)", value: "'JetBrains Mono', monospace" }
+        ];
+
+        const defaultHeaderConfig = {
+            judul: "LocDailyMar",
+            subJudul: "Riwayat Transaksi",
+            warnaJudul: "#ffffff",
+            warnaOutline: "#d99b00",
+            warnaSubJudul: "#ffc107",
+            warnaBgHeader: "#0d2240",
+            fontFamily: "'Poppins', sans-serif",
+            brandFontFamily: "'Poppins', sans-serif",
+            bgPrimary: "#f4f6f9",
+            bgSecondary: "#ffffff",
+            logoData: "",
+            darkMode: false
+        };
+
+        const defaultStrukConfig = {
+            namaToko: "LocDailyMar POS",
+            subHeader: "",
+            footer: "-- Terima Kasih --"
+        };
+
+        function getAuthPassword() {
+            return localStorage.getItem("appAuthPassword") || "Totem123";
+        }
+
+        function getRolePengguna() {
+
+    const role =
+        (
+            localStorage.getItem("userRole") ||
+            localStorage.getItem("role") ||
+            ""
+        )
+        .trim()
+        .toLowerCase();
+
+
+    if (role === "owner") {
+        return "Owner";
+    }
+
+
+    if (role === "admin") {
+        return "Admin";
+    }
+
+
+    if (role === "kasir") {
+        return "Kasir";
+    }
+
+
+    return "Tidak Dikenal";
+}
+
+function filterDataLaporanBerdasarkanRole(data) {
+
+    const role =
+        getRolePengguna();
+
+
+    /*
+     * Owner dan Admin melihat seluruh transaksi.
+     */
+
+    if (
+        role === "Owner" ||
+        role === "Admin"
+    ) {
+
+        return data;
+
+    }
+
+
+    /*
+     * Kasir hanya melihat transaksi
+     * atas nama dirinya sendiri.
+     */
+
+    if (role === "Kasir") {
+
+        const username =
+            (
+                localStorage.getItem(
+                    "username"
+                ) ||
+                localStorage.getItem(
+                    "activeUsername"
+                ) ||
+                localStorage.getItem(
+                    "loggedInUser"
+                ) ||
+                ""
+            )
+            .trim()
+            .toLowerCase();
+
+
+        if (!username) {
+            return [];
+        }
+
+
+        return data.filter(
+            transaksi => {
+
+                const namaKasir =
+                    String(
+                        transaksi.kasir ||
+                        transaksi.operator ||
+                        transaksi.username ||
+                        ""
+                    )
+                    .trim()
+                    .toLowerCase();
+
+
+                return (
+                    namaKasir ===
+                    username
+                );
+
+            }
+        );
+
+    }
+
+
+    return [];
+}
+
+        function filterAksesPengaturanStruk() {
+            const currentRole = getRolePengguna();
+            const btnStruk = document.getElementById("btnSettingStruk");
+            const btnGantiPass = document.getElementById("btnGantiPassOwner");
+            
+            if (currentRole === "Owner") {
+                if (btnStruk) btnStruk.style.display = "flex";
+                if (btnGantiPass) btnGantiPass.style.display = "flex";
+            } else {
+                if (btnStruk) btnStruk.style.display = "none";
+                if (btnGantiPass) btnGantiPass.style.display = "none";
+            }
+        }
+
+        function bukaModalGantiPass() {
+            if (getRolePengguna() !== "Owner") {
+                tampilkanNotifikasi("Akses Ditolak", "Hanya akun Owner yang dapat mengganti password!", "🔒");
+                return;
+            }
+            document.getElementById("inputPassBaru").value = "";
+            document.getElementById("inputPassBaruConfirm").value = "";
+            bukaModal("modalGantiPass");
+        }
+
+        function tutupModalGantiPass() {
+            tutupModal("modalGantiPass");
+        }
+
+        function simpanPasswordBaru() {
+            if (getRolePengguna() !== "Owner") {
+                tampilkanNotifikasi("Akses Ditolak", "Hanya akun Owner yang dapat mengganti password!", "🔒");
+                return;
+            }
+
+            const p1 = document.getElementById("inputPassBaru").value.trim();
+            const p2 = document.getElementById("inputPassBaruConfirm").value.trim();
+
+            if (!p1) {
+                tampilkanNotifikasi("Input Kosong", "Password tidak boleh kosong!", "⚠️");
+                return;
+            }
+
+            if (p1 !== p2) {
+                tampilkanNotifikasi("Tidak Cocok", "Konfirmasi password baru tidak cocok!", "⚠️");
+                return;
+            }
+
+            localStorage.setItem("appAuthPassword", p1);
+            tutupModalGantiPass();
+            tampilkanNotifikasi("Sukses", "Password otentikasi berhasil diperbarui!", "🔑");
+        }
+
+        function populateFontSelectors() {
+            const selectors = document.querySelectorAll(".font-selector-list");
+            selectors.forEach(select => {
+                select.innerHTML = "";
+                fontCollection.forEach(font => {
+                    const opt = document.createElement("option");
+                    opt.value = font.value;
+                    opt.innerText = font.label;
+                    opt.style.fontFamily = font.value;
+                    select.appendChild(opt);
+                });
+            });
+        }
+
+        function muatHeaderToko(configCustom = null) {
+            let config = configCustom || JSON.parse(localStorage.getItem("headerConfig")) || defaultHeaderConfig;
+
+            const elJudul = document.getElementById("txtJudulToko");
+            const elSubJudul = document.getElementById("txtSubJudulToko");
+            const elHeader = document.getElementById("headerApp");
+            const elImgLogo = document.getElementById("imgLogoToko");
+
+            if (config.logoData) {
+                if (elImgLogo) {
+                    elImgLogo.src = config.logoData;
+                    elImgLogo.style.display = "block";
+                }
+            } else {
+                if (elImgLogo) elImgLogo.style.display = "none";
+            }
+
+            if (elJudul) {
+                elJudul.innerText = config.judul || defaultHeaderConfig.judul;
+                elJudul.style.color = config.warnaJudul || defaultHeaderConfig.warnaJudul;
+                elJudul.style.textShadow = `1px 1px 0px ${config.warnaOutline || defaultHeaderConfig.warnaOutline}`;
+            }
+
+            if (elSubJudul) {
+                elSubJudul.innerText = config.subJudul || defaultHeaderConfig.subJudul;
+                elSubJudul.style.color = config.warnaSubJudul || defaultHeaderConfig.warnaSubJudul;
+            }
+
+            if (elHeader) {
+                elHeader.style.background = config.warnaBgHeader || defaultHeaderConfig.warnaBgHeader;
+            }
+
+            if (config.darkMode) {
+                document.body.classList.add("dark-mode");
+            } else {
+                document.body.classList.remove("dark-mode");
+            }
+
+            document.documentElement.style.setProperty('--app-font', config.fontFamily || defaultHeaderConfig.fontFamily);
+            document.documentElement.style.setProperty('--brand-font', config.brandFontFamily || config.fontFamily || defaultHeaderConfig.brandFontFamily);
+            document.documentElement.style.setProperty('--bg-primary', config.bgPrimary || defaultHeaderConfig.bgPrimary);
+            document.documentElement.style.setProperty('--bg-secondary', config.bgSecondary || defaultHeaderConfig.bgSecondary);
+        }
+
+        function previewRealtimeTheme() {
+            const isDark = document.getElementById("toggleDarkMode").checked;
+            const currentConfig = {
+                judul: document.getElementById("inputJudulToko").value.trim() || "LocDailyMar",
+                subJudul: document.getElementById("inputSubJudulToko").value.trim() || "",
+                warnaJudul: document.getElementById("inputWarnaJudul").value,
+                warnaOutline: document.getElementById("inputWarnaOutline").value,
+                warnaSubJudul: document.getElementById("inputWarnaSubJudul").value,
+                warnaBgHeader: document.getElementById("inputWarnaBgHeader").value,
+                fontFamily: document.getElementById("selectFontFamily").value,
+                brandFontFamily: document.getElementById("selectBrandFontFamily").value,
+                bgPrimary: document.getElementById("inputBgPrimary").value,
+                bgSecondary: document.getElementById("inputBgSecondary").value,
+                logoData: tempLogoBase64 || "",
+                darkMode: isDark
+            };
+
+            muatHeaderToko(currentConfig);
+        }
+
+        function previewUploadLogo(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (file.size > 2 * 1024 * 1024) {
+                tampilkanNotifikasi("Gambar Terlalu Besar", "Ukuran gambar logo terlalu besar! Maksimal 2MB.", "⚠️");
+                event.target.value = "";
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                tempLogoBase64 = e.target.result;
+                const container = document.getElementById("previewLogoContainer");
+                const imgPreview = document.getElementById("imgPreviewModal");
+                
+                imgPreview.src = tempLogoBase64;
+                container.style.display = "flex";
+                previewRealtimeTheme();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function hapusLogoKustom() {
+            tempLogoBase64 = "";
+            document.getElementById("inputLogoFile").value = "";
+            document.getElementById("previewLogoContainer").style.display = "none";
+            previewRealtimeTheme();
+        }
+
+        function bukaModalHeader() {
+            let config = JSON.parse(localStorage.getItem("headerConfig")) || defaultHeaderConfig;
+            backupConfigBeforeEdit = JSON.parse(JSON.stringify(config));
+
+            tempLogoBase64 = config.logoData || "";
+
+            document.getElementById("toggleDarkMode").checked = !!config.darkMode;
+            document.getElementById("inputJudulToko").value = config.judul || defaultHeaderConfig.judul;
+            document.getElementById("inputSubJudulToko").value = config.subJudul || defaultHeaderConfig.subJudul;
+            document.getElementById("inputWarnaJudul").value = config.warnaJudul || defaultHeaderConfig.warnaJudul;
+            document.getElementById("inputWarnaOutline").value = config.warnaOutline || defaultHeaderConfig.warnaOutline;
+            document.getElementById("inputWarnaSubJudul").value = config.warnaSubJudul || defaultHeaderConfig.warnaSubJudul;
+            document.getElementById("inputWarnaBgHeader").value = config.warnaBgHeader || defaultHeaderConfig.warnaBgHeader;
+
+            document.getElementById("selectFontFamily").value = config.fontFamily || defaultHeaderConfig.fontFamily;
+            document.getElementById("selectBrandFontFamily").value = config.brandFontFamily || config.fontFamily || defaultHeaderConfig.brandFontFamily;
+            document.getElementById("inputBgPrimary").value = config.bgPrimary || defaultHeaderConfig.bgPrimary;
+            document.getElementById("inputBgSecondary").value = config.bgSecondary || defaultHeaderConfig.bgSecondary;
+
+            const container = document.getElementById("previewLogoContainer");
+            const imgPreview = document.getElementById("imgPreviewModal");
+            if (tempLogoBase64) {
+                imgPreview.src = tempLogoBase64;
+                container.style.display = "flex";
+            } else {
+                container.style.display = "none";
+            }
+
+            document.getElementById("modalEditHeader").style.display = "flex";
+        }
+
+        function tutupModalHeader() {
+            document.getElementById("modalEditHeader").style.display = "none";
+        }
+
+        function batalEditHeader() {
+            if (backupConfigBeforeEdit) {
+                muatHeaderToko(backupConfigBeforeEdit);
+            }
+            tutupModalHeader();
+        }
+
+        function simpanHeaderToko() {
+            const judulInput = document.getElementById("inputJudulToko").value.trim();
+            const subJudulInput = document.getElementById("inputSubJudulToko").value.trim();
+
+            if (!judulInput) {
+                tampilkanNotifikasi("Input Kosong", "Harap masukkan judul toko/perusahaan!", "⚠️");
+                return;
+            }
+
+            const headerConfigBaru = {
+                judul: judulInput,
+                subJudul: subJudulInput,
+                warnaJudul: document.getElementById("inputWarnaJudul").value,
+                warnaOutline: document.getElementById("inputWarnaOutline").value,
+                warnaSubJudul: document.getElementById("inputWarnaSubJudul").value,
+                warnaBgHeader: document.getElementById("inputWarnaBgHeader").value,
+                fontFamily: document.getElementById("selectFontFamily").value,
+                brandFontFamily: document.getElementById("selectBrandFontFamily").value,
+                bgPrimary: document.getElementById("inputBgPrimary").value,
+                bgSecondary: document.getElementById("inputBgSecondary").value,
+                logoData: tempLogoBase64 || "",
+                darkMode: document.getElementById("toggleDarkMode").checked
+            };
+
+            localStorage.setItem("headerConfig", JSON.stringify(headerConfigBaru));
+
+            muatHeaderToko();
+            tutupModalHeader();
+            tampilkanNotifikasi("Sukses", "Pengaturan tampilan berhasil disimpan!", "🎨");
+        }
+
+        /* LOGIKA PENGATURAN STRUK KUSTOM (KHUSUS OWNER) */
+        function updateLivePreviewStruk() {
+            const namaToko = document.getElementById("inputStrukNamaToko").value.trim() || "LocDailyMar POS";
+            const subHeader = document.getElementById("inputStrukSubHeader").value.trim();
+            const footer = document.getElementById("inputStrukFooter").value.trim();
+
+            document.getElementById("previewStrukNama").innerText = namaToko;
+            document.getElementById("previewStrukSubHeader").innerHTML = subHeader ? subHeader.replace(/\n/g, '<br>') : '';
+            document.getElementById("previewStrukFooter").innerHTML = footer ? footer.replace(/\n/g, '<br>') : '-- Terima Kasih --';
+        }
+
+        function bukaModalStruk() {
+            if (getRolePengguna() !== "Owner") {
+                tampilkanNotifikasi("Akses Ditolak", "Hanya akun Owner yang dapat mengedit Pengaturan Struk!", "🔒");
+                return;
+            }
+
+            let configHeader = JSON.parse(localStorage.getItem("headerConfig")) || defaultHeaderConfig;
+            let configStruk = JSON.parse(localStorage.getItem("strukConfig")) || {
+                namaToko: configHeader.judul ? configHeader.judul.toUpperCase() : defaultStrukConfig.namaToko,
+                subHeader: configHeader.subJudul || defaultStrukConfig.subHeader,
+                footer: defaultStrukConfig.footer
+            };
+
+            document.getElementById("inputStrukNamaToko").value = configStruk.namaToko || "";
+            document.getElementById("inputStrukSubHeader").value = configStruk.subHeader || "";
+            document.getElementById("inputStrukFooter").value = configStruk.footer || "";
+
+            updateLivePreviewStruk();
+            bukaModal("modalEditStruk");
+        }
+
+        function tutupModalStruk() {
+            tutupModal("modalEditStruk");
+        }
+
+        function simpanPengaturanStruk() {
+            if (getRolePengguna() !== "Owner") {
+                tampilkanNotifikasi("Akses Ditolak", "Hanya akun Owner yang dapat menyimpan Pengaturan Struk!", "🔒");
+                return;
+            }
+
+            const namaToko = document.getElementById("inputStrukNamaToko").value.trim();
+            const subHeader = document.getElementById("inputStrukSubHeader").value.trim();
+            const footer = document.getElementById("inputStrukFooter").value.trim();
+
+            if (!namaToko) {
+                tampilkanNotifikasi("Input Kosong", "Harap masukkan Nama Toko untuk struk!", "⚠️");
+                return;
+            }
+
+            const strukConfig = {
+                namaToko: namaToko,
+                subHeader: subHeader,
+                footer: footer
+            };
+
+            localStorage.setItem("strukConfig", JSON.stringify(strukConfig));
+            tutupModalStruk();
+            tampilkanNotifikasi("Sukses", "Pengaturan struk berhasil disimpan!", "🧾");
+        }
+
+        /* LOGIKA LAPORAN TRANSAKSI PADA TERHUBUNG KASIR.HTML */
+        function bukaModal(id) { 
+            const modalEl = document.getElementById(id);
+            if (modalEl) {
+                modalEl.style.display = "flex"; 
+                setTimeout(() => {
+                    const inputTarget = modalEl.querySelector('input[type="password"], input[type="text"]');
+                    if (inputTarget) {
+                        inputTarget.focus();
+                    } else {
+                        const btnTarget = modalEl.querySelector('.btn-popup-primary, .btn-confirm-yes, .btn-modal-save');
+                        if (btnTarget) btnTarget.focus();
+                    }
+                }, 50);
+            }
+        }
+        
+        function tutupModal(id) { document.getElementById(id).style.display = "none"; }
+
+        function tampilkanNotifikasi(judul, pesan, icon = "ℹ️") {
+            document.getElementById("infoTitle").innerText = judul;
+            document.getElementById("infoMessage").innerText = pesan;
+            document.getElementById("infoIcon").innerText = icon;
+            bukaModal("modalInfo");
+        }
+
+function simpanLaporanKeStorage(dataArray) {
+    // Jangan pernah menyimpan data kosong secara tidak sengaja
+    if (!Array.isArray(dataArray)) {
+        console.error("Data laporan tidak valid. Penyimpanan dibatalkan.");
+        return false;
+    }
+
+    const laporanLama =
+        JSON.parse(localStorage.getItem("laporan")) || [];
+
+    /*
+     * Jika dataArray kosong, jangan langsung menghapus seluruh laporan.
+     * Reset hanya boleh dilakukan melalui fungsi reset khusus.
+     */
+    if (dataArray.length === 0 && laporanLama.length > 0) {
+        console.warn(
+            "Penyimpanan laporan kosong dibatalkan untuk mencegah kehilangan riwayat."
+        );
+        return false;
+    }
+
+    const jsonString = JSON.stringify(dataArray);
+
+    localStorage.setItem("laporan", jsonString);
+    localStorage.setItem("dataLaporan", jsonString);
+    localStorage.setItem("riwayatTransaksi", jsonString);
+
+    return true;
+}
+
+        function cekAksesAdmin() {
+            const role = getRolePengguna();
+            const btnHapusSatu = document.getElementById("btnHapusSatu");
+            if (btnHapusSatu) {
+                btnHapusSatu.style.display = (role === "Admin" || role === "Owner") ? "block" : "none";
+            }
+        }
+
+        function cekPeringatanStok() {
+            const BATAS_STOK_MINIMAL = 9;
+            let localData = localStorage.getItem("dataBarang");
+            if (!localData) return;
+            let data = JSON.parse(localData);
+            let adaStokTipis = data.some(item => (Number(item.stok) || 0) <= BATAS_STOK_MINIMAL);
+            
+            let badge = document.getElementById("navBadge");
+            if (badge) {
+                badge.style.display = adaStokTipis ? "flex" : "none";
+            }
+        }
+
+        function loadLaporan() {
+            dataLaporan = JSON.parse(localStorage.getItem("laporan")) || 
+                          JSON.parse(localStorage.getItem("dataLaporan")) || 
+                          JSON.parse(localStorage.getItem("riwayatTransaksi")) || [];
+            dataLaporan =
+    filterDataLaporanBerdasarkanRole(
+        dataLaporan
+    );
+            dataLaporan = dataLaporan.map((item, idx) => ({ ...item, realIndex: idx }));
+            onSearchInput();
+        }
+
+        function onSearchInput() {
+            let searchBox = document.getElementById("inputSearch");
+            let keyword = searchBox ? searchBox.value.toLowerCase().trim() : "";
+            
+            let startDateVal = document.getElementById("filterStartDate").value;
+            let endDateVal = document.getElementById("filterEndDate").value;
+
+            filteredData = dataLaporan.slice().reverse().filter(item => {
+                let trxID = `trx-#${item.realIndex + 1}`.toLowerCase();
+                let tanggalTeks = (item.waktu_teks || item.tanggal || "").toLowerCase();
+                let barang = (item.barang || "").toLowerCase();
+                let metode = (item.metode || "tunai").toLowerCase();
+                let kasir = (item.kasir || item.operator || localStorage.getItem("username") || "owner").toLowerCase();
+
+                let matchKeyword = trxID.includes(keyword) || tanggalTeks.includes(keyword) || barang.includes(keyword) || metode.includes(keyword) || kasir.includes(keyword);
+
+                let matchDate = true;
+                if (startDateVal || endDateVal) {
+                    let itemDate = item.waktu_teks ? new Date(item.waktu_teks) : (item.tanggal ? new Date(item.tanggal) : null);
+                    if (itemDate && !isNaN(itemDate.getTime())) {
+                        if (startDateVal) {
+                            let start = new Date(startDateVal);
+                            start.setHours(0,0,0,0);
+                            matchDate = matchDate && itemDate >= start;
+                        }
+                        if (endDateVal) {
+                            let end = new Date(endDateVal);
+                            end.setHours(23,59,59,999);
+                            matchDate = matchDate && itemDate <= end;
+                        }
+                    }
+                }
+
+                return matchKeyword && matchDate;
+            });
+
+            updateSummaryCards();
+
+            let totalPages = Math.ceil(filteredData.length / itemsPerPage) || 1;
+            if (currentPage > totalPages) currentPage = totalPages;
+
+            renderTable();
+        }
+
+        function updateSummaryCards() {
+            let totalOmset = filteredData.reduce((acc, curr) => acc + Number(curr.total || 0), 0);
+            document.getElementById("statOmset").innerText = `Rp ${totalOmset.toLocaleString("id-ID")}`;
+            document.getElementById("statCount").innerText = `${filteredData.length} TRX`;
+        }
+
+        function renderTable() {
+            let tbody = document.getElementById("tabelLaporan");
+            if(!tbody) return;
+            
+            tbody.innerHTML = "";
+
+            if (filteredData.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#94a3b8; padding:15px;">Riwayat tidak ditemukan.</td></tr>`;
+                document.getElementById("paginationBox").innerHTML = "";
+                return;
+            }
+
+            let startIndex = (currentPage - 1) * itemsPerPage;
+            let pageData = filteredData.slice(startIndex, startIndex + itemsPerPage);
+
+            pageData.forEach(item => {
+                let isSplit = item.isSplit || (item.metode && item.metode.toLowerCase().includes("split")) || (Number(item.bayarCash || item.cash || 0) > 0 && Number(item.bayarQris || item.qris || item.nonTunai || 0) > 0);
+                let isNonTunai = !isSplit && ((item.metode && item.metode.toLowerCase().includes("non tunai")) || item.bayar === "Non Tunai" || Number(item.bayarQris || item.qris || item.nonTunai || 0) > 0);
+                
+                let badgePembayaran = "";
+                if (isSplit) {
+                    badgePembayaran = `<span class="badge-method badge-split">Tunai + Non Tunai</span>`;
+                } else if (isNonTunai) {
+                    badgePembayaran = `<span class="badge-method badge-nontunai">Non tunai</span>`;
+                } else {
+                    badgePembayaran = `<span class="badge-method badge-tunai">Tunai</span>`;
+                }
+                
+                let namaKasir = item.kasir || item.operator || localStorage.getItem("username") || "owner";
+
+                tbody.innerHTML += `
+                    <tr class="tr-clickable" onclick="bukaDetail(${item.realIndex})">
+                        <td><strong>#${item.realIndex + 1}</strong></td>
+                        <td>${item.waktu_teks || item.tanggal || '-'}</td>
+                        <td><span style="font-weight:600; color:#0284c7;">${namaKasir}</span></td>
+                        <td><strong>Rp ${Number(item.total || 0).toLocaleString("id-ID")}</strong></td>
+                        <td>${badgePembayaran}</td>
+                        <td><span class="badge-view">Detail ➔</span></td>
+                    </tr>
+                `;
+            });
+
+            renderPagination();
+        }
+
+        function renderPagination() {
+            let pageBox = document.getElementById("paginationBox");
+            if (!pageBox) return;
+            pageBox.innerHTML = "";
+
+            let totalPages = Math.ceil(filteredData.length / itemsPerPage);
+            if (totalPages <= 1) return;
+
+            let prevDisabled = currentPage === 1 ? "disabled" : "";
+            pageBox.innerHTML += `<button class="btn-page" ${prevDisabled} onclick="changePage(${currentPage - 1})">❮ Prev</button>`;
+
+            for (let i = 1; i <= totalPages; i++) {
+                let activeClass = i === currentPage ? "active" : "";
+                pageBox.innerHTML += `<button class="btn-page ${activeClass}" onclick="changePage(${i})">${i}</button>`;
+            }
+
+            let nextDisabled = currentPage === totalPages ? "disabled" : "";
+            pageBox.innerHTML += `<button class="btn-page" ${nextDisabled} onclick="changePage(${currentPage + 1})">Next ❯</button>`;
+        }
+
+        function changePage(page) {
+            currentPage = page;
+            renderTable();
+        }
+
+        function bukaDetail(index) {
+            selectedIndex = index;
+            let item = dataLaporan.find(d => d.realIndex === index);
+            if (!item) return;
+
+            document.getElementById("advID").innerText = `TRX-#${index + 1}`;
+            document.getElementById("advTanggal").innerText = item.waktu_teks || item.tanggal || '';
+            document.getElementById("advKasir").innerText = item.kasir || item.operator || localStorage.getItem("username") || 'owner';
+            
+            let itemBox = document.getElementById("advItemList");
+            itemBox.innerHTML = "";
+
+            let totalDiskonNominal = Number(item.diskon) || Number(item.totalDiskon) || 0;
+
+            if (item.keranjang && Array.isArray(item.keranjang)) {
+                item.keranjang.forEach(b => {
+                    let itemDiskon = Number(b.diskon) || 0;
+                    if (itemDiskon === 0 && b.hargaAwal && b.harga) {
+                        itemDiskon = (Number(b.hargaAwal) - Number(b.harga)) * Number(b.qty);
+                    }
+                    if (itemDiskon > 0) totalDiskonNominal += itemDiskon;
+
+                    let rowHTML = `
+                        <div class="item-row">
+                            <div class="item-main-info">
+                                <span>• ${b.nama} (${b.qty} ${b.satuan || 'Pcs'})</span>
+                                <span>Rp ${Number(b.subtotal || (b.harga * b.qty)).toLocaleString("id-ID")}</span>
+                            </div>`;
+                    
+                    if (itemDiskon > 0) {
+                        rowHTML += `<div class="item-sub-info">  (Potongan Harga: -Rp ${itemDiskon.toLocaleString("id-ID")})</div>`;
+                    }
+                    rowHTML += `</div>`;
+                    itemBox.innerHTML += rowHTML;
+                });
+            } else if (typeof item.barang === 'string') {
+                item.barang.split(", ").forEach(i => {
+                    itemBox.innerHTML += `<div class="item-row"><div class="item-main-info"><span>• ${i}</span></div></div>`;
+                });
+            }
+
+            const rowDiskonEl = document.getElementById("rowAdvTotalDiskon");
+            if (totalDiskonNominal > 0) {
+                rowDiskonEl.style.display = "flex";
+                document.getElementById("advTotalDiskon").innerText = `-Rp ${totalDiskonNominal.toLocaleString("id-ID")}`;
+            } else {
+                rowDiskonEl.style.display = "none";
+            }
+
+            document.getElementById("advTotal").innerText = `Rp ${Number(item.total || 0).toLocaleString("id-ID")}`;
+
+            let isSplit = item.isSplit || (item.metode && item.metode.toLowerCase().includes("split")) || (Number(item.bayarCash || item.cash || 0) > 0 && Number(item.bayarQris || item.qris || item.nonTunai || 0) > 0);
+            let isNonTunai = !isSplit && ((item.metode && item.metode.toLowerCase().includes("non tunai")) || item.bayar === "Non Tunai" || Number(item.bayarQris || item.qris || item.nonTunai || 0) > 0);
+
+            const rowSingle = document.getElementById("rowSingleBayar");
+            const rowSplitCash = document.getElementById("rowSplitCash");
+            const rowSplitQris = document.getElementById("rowSplitQris");
+
+            if (isSplit) {
+                rowSingle.style.display = "none";
+                rowSplitCash.style.display = "flex";
+                rowSplitQris.style.display = "flex";
+
+                let nominalCash = Number(item.bayarCash !== undefined ? item.bayarCash : (item.cash || 0));
+                let nominalQris = Number(item.bayarQris !== undefined ? item.bayarQris : (item.qris || item.nonTunai || 0));
+
+                document.getElementById("advSplitCash").innerText = `Rp ${nominalCash.toLocaleString("id-ID")}`;
+                document.getElementById("advSplitQris").innerText = `Rp ${nominalQris.toLocaleString("id-ID")}`;
+                document.getElementById("advKembali").innerText = `Rp ${Number(item.kembali || 0).toLocaleString("id-ID")}`;
+            } else {
+                rowSingle.style.display = "flex";
+                rowSplitCash.style.display = "none";
+                rowSplitQris.style.display = "none";
+
+                if (isNonTunai) {
+                    document.getElementById("labelBayar").innerText = "Non Tunai";
+                    let nominalQris = Number(item.bayarQris !== undefined ? item.bayarQris : (item.qris || item.nonTunai || item.total || 0));
+                    document.getElementById("advBayar").innerText = `Rp ${nominalQris.toLocaleString("id-ID")}`;
+                    document.getElementById("advKembali").innerText = "Rp 0";
+                } else {
+                    document.getElementById("labelBayar").innerText = "Tunai";
+                    let nominalBayar = typeof item.bayar === "number" ? item.bayar : (Number(item.bayarCash || item.cash || item.bayar) || 0);
+                    document.getElementById("advBayar").innerText = `Rp ${nominalBayar.toLocaleString("id-ID")}`;
+                    document.getElementById("advKembali").innerText = `Rp ${Number(item.kembali || 0).toLocaleString("id-ID")}`;
+                }
+            }
+
+            cekAksesAdmin();
+            bukaModal("popupDetail");
+        }
+
+        function tutupDetail() { tutupModal("popupDetail"); }
+
+        /* CETAK STRUK DENGAN SINKRONISASI PENGATURAN STRUK SAMA SEPERTI KASIR */
+        function cetakStruk() {
+
+    if (selectedIndex === null) return;
+
+    const item =
+        dataLaporan.find(
+            d => d.realIndex === selectedIndex
+        );
+
+    if (!item) return;
+
+
+    /* =====================================================
+       PENGATURAN STRUK
+       ===================================================== */
+
+    const configHeader =
+        JSON.parse(
+            localStorage.getItem("headerConfig")
+        ) || defaultHeaderConfig;
+
+
+    const configStruk =
+        JSON.parse(
+            localStorage.getItem("strukConfig")
+        ) || {
+
+            namaToko:
+                configHeader.judul ||
+                "LocDailyMar",
+
+            subHeader:
+                configHeader.subJudul ||
+                "",
+
+            footer:
+                "-- Terima Kasih --"
+        };
+
+
+    const namaToko =
+        configStruk.namaToko ||
+        "LocDailyMar";
+
+
+    const subHeaderHTML =
+        configStruk.subHeader
+            ? `
+                <p style="margin:2px 0;">
+                    ${configStruk.subHeader.replace(
+                        /\n/g,
+                        "<br>"
+                    )}
+                </p>
+              `
+            : "";
+
+
+    const footerHTML =
+        configStruk.footer
+            ? configStruk.footer.replace(
+                /\n/g,
+                "<br>"
+            )
+            : "-- Terima Kasih --";
+
+
+    /* =====================================================
+       HITUNG SUBTOTAL & DISKON
+       ===================================================== */
+
+    let subtotal = 0;
+
+    let totalDiskon = 0;
+
+    let itemsHTML = "";
+
+
+    if (
+        item.keranjang &&
+        Array.isArray(item.keranjang)
+    ) {
+
+        item.keranjang.forEach(b => {
+
+            const qty =
+                Number(b.qty) || 0;
+
+
+            const hargaNormal =
+                Number(b.hargaNormal) ||
+                Number(b.hargaAwal) ||
+                Number(b.harga) ||
+                0;
+
+
+            const hargaPromo =
+                Number(b.harga) || 0;
+
+
+            const subtotalNormal =
+                hargaNormal * qty;
+
+
+            const subtotalPromo =
+                Number(b.subtotal) ||
+                (hargaPromo * qty);
+
+
+            const diskonItem =
+                Math.max(
+                    0,
+                    subtotalNormal -
+                    subtotalPromo
+                );
+
+
+            subtotal +=
+                subtotalNormal;
+
+
+            totalDiskon +=
+                diskonItem;
+
+
+            /* =============================================
+               ITEM
+               ============================================= */
+
+            itemsHTML += `
+                <div
+                    class="row item-row"
+                >
+
+                    <span>
+                        ${b.nama} ${qty}x
+                    </span>
+
+                    <span>
+                        Rp ${subtotalNormal.toLocaleString(
+                            "id-ID"
+                        )}
+                    </span>
+
+                </div>
+            `;
+
+
+            /* =============================================
+               POTONGAN HARGA
+               ============================================= */
+
+            if (diskonItem > 0) {
+
+                itemsHTML += `
+                    <div
+                        class="row discount-row"
+                    >
+
+                        <span>
+                            Potongan Harga
+                        </span>
+
+                        <span>
+                            -Rp ${diskonItem.toLocaleString(
+                                "id-ID"
+                            )}
+                        </span>
+
+                    </div>
+                `;
+
+            }
+
+        });
+
+    }
+
+
+    /* =====================================================
+       FALLBACK UNTUK TRANSAKSI LAMA
+       ===================================================== */
+
+    if (
+        subtotal === 0 &&
+        Number(item.total || 0) > 0
+    ) {
+
+        subtotal =
+            Number(item.total || 0);
+
+    }
+
+
+    const total =
+        Math.max(
+            0,
+            subtotal - totalDiskon
+        );
+
+
+    /* =====================================================
+       TOTAL DISKON
+       HANYA MUNCUL JIKA ADA DISKON
+       ===================================================== */
+
+    let diskonSummaryHTML = "";
+
+
+    if (totalDiskon > 0) {
+
+        diskonSummaryHTML = `
+            <div class="row">
+
+                <span>
+                    Total Diskon
+                </span>
+
+                <span>
+                    -Rp ${totalDiskon.toLocaleString(
+                        "id-ID"
+                    )}
+                </span>
+
+            </div>
+        `;
+
+    }
+
+
+    /* =====================================================
+       PEMBAYARAN
+       ===================================================== */
+
+    let paymentDetailsHTML = "";
+
+
+    const metode =
+        item.metode || "Tunai";
+
+
+    const isSplit =
+        metode
+            .toLowerCase()
+            .includes("split");
+
+
+    const isNonTunai =
+        !isSplit &&
+        metode
+            .toLowerCase()
+            .includes("non tunai");
+
+
+    if (isSplit) {
+
+        const cash =
+            Number(
+                item.bayarCash ||
+                item.cash ||
+                0
+            );
+
+
+        const qris =
+            Number(
+                item.bayarQris ||
+                item.qris ||
+                item.nonTunai ||
+                0
+            );
+
+
+        paymentDetailsHTML = `
+
+            <div class="row">
+                <span>Metode</span>
+                <span>Split Payment</span>
+            </div>
+
+            <div class="row">
+                <span>Tunai</span>
+                <span>
+                    Rp ${cash.toLocaleString(
+                        "id-ID"
+                    )}
+                </span>
+            </div>
+
+            <div class="row">
+                <span>Non Tunai</span>
+                <span>
+                    Rp ${qris.toLocaleString(
+                        "id-ID"
+                    )}
+                </span>
+            </div>
+
+            <div class="row">
+                <span>Kembalian</span>
+                <span>
+                    Rp ${Number(
+                        item.kembali || 0
+                    ).toLocaleString(
+                        "id-ID"
+                    )}
+                </span>
+            </div>
+
+        `;
+
+    }
+
+    else if (isNonTunai) {
+
+        paymentDetailsHTML = `
+
+            <div class="row">
+                <span>Metode</span>
+                <span>Non Tunai</span>
+            </div>
+
+            <div class="row">
+                <span>Bayar</span>
+                <span>
+                    Rp ${Number(
+                        item.bayarQris ||
+                        item.qris ||
+                        item.nonTunai ||
+                        item.total ||
+                        0
+                    ).toLocaleString(
+                        "id-ID"
+                    )}
+                </span>
+            </div>
+
+            <div class="row">
+                <span>Kembalian</span>
+                <span>Rp 0</span>
+            </div>
+
+        `;
+
+    }
+
+    else {
+
+        paymentDetailsHTML = `
+
+            <div class="row">
+                <span>Metode</span>
+                <span>Tunai</span>
+            </div>
+
+            <div class="row">
+                <span>Bayar</span>
+                <span>
+                    Rp ${Number(
+                        item.bayar ||
+                        item.bayarCash ||
+                        item.cash ||
+                        0
+                    ).toLocaleString(
+                        "id-ID"
+                    )}
+                </span>
+            </div>
+
+            <div class="row">
+                <span>Kembalian</span>
+                <span>
+                    Rp ${Number(
+                        item.kembali || 0
+                    ).toLocaleString(
+                        "id-ID"
+                    )}
+                </span>
+            </div>
+
+        `;
+
+    }
+
+
+    /* =====================================================
+       CETAK
+       ===================================================== */
+
+    const printWindow =
+        window.open(
+            "",
+            "",
+            "height=600,width=400"
+        );
+
+
+    if (!printWindow) {
+
+        if (typeof tampilkanNotifikasi === "function") {
+
+            tampilkanNotifikasi(
+                "Popup Diblokir",
+                "Izinkan popup browser untuk mencetak struk.",
+                "🖨️"
+            );
+
+        }
+
+        return;
+
+    }
+
+
+    printWindow.document.write(`
+
+        <html>
+
+        <head>
+
+            <title>
+                Struk Transaksi
+            </title>
+
+
+            <style>
+
+                body {
+
+                    font-family:
+                        monospace;
+
+                    padding:
+                        15px;
+
+                    font-size:
+                        12px;
+
+                    color:
+                        #000;
+
+                }
+
+
+                .text-center {
+
+                    text-align:
+                        center;
+
+                }
+
+
+                .line {
+
+                    border-bottom:
+                        1px dashed #000;
+
+                    margin:
+                        8px 0;
+
+                }
+
+
+                .row {
+
+                    display:
+                        flex;
+
+                    justify-content:
+                        space-between;
+
+                    gap:
+                        10px;
+
+                    margin-bottom:
+                        3px;
+
+                }
+
+
+                .item-row {
+
+                    margin-bottom:
+                        2px;
+
+                }
+
+
+                .discount-row {
+
+                    font-size:
+                        10px;
+
+                    padding-left:
+                        8px;
+
+                    margin-bottom:
+                        5px;
+
+                    color:
+                        #555;
+
+                }
+
+
+                .total-row {
+
+                    display:
+                        flex;
+
+                    justify-content:
+                        space-between;
+
+                }
+
+
+                .total-final {
+
+                    font-weight:
+                        bold;
+
+                    margin-top:
+                        4px;
+
+                }
+
+
+                .footer {
+
+                    text-align:
+                        center;
+
+                    font-size:
+                        10px;
+
+                }
+
+            </style>
+
+        </head>
+
+
+        <body>
+
+
+            <!-- HEADER -->
+
+            <div class="text-center">
+
+                <h3
+                    style="
+                        margin:0;
+                    "
+                >
+                    ${namaToko}
+                </h3>
+
+
+                ${subHeaderHTML}
+
+
+                <p
+                    style="
+                        margin:5px 0 2px;
+                        font-size:10px;
+                    "
+                >
+                    ${
+                        item.waktu_teks ||
+                        item.tanggal ||
+                        ""
+                    }
+                </p>
+
+
+                <p
+                    style="
+                        margin:2px 0;
+                        font-size:10px;
+                    "
+                >
+                    <b>
+                        Kasir:
+                        ${
+                            item.kasir ||
+                            item.operator ||
+                            "Owner"
+                        }
+                    </b>
+                </p>
+
+            </div>
+
+
+            <div class="line"></div>
+
+
+            <!-- BARANG -->
+
+            <div>
+
+                ${itemsHTML}
+
+            </div>
+
+
+            <div class="line"></div>
+
+
+            <!-- SUBTOTAL -->
+
+            <div class="row">
+
+                <span>
+                    Subtotal
+                </span>
+
+                <span>
+                    Rp ${subtotal.toLocaleString(
+                        "id-ID"
+                    )}
+                </span>
+
+            </div>
+
+
+            <!-- TOTAL DISKON -->
+
+            ${diskonSummaryHTML}
+
+
+            <!-- TOTAL -->
+
+            <div
+                class="
+                    row
+                    total-final
+                "
+            >
+
+                <span>
+                    Total
+                </span>
+
+                <span>
+                    Rp ${total.toLocaleString(
+                        "id-ID"
+                    )}
+                </span>
+
+            </div>
+
+
+            <div
+                style="
+                    margin-top:6px;
+                "
+            >
+
+                ${paymentDetailsHTML}
+
+            </div>
+
+
+            <div class="line"></div>
+
+
+            <!-- FOOTER -->
+
+            <div class="footer">
+
+                ${footerHTML}
+
+            </div>
+
+
+        </body>
+
+        </html>
+
+    `);
+
+
+    printWindow.document.close();
+
+
+    setTimeout(() => {
+
+        printWindow.focus();
+
+        printWindow.print();
+
+    }, 250);
+
+}
+
+        function exportDataCSV() {
+            if (
+        !requirePermission(
+            "laporan.view"
+        )
+    ) {
+
+        return;
+
+    }
+            if (filteredData.length === 0) {
+                return tampilkanNotifikasi("Export Gagal", "Tidak ada data transaksi untuk di-export!", "⚠️");
+            }
+
+            let csvContent = "data:text/csv;charset=utf-8,ID TRX,Waktu,Kasir,Detail Barang,Total,Metode Pembayaran\n";
+            filteredData.forEach(item => {
+                let idTrx = `TRX-#${item.realIndex + 1}`;
+                let waktu = `"${item.waktu_teks || item.tanggal || ''}"`;
+                let kasir = `"${item.kasir || item.operator || localStorage.getItem("username") || 'owner'}"`;
+                let barang = `"${(item.barang || '').replace(/"/g, '""')}"`;
+                let total = item.total || 0;
+                let metode = item.metode || "Tunai";
+
+                csvContent += `${idTrx},${waktu},${kasir},${barang},${total},${metode}\n`;
+            });
+
+            let encodedUri = encodeURI(csvContent);
+            let link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `laporan_penjualan_${Date.now()}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function bukaModalPasswordReset() {
+
+    if (
+        !requirePermission(
+            "laporan.delete"
+        )
+    ) {
+
+        return;
+
+    }
+
+
+    bukaModal(
+        "modalConfirmReset"
+    );
+
+}
+
+        function verifikasiPasswordReset() {
+            let passInput = document.getElementById("inputPassOwner").value;
+            let currentAuthPass = getAuthPassword();
+
+            if (passInput === currentAuthPass) {
+                tutupModal("modalPasswordOwner");
+                bukaModal("modalConfirmReset");
+            } else {
+                tampilkanNotifikasi("Password Salah", "Password otentikasi yang Anda masukkan salah!", "🔒");
+            }
+        }
+
+function eksekusiResetSemua() {
+
+    if (
+        !requirePermission(
+            "laporan.delete"
+        )
+    ) {
+
+        return;
+
+    }
+
+
+    dataLaporan = [];
+
+    simpanLaporanKeStorage(
+        []
+    );
+
+    tutupModal(
+        "modalConfirmReset"
+    );
+
+    loadLaporan();
+
+    tampilkanNotifikasi(
+        "Sukses",
+        "Seluruh data laporan berhasil direset!",
+        "🧹"
+    );
+
+}
+
+        function konfirmasiHapusSatu() {
+            if (getRolePengguna() === "Owner") {
+                document.getElementById("teksConfirmHapusSatu").innerText = `Apakah Anda yakin ingin menghapus transaksi TRX-#${selectedIndex + 1}?`;
+                bukaModal("modalConfirmHapusSatu");
+            } else {
+                document.getElementById("inputPassHapusSatu").value = "";
+                bukaModal("modalPasswordHapusSatu");
+            }
+        }
+
+        function verifikasiHapusSatu() {
+            let passInput = document.getElementById("inputPassHapusSatu").value;
+            let currentAuthPass = getAuthPassword();
+
+            if (passInput === currentAuthPass) {
+                tutupModal("modalPasswordHapusSatu");
+                document.getElementById("teksConfirmHapusSatu").innerText = `Apakah Anda yakin ingin menghapus transaksi TRX-#${selectedIndex + 1}?`;
+                bukaModal("modalConfirmHapusSatu");
+            } else {
+                tampilkanNotifikasi("Password Salah", "Password otentikasi yang Anda masukkan salah!", "🔒");
+            }
+        }
+
+        function eksekusiHapusSatu() {
+                if (!requirePermission("laporan.delete")) {
+                    return;
+                }
+            if (selectedIndex !== null) {
+                dataLaporan = dataLaporan.filter(d => d.realIndex !== selectedIndex);
+                let cleanedData = dataLaporan.map(item => {
+                    let temp = { ...item };
+                    delete temp.realIndex;
+                    return temp;
+                });
+                simpanLaporanKeStorage(cleanedData);
+                tutupModal("modalConfirmHapusSatu");
+                tutupDetail();
+                loadLaporan();
+                tampilkanNotifikasi("Sukses", "Transaksi berhasil dihapus!", "🗑️");
+            }
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                if (document.activeElement && document.activeElement.tagName.toLowerCase() === 'textarea') {
+                    return;
+                }
+
+                const listModal = [
+                    'modalInfo', 'modalConfirmHapusSatu', 'modalPasswordHapusSatu', 
+                    'modalConfirmReset', 'modalPasswordOwner', 'popupDetail', 
+                    'modalGantiPass', 'modalEditStruk', 'modalEditHeader'
+                ];
+
+                for (let id of listModal) {
+                    const el = document.getElementById(id);
+                    if (el && getComputedStyle(el).display !== 'none') {
+                        e.preventDefault();
+                        if (id === 'modalInfo') {
+                            tutupModal('modalInfo');
+                        } else if (id === 'modalPasswordOwner') {
+                            verifikasiPasswordReset();
+                        } else if (id === 'modalConfirmReset') {
+                            eksekusiResetSemua();
+                        } else if (id === 'modalPasswordHapusSatu') {
+                            verifikasiHapusSatu();
+                        } else if (id === 'modalConfirmHapusSatu') {
+                            eksekusiHapusSatu();
+                        } else if (id === 'popupDetail') {
+                            tutupDetail();
+                        } else if (id === 'modalGantiPass') {
+                            simpanPasswordBaru();
+                        } else if (id === 'modalEditStruk') {
+                            simpanPengaturanStruk();
+                        } else if (id === 'modalEditHeader') {
+                            simpanHeaderToko();
+                        }
+                        break;
+                    }
+                }
+            }
+        });
+
+        document.addEventListener("DOMContentLoaded", function() {
+            proteksiHalamanKasir();
+            filterAksesPengaturanStruk();
+            populateFontSelectors();
+            muatHeaderToko();
+            cekPeringatanStok();
+            loadLaporan();
+            tampilkanStatusAksesLaporan();
+        });
+
+        window.addEventListener('storage', (event) => {
+          if (event.key === 'headerConfig') {
+            muatHeaderToko();
+          }
+          if (event.key === 'strukConfig') {
+            if (typeof updateLivePreviewStruk === 'function') updateLivePreviewStruk();
+          }
+          if (event.key === 'userRole' || event.key === 'role') {
+            filterAksesPengaturanStruk();
+          }
+          if (event.key === 'laporan' || event.key === 'dataLaporan' || event.key === 'riwayatTransaksi') {
+            loadLaporan();
+          }
+        });
+
+        // =====================================================
+// SECURITY GUARD - FASE 1C
+// =====================================================
+
+const SECURITY_CONFIG = {
+
+    LOGIN_PAGE:
+        "index.html",
+
+    DASHBOARD_PAGE:
+        "dashboard.html",
+
+    /*
+     * Maksimal satu sesi kerja:
+     * 8 jam
+     */
+    SESSION_TIMEOUT:
+        8 * 60 * 60 * 1000,
+
+    /*
+     * Tidak ada aktivitas:
+     * 30 menit
+     */
+    IDLE_TIMEOUT:
+        30 * 60 * 1000,
+
+    ACTIVITY_REFRESH_INTERVAL:
+        60 * 1000
+
+};
+
+
+// =====================================================
+// AMBIL SESSION AKTIF
+// =====================================================
+
+function getSecuritySession() {
+
+    const isLoggedIn =
+        localStorage.getItem("isLoggedIn");
+
+
+    const username =
+        localStorage.getItem("username") ||
+        localStorage.getItem("activeUsername") ||
+        localStorage.getItem("loggedInUser");
+
+
+    const role =
+        localStorage.getItem("userRole");
+
+
+    const loginTimestamp =
+        parseInt(
+            localStorage.getItem("loginTimestamp") || "0",
+            10
+        );
+
+
+    // Jangan pernah menggunakan
+    // fallback "admin" di sini.
+
+    if (
+        isLoggedIn !== "true" ||
+        !username ||
+        !role ||
+        !loginTimestamp
+    ) {
+
+        return null;
+
+    }
+
+
+    // Normalisasi role
+
+    const normalizedRole =
+        role
+            .toString()
+            .trim()
+            .toLowerCase();
+
+
+    const allowedRoles = [
+        "owner",
+        "admin",
+        "kasir"
+    ];
+
+
+    if (
+        !allowedRoles.includes(
+            normalizedRole
+        )
+    ) {
+
+        return null;
+
+    }
+
+
+    // Cek session timeout
+
+    if (
+        Date.now() -
+        loginTimestamp >
+        SECURITY_CONFIG.SESSION_TIMEOUT
+    ) {
+
+        clearSecuritySession();
+
+        return null;
+
+    }
+
+
+    return {
+
+        username:
+            username.toString().trim(),
+
+        role:
+            normalizedRole,
+
+        loginTimestamp:
+            loginTimestamp
+
+    };
+
+}
+
+
+// =====================================================
+// HAPUS SESSION
+// =====================================================
+
+function clearSecuritySession() {
+
+    localStorage.removeItem(
+        "isLoggedIn"
+    );
+
+    localStorage.removeItem(
+        "userRole"
+    );
+
+    localStorage.removeItem(
+        "username"
+    );
+
+    localStorage.removeItem(
+        "activeUsername"
+    );
+
+    localStorage.removeItem(
+        "loggedInUser"
+    );
+
+    localStorage.removeItem(
+        "activeUserId"
+    );
+
+    localStorage.removeItem(
+        "loginTimestamp"
+    );
+
+}
+
+
+// =====================================================
+// WAJIB LOGIN
+// =====================================================
+
+function requireLogin() {
+
+    const session =
+        getSecuritySession();
+
+
+    if (!session) {
+
+        clearSecuritySession();
+
+        window.location.replace(
+            SECURITY_CONFIG.LOGIN_PAGE
+        );
+
+        return null;
+
+    }
+
+
+    return session;
+
+}
+
+
+// =====================================================
+// CEK ROLE
+// =====================================================
+
+function requireRole(
+    allowedRoles = []
+) {
+
+    const session =
+        requireLogin();
+
+
+    if (!session) {
+
+        return null;
+
+    }
+
+
+    const allowed =
+        allowedRoles.map(
+            role =>
+                role.toLowerCase()
+        );
+
+
+    if (
+        !allowed.includes(
+            session.role
+        )
+    ) {
+
+        window.location.replace(
+            SECURITY_CONFIG.DASHBOARD_PAGE
+        );
+
+        return null;
+
+    }
+
+
+    return session;
+
+}
+
+
+// =====================================================
+// LOGOUT
+// =====================================================
+
+function secureLogout() {
+
+    clearSecuritySession();
+
+    window.location.replace(
+        SECURITY_CONFIG.LOGIN_PAGE
+    );
+
+}
+
+
+// =====================================================
+// PERPANJANG SESSION
+// =====================================================
+
+function refreshSession() {
+
+    if (
+        localStorage.getItem(
+            "isLoggedIn"
+        ) !== "true"
+    ) {
+
+        return;
+
+    }
+
+
+    localStorage.setItem(
+        "loginTimestamp",
+        Date.now().toString()
+    );
+
+}
+
+
+// =====================================================
+// AKTIVITAS USER
+// Session diperpanjang ketika user aktif
+// =====================================================
+
+let lastActivityRefresh = 0;
+
+
+function registerSecurityActivity() {
+
+    const now =
+        Date.now();
+
+
+    // Jangan menulis localStorage
+    // setiap beberapa milidetik.
+
+    if (
+        now -
+        lastActivityRefresh <
+        60 * 1000
+    ) {
+
+        return;
+
+    }
+
+
+    lastActivityRefresh =
+        now;
+
+
+    refreshSession();
+
+}
+
+
+[
+    "click",
+    "keydown",
+    "mousemove",
+    "touchstart"
+].forEach(
+    eventName => {
+
+        document.addEventListener(
+            eventName,
+            registerSecurityActivity,
+            {
+                passive: true
+            }
+        );
+
+    }
+);
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function() {
+
+        const session =
+            requireLogin();
+
+
+        if (!session) {
+            return;
+        }
+
+
+        terapkanMenuRole();
+
+    }
+);
+
+window.addEventListener(
+    "storage",
+    function(event) {
+
+        if (
+            event.key === "isLoggedIn" ||
+            event.key === "userRole" ||
+            event.key === "username" ||
+            event.key === "loginTimestamp"
+        ) {
+
+            const session =
+                getSecuritySession();
+
+
+            if (!session) {
+
+                window.location.replace(
+                    "index.html"
+                );
+
+            }
+
+        }
+
+    }
+);
+
+const ROLE_CONFIG = {
+
+    OWNER: "owner",
+
+    ADMIN: "admin",
+
+    KASIR: "kasir"
+
+};
+
+const ROLE_PERMISSIONS = {
+
+    owner: [
+
+        "dashboard.view",
+
+        "barang.view",
+        "barang.add",
+        "barang.edit",
+        "barang.delete",
+        "barang.price",
+
+        "kasir.access",
+
+        "laporan.view",
+        "laporan.delete",
+
+        "stockopname.view",
+        "stockopname.create",
+        "stockopname.approve",
+        "stockopname.delete",
+
+        "absensi.view",
+        "absensi.history",
+
+        "closing.view",
+        "closing.approve",
+
+        "akun.view",
+        "akun.manage",
+
+        "settings.view"
+
+    ],
+
+
+    admin: [
+
+        "dashboard.view",
+
+        "barang.view",
+        "barang.add",
+        "barang.edit",
+
+        "kasir.access",
+
+        "laporan.view",
+
+        "stockopname.view",
+        "stockopname.create",
+
+        "absensi.view",
+
+        "closing.view"
+
+    ],
+
+
+    kasir: [
+
+        "dashboard.view",
+
+        "barang.view",
+
+        "kasir.access",
+
+        "laporan.view",
+
+        "stockopname.view",
+
+        "stockopname.create",
+
+        "absensi.view",
+
+        "closing.view"
+
+    ]
+
+};
+
+function normalizeRole(role) {
+
+    return String(role || "")
+        .trim()
+        .toLowerCase();
+
+}
+
+function getCurrentRole() {
+
+    const session =
+        typeof getSecuritySession === "function"
+            ? getSecuritySession()
+            : null;
+
+
+    if (
+        session &&
+        session.role
+    ) {
+
+        return normalizeRole(
+            session.role
+        );
+
+    }
+
+
+    /*
+     * Fallback untuk sistem lama
+     */
+
+    return normalizeRole(
+        localStorage.getItem(
+            "userRole"
+        )
+    );
+
+}
+
+function hasPermission(
+    permission
+) {
+
+    const role =
+        getCurrentRole();
+
+
+    if (!role) {
+
+        return false;
+
+    }
+
+
+    const permissions =
+        ROLE_PERMISSIONS[role];
+
+
+    if (!Array.isArray(
+        permissions
+    )) {
+
+        return false;
+
+    }
+
+
+    return permissions.includes(
+        permission
+    );
+
+}
+
+function requirePermission(
+    permission,
+    options = {}
+) {
+
+    const {
+        showMessage = true,
+        redirect = false
+    } = options;
+
+
+    /*
+     * Pastikan login terlebih dahulu.
+     */
+
+    if (
+        typeof requireLogin ===
+        "function"
+    ) {
+
+        const session =
+            requireLogin();
+
+
+        if (!session) {
+
+            return false;
+
+        }
+
+    }
+
+
+    if (
+        hasPermission(
+            permission
+        )
+    ) {
+
+        return true;
+
+    }
+
+
+    if (
+        showMessage &&
+        typeof tampilkanNotifikasi ===
+        "function"
+    ) {
+
+        tampilkanNotifikasi(
+            "Akses Ditolak",
+            "Anda tidak memiliki izin untuk menggunakan fitur ini.",
+            "🔒"
+        );
+
+    }
+
+
+    if (
+        showMessage &&
+        typeof showAlert ===
+        "function"
+    ) {
+
+        showAlert(
+            "Akses Ditolak",
+            "Anda tidak memiliki izin untuk menggunakan fitur ini."
+        );
+
+    }
+
+
+    if (redirect) {
+
+        window.location.replace(
+            "dashboard.html"
+        );
+
+    }
+
+
+    return false;
+
+}
+
+function terapkanPermissionUI() {
+
+    document
+        .querySelectorAll(
+            "[data-permission]"
+        )
+        .forEach(
+            element => {
+
+                const permission =
+                    element.dataset
+                        .permission;
+
+
+                if (
+                    !hasPermission(
+                        permission
+                    )
+                ) {
+
+                    element.style.display =
+                        "none";
+
+                }
+
+            }
+        );
+
+}
+document.addEventListener(
+    "DOMContentLoaded",
+    function() {
+
+        if (
+            typeof requireLogin ===
+            "function"
+        ) {
+
+            const session =
+                requireLogin();
+
+
+            if (!session) {
+
+                return;
+
+            }
+
+        }
+
+
+        terapkanPermissionUI();
+
+    }
+);
+
+function tampilkanStatusAksesLaporan() {
+
+    const role =
+        getRolePengguna();
+
+    const el =
+        document.getElementById(
+            "roleReportNotice"
+        );
+
+
+    if (!el) {
+        return;
+    }
+
+
+    if (role === "Kasir") {
+
+        const username =
+            localStorage.getItem(
+                "username"
+            ) || "Kasir";
+
+        el.textContent =
+            `🧾 Mode Kasir: laporan hanya menampilkan transaksi ${username}.`;
+
+    }
+
+    else if (role === "Admin") {
+
+        el.textContent =
+            "🛠️ Mode Admin: laporan operasional.";
+
+    }
+
+    else if (role === "Owner") {
+
+        el.textContent =
+            "👑 Mode Owner: akses laporan penuh.";
+
+    }
+
+    else {
+
+        el.textContent =
+            "";
+
+    }
+
+}
+
+function batasiTampilanOmzetLaporan() {
+
+    const role =
+        (
+            localStorage.getItem("userRole") ||
+            ""
+        )
+        .trim()
+        .toLowerCase();
+
+
+    const omzetElement =
+        document.getElementById(
+            "statOmset"
+        );
+
+
+    if (!omzetElement) {
+        return;
+    }
+
+
+    const omzetCard =
+        omzetElement.closest(
+            ".stat-card"
+        );
+
+
+    if (!omzetCard) {
+        return;
+    }
+
+
+    /*
+     * Hanya Owner melihat
+     * Total Penjualan.
+     */
+    if (role === "owner") {
+
+        omzetCard.style.display = "";
+
+    } else {
+
+        omzetCard.style.display = "none";
+
+    }
+
+}
+    </script>
+
+    <script src="setting.js"></script>
+</body>
+</html>

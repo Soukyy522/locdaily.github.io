@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pengaturan Tampilan - Safana POS</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0d2240">
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Fira+Code:wght@500;700&family=Fredoka:wght@600;700&family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@500;700&family=Lato:wght@400;700&family=Lobster&family=Merriweather:wght@400;700&family=Montserrat:wght@400;600;700&family=Nunito:wght@400;700&family=Open+Sans:wght@400;600;700&family=Oswald:wght@500;700&family=Pacifico&family=Playfair+Display:wght@600;800&family=Poppins:wght@400;600;700&family=Raleway:wght@500;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --app-font: 'Poppins', sans-serif;
+            --brand-font: 'Poppins', sans-serif;
+            --bg-primary: #f4f6f9;
+            --bg-secondary: #ffffff;
+            --text-color: #334155;
+            --heading-color: #0d2240;
+            --border-color: #e2e8f0;
+            --card-shadow: rgba(0,0,0,0.03);
+            --nav-bg: #ffffff;
+            --input-bg: #ffffff;
+        }
+
+        body.dark-mode {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --text-color: #e2e8f0;
+            --heading-color: #f8fafc;
+            --border-color: #334155;
+            --card-shadow: rgba(0,0,0,0.25);
+            --nav-bg: #1e293b;
+            --input-bg: #0f172a;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: var(--app-font); }
+        body { background-color: var(--bg-primary); color: var(--text-color); min-height: 100vh; transition: background-color 0.3s ease, color 0.3s ease; }
+
+        .app-layout { display: flex; flex-direction: column; min-height: 100vh; }
+
+        /* Navigasi */
+        .nav-bar { 
+            position: fixed; 
+            bottom: 0; 
+            left: 0; 
+            width: 100%; 
+            background: var(--nav-bg); 
+            display: flex; 
+            justify-content: space-around; 
+            padding: 8px 0; 
+            border-top: 1px solid var(--border-color); 
+            z-index: 99; 
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05); 
+            transition: background 0.3s ease;
+        }
+        .nav-item { 
+            text-decoration: none; 
+            color: #94a3b8; 
+            font-size: 0.7rem; 
+            font-weight: 600; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            gap: 2px; 
+        }
+        .nav-item span { font-size: 1.2rem; }
+        .nav-item.active { color: var(--heading-color); font-weight: 700; }
+
+        .main-content { padding: 16px; padding-bottom: 80px; flex: 1; max-width: 900px; margin: 0 auto; width: 100%; }
+
+        /* Header Preview */
+        .preview-header-card {
+            background: #0d2240;
+            color: white;
+            padding: 16px;
+            border-radius: 14px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .preview-brand-container { display: flex; align-items: center; gap: 12px; }
+        .preview-logo-img { max-height: 48px; max-width: 120px; object-fit: contain; border-radius: 8px; display: none; }
+        .preview-header-card h1 { font-family: var(--brand-font); font-size: 1.4rem; color: #ffffff; text-shadow: 1px 1px 0px #d99b00; }
+        .preview-header-card p { font-family: var(--brand-font); font-size: 0.75rem; color: #ffc107; font-weight: 700; text-transform: uppercase; }
+
+        /* Setting Section Cards */
+        .setting-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px var(--card-shadow);
+            transition: background 0.3s ease;
+        }
+        .setting-card-title {
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: #0284c7;
+            text-transform: uppercase;
+            margin-bottom: 14px;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px dashed var(--border-color);
+            padding-bottom: 8px;
+        }
+
+        .form-row { margin-bottom: 12px; }
+        .form-row:last-child { margin-bottom: 0; }
+        .form-row label { font-size: 0.75rem; font-weight: 700; color: #64748b; display: block; margin-bottom: 6px; text-transform: uppercase; }
+        .form-row input[type="text"], .form-row select, .form-row input[type="file"] { 
+            width: 100%; 
+            padding: 9px 12px; 
+            border: 1px solid var(--border-color); 
+            background: var(--input-bg);
+            color: var(--text-color);
+            border-radius: 8px; 
+            font-size: 0.85rem; 
+            outline: none; 
+        }
+
+        /* Toggle Switch */
+        .toggle-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; }
+        .switch { position: relative; display: inline-block; width: 46px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .3s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
+        input:checked + .slider { background-color: #0284c7; }
+        input:checked + .slider:before { transform: translateX(22px); }
+
+        /* Color Grid */
+        .color-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+        .color-picker-item { 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            background: var(--bg-primary);
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+        .color-picker-item input[type="color"] { width: 32px; height: 32px; border: none; border-radius: 6px; cursor: pointer; background: transparent; }
+
+        /* Logo Preview Box */
+        .preview-logo-box { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+        .btn-remove-logo { background: #fecaca; color: #dc2626; border: none; padding: 6px 10px; border-radius: 6px; font-size: 0.72rem; font-weight: 700; cursor: pointer; }
+
+        /* Action Buttons */
+        .action-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-top: 20px; }
+        .btn-action {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            transition: 0.2s;
+        }
+        .btn-save { background: #0d2240; color: white; }
+        .btn-save:hover { background: #1e3a8a; }
+        .btn-export { background: #16a34a; color: white; }
+        .btn-export:hover { background: #15803d; }
+        .btn-import { background: #d97706; color: white; }
+        .btn-import:hover { background: #b45309; }
+        .btn-reset { background: #ef4444; color: white; }
+        .btn-reset:hover { background: #dc2626; }
+
+        /* Alert Modal */
+        .modal-alert { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 1000; justify-content: center; align-items: center; padding: 15px; }
+        .modal-alert-content { background: var(--bg-secondary); color: var(--text-color); padding: 20px; border-radius: 14px; width: 100%; max-width: 360px; text-align: center; border: 1px solid var(--border-color); }
+        .btn-modal-ok { width: 100%; padding: 10px; background: #0d2240; color: white; border: none; border-radius: 8px; font-weight: 700; margin-top: 15px; cursor: pointer; }
+
+        @media (min-width: 768px) {
+            .app-layout { flex-direction: row; }
+            .nav-bar { 
+                position: sticky; 
+                top: 0; 
+                height: 100vh; 
+                width: 240px; 
+                flex-direction: column; 
+                justify-content: flex-start; 
+                padding: 30px 15px; 
+                border-top: none; 
+                border-right: 1px solid var(--border-color); 
+                gap: 10px; 
+                background: #0d2240; 
+                flex-shrink: 0; 
+            }
+            .nav-item { flex-direction: row; gap: 15px; padding: 12px 18px; border-radius: 12px; color: #94a3b8; font-size: 0.95rem; width: 100%; justify-content: flex-start; }
+            .nav-item.active { background: #ffc107; color: #0d2240; }
+            .main-content { padding: 30px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-layout">
+        <!-- Sidebar / Navigasi Bottom -->
+        <div class="nav-bar">
+            <a href="dashboard.html" class="nav-item"><span>📊</span> Dashboard</a>
+            <a href="kasir.html" class="nav-item"><span>💵</span> Kasir</a>
+            <a href="barang.html" class="nav-item"><span>📦</span> Barang</a>
+            <a href="laporan.html" class="nav-item"><span>📋</span> Laporan</a>
+            <a href="settings.html" class="nav-item active"><span>⚙️</span> Pengaturan</a>
+        </div>
+
+        <!-- Area Utama -->
+        <div class="main-content">
+            <h2 style="margin-bottom: 16px; color: var(--heading-color);">⚙️ Pengaturan Tampilan & Sistem</h2>
+
+            <!-- Live Preview Header Banner -->
+            <div class="preview-header-card" id="previewHeaderApp">
+                <div class="preview-brand-container">
+                    <img id="previewImgLogo" class="preview-logo-img" alt="Logo Toko">
+                    <div>
+                        <h1 id="previewTxtJudul">Safana</h1>
+                        <p id="previewTxtSubJudul">Frozen Food</p>
+                    </div>
+                </div>
+                <span style="font-size: 0.72rem; background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 6px;">Live Preview</span>
+            </div>
+
+            <!-- 1. Mode Tampilan Global -->
+            <div class="setting-card">
+                <div class="setting-card-title">🌙 1. Mode Tampilan Global</div>
+                <div class="toggle-row">
+                    <span style="font-size:0.85rem; font-weight:600;">Aktifkan Mode Gelap (Dark Mode)</span>
+                    <label class="switch">
+                        <input type="checkbox" id="toggleDarkMode" onchange="updateLivePreview()">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- 2. Branding & Identitas -->
+            <div class="setting-card">
+                <div class="setting-card-title">🏢 2. Identitas & Logo Toko</div>
+                
+                <div class="form-row">
+                    <label>Upload Logo Toko/Perusahaan</label>
+                    <input type="file" id="inputLogoFile" accept="image/*" onchange="handleUploadLogo(event)">
+                    <div class="preview-logo-box" id="logoPreviewContainer" style="display: none;">
+                        <img id="imgLogoThumb" style="max-height: 40px; border-radius: 6px;" alt="Thumb">
+                        <button type="button" class="btn-remove-logo" onclick="hapusLogo()">Hapus Logo</button>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <label>Nama Toko / Perusahaan</label>
+                    <input type="text" id="inputJudul" placeholder="Contoh: Safana" oninput="updateLivePreview()">
+                </div>
+
+                <div class="form-row">
+                    <label>Sub-Judul / Kategori</label>
+                    <input type="text" id="inputSubJudul" placeholder="Contoh: Frozen Food" oninput="updateLivePreview()">
+                </div>
+            </div>
+
+            <!-- 3. Tipografi / Font -->
+            <div class="setting-card">
+                <div class="setting-card-title">🔤 3. Tipografi & Font</div>
+
+                <div class="form-row">
+                    <label>Font Brand / Logo Judul</label>
+                    <select id="selectBrandFont" class="font-dropdown" onchange="updateLivePreview()"></select>
+                </div>
+
+                <div class="form-row">
+                    <label>Font Aplikasi (Umum)</label>
+                    <select id="selectAppFont" class="font-dropdown" onchange="updateLivePreview()"></select>
+                </div>
+            </div>
+
+            <!-- 4. Warna & Tema Header -->
+            <div class="setting-card">
+                <div class="setting-card-title">🎨 4. Skema Warna Header & Tema</div>
+
+                <div class="color-grid" style="margin-bottom: 12px;">
+                    <div class="form-row">
+                        <label>Warna Latar Utama</label>
+                        <div class="color-picker-item">
+                            <span style="font-size: 0.72rem; color: #64748b;">Halaman</span>
+                            <input type="color" id="colorBgPrimary" value="#f4f6f9" oninput="updateLivePreview()">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <label>Warna Latar Kartu</label>
+                        <div class="color-picker-item">
+                            <span style="font-size: 0.72rem; color: #64748b;">Box Card</span>
+                            <input type="color" id="colorBgSecondary" value="#ffffff" oninput="updateLivePreview()">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="color-grid">
+                    <div class="form-row">
+                        <label>Warna Teks Judul</label>
+                        <div class="color-picker-item">
+                            <span style="font-size: 0.72rem; color: #64748b;">Judul</span>
+                            <input type="color" id="colorWarnaJudul" value="#ffffff" oninput="updateLivePreview()">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <label>Warna Shadow Teks</label>
+                        <div class="color-picker-item">
+                            <span style="font-size: 0.72rem; color: #64748b;">Outline</span>
+                            <input type="color" id="colorWarnaOutline" value="#d99b00" oninput="updateLivePreview()">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <label>Warna Sub-Judul</label>
+                        <div class="color-picker-item">
+                            <span style="font-size: 0.72rem; color: #64748b;">Sub-Judul</span>
+                            <input type="color" id="colorWarnaSubJudul" value="#ffc107" oninput="updateLivePreview()">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <label>Background Banner</label>
+                        <div class="color-picker-item">
+                            <span style="font-size: 0.72rem; color: #64748b;">Header</span>
+                            <input type="color" id="colorBgHeader" value="#0d2240" oninput="updateLivePreview()">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tombol Aksi & Backup -->
+            <div class="action-grid">
+                <button class="btn-action btn-save" onclick="simpanPengaturan()">💾 Simpan Perubahan</button>
+                <button class="btn-action btn-export" onclick="exportBackupJSON()">📥 Ekspor Backup (JSON)</button>
+                
+                <label class="btn-action btn-import" style="text-align:center;">
+                    📤 Impor Backup (JSON)
+                    <input type="file" id="inputImportJSON" accept=".json" onchange="importBackupJSON(event)" style="display:none;">
+                </label>
+
+                <button class="btn-action btn-reset" onclick="resetToDefault()">🔄 Reset Standar</button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Alert Modal Custom -->
+    <div class="modal-alert" id="customAlertModal">
+        <div class="modal-alert-content">
+            <div style="font-size:2.5rem; margin-bottom:8px;" id="alertIcon">✅</div>
+            <h3 id="alertTitle" style="margin-bottom:6px;">Informasi</h3>
+            <p id="alertMsg" style="font-size:0.85rem; color:#64748b;"></p>
+            <button class="btn-modal-ok" onclick="tutupAlert()">Tutup</button>
+        </div>
+    </div>
+
+    <script>
+        const fontCollection = [
+            { label: "Poppins (Default - Modern)", value: "'Poppins', sans-serif" },
+            { label: "Inter (Clean & Minimalis)", value: "'Inter', sans-serif" },
+            { label: "Montserrat (Elegan / Bold)", value: "'Montserrat', sans-serif" },
+            { label: "Roboto (Standar Android)", value: "'Roboto', sans-serif" },
+            { label: "Open Sans (Simpel & Jelas)", value: "'Open Sans', sans-serif" },
+            { label: "Lato (Seimbang)", value: "'Lato', sans-serif" },
+            { label: "Nunito (Membulat)", value: "'Nunito', sans-serif" },
+            { label: "Raleway (Modern Thin)", value: "'Raleway', sans-serif" },
+            { label: "Fredoka (Ceria)", value: "'Fredoka', cursive" },
+            { label: "Oswald (Tinggi & Tegas)", value: "'Oswald', sans-serif" },
+            { label: "Lobster (Retro Script)", value: "'Lobster', cursive" },
+            { label: "Pacifico (Handwriting)", value: "'Pacifico', cursive" },
+            { label: "Caveat (Tulisan Tangan)", value: "'Caveat', cursive" },
+            { label: "Playfair Display (Mewah Klasik)", value: "'Playfair Display', serif" },
+            { label: "Fira Code (Monospace)", value: "'Fira Code', monospace" }
+        ];
+
+        const defaultHeaderConfig = {
+            judul: "Safana",
+            subJudul: "Frozen Food",
+            warnaJudul: "#ffffff",
+            warnaOutline: "#d99b00",
+            warnaSubJudul: "#ffc107",
+            warnaBgHeader: "#0d2240",
+            fontFamily: "'Poppins', sans-serif",
+            brandFontFamily: "'Poppins', sans-serif",
+            bgPrimary: "#f4f6f9",
+            bgSecondary: "#ffffff",
+            logoData: "",
+            darkMode: false
+        };
+
+        let tempLogoBase64 = "";
+
+        function showAlert(title, msg, type = 'success') {
+            document.getElementById("alertIcon").innerText = type === 'success' ? '✅' : (type === 'warning' ? '⚠️' : '❌');
+            document.getElementById("alertTitle").innerText = title;
+            document.getElementById("alertMsg").innerText = msg;
+            document.getElementById("customAlertModal").style.display = "flex";
+        }
+
+        function tutupAlert() {
+            document.getElementById("customAlertModal").style.display = "none";
+        }
+
+        function populateFonts() {
+            const dropdowns = document.querySelectorAll(".font-dropdown");
+            dropdowns.forEach(select => {
+                select.innerHTML = "";
+                fontCollection.forEach(f => {
+                    const opt = document.createElement("option");
+                    opt.value = f.value;
+                    opt.innerText = f.label;
+                    opt.style.fontFamily = f.value;
+                    select.appendChild(opt);
+                });
+            });
+        }
+
+        function loadConfigToForm() {
+            const config = JSON.parse(localStorage.getItem("headerConfig")) || defaultHeaderConfig;
+            tempLogoBase64 = config.logoData || "";
+
+            document.getElementById("toggleDarkMode").checked = !!config.darkMode;
+            document.getElementById("inputJudul").value = config.judul || defaultHeaderConfig.judul;
+            document.getElementById("inputSubJudul").value = config.subJudul || defaultHeaderConfig.subJudul;
+            document.getElementById("colorWarnaJudul").value = config.warnaJudul || defaultHeaderConfig.warnaJudul;
+            document.getElementById("colorWarnaOutline").value = config.warnaOutline || defaultHeaderConfig.warnaOutline;
+            document.getElementById("colorWarnaSubJudul").value = config.warnaSubJudul || defaultHeaderConfig.warnaSubJudul;
+            document.getElementById("colorBgHeader").value = config.warnaBgHeader || defaultHeaderConfig.warnaBgHeader;
+            document.getElementById("selectAppFont").value = config.fontFamily || defaultHeaderConfig.fontFamily;
+            document.getElementById("selectBrandFont").value = config.brandFontFamily || config.fontFamily || defaultHeaderConfig.brandFontFamily;
+            document.getElementById("colorBgPrimary").value = config.bgPrimary || defaultHeaderConfig.bgPrimary;
+            document.getElementById("colorBgSecondary").value = config.bgSecondary || defaultHeaderConfig.bgSecondary;
+
+            if (tempLogoBase64) {
+                document.getElementById("imgLogoThumb").src = tempLogoBase64;
+                document.getElementById("logoPreviewContainer").style.display = "flex";
+            } else {
+                document.getElementById("logoPreviewContainer").style.display = "none";
+            }
+
+            updateLivePreview();
+        }
+
+        function updateLivePreview() {
+            const isDark = document.getElementById("toggleDarkMode").checked;
+            const judul = document.getElementById("inputJudul").value.trim() || "Safana";
+            const subJudul = document.getElementById("inputSubJudul").value.trim() || "Frozen Food";
+            const warnaJudul = document.getElementById("colorWarnaJudul").value;
+            const warnaOutline = document.getElementById("colorWarnaOutline").value;
+            const warnaSubJudul = document.getElementById("colorWarnaSubJudul").value;
+            const bgHeader = document.getElementById("colorBgHeader").value;
+            const appFont = document.getElementById("selectAppFont").value;
+            const brandFont = document.getElementById("selectBrandFont").value;
+            const bgPrimary = document.getElementById("colorBgPrimary").value;
+            const bgSecondary = document.getElementById("colorBgSecondary").value;
+
+            // Apply Dark Mode
+            if (isDark) {
+                document.body.classList.add("dark-mode");
+            } else {
+                document.body.classList.remove("dark-mode");
+            }
+
+            // CSS Variables
+            document.documentElement.style.setProperty('--app-font', appFont);
+            document.documentElement.style.setProperty('--brand-font', brandFont);
+            document.documentElement.style.setProperty('--bg-primary', bgPrimary);
+            document.documentElement.style.setProperty('--bg-secondary', bgSecondary);
+
+            // Preview Card Update
+            const headerBox = document.getElementById("previewHeaderApp");
+            const txtJudul = document.getElementById("previewTxtJudul");
+            const txtSubJudul = document.getElementById("previewTxtSubJudul");
+            const imgLogo = document.getElementById("previewImgLogo");
+
+            headerBox.style.background = bgHeader;
+            txtJudul.innerText = judul;
+            txtJudul.style.color = warnaJudul;
+            txtJudul.style.textShadow = `1px 1px 0px ${warnaOutline}`;
+            
+            txtSubJudul.innerText = subJudul;
+            txtSubJudul.style.color = warnaSubJudul;
+
+            if (tempLogoBase64) {
+                imgLogo.src = tempLogoBase64;
+                imgLogo.style.display = "block";
+            } else {
+                imgLogo.style.display = "none";
+            }
+        }
+
+        function handleUploadLogo(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (file.size > 2 * 1024 * 1024) {
+                showAlert("Ukuran Terlalu Besar", "Foto logo tidak boleh lebih dari 2MB!", "warning");
+                event.target.value = "";
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                tempLogoBase64 = e.target.result;
+                document.getElementById("imgLogoThumb").src = tempLogoBase64;
+                document.getElementById("logoPreviewContainer").style.display = "flex";
+                updateLivePreview();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function hapusLogo() {
+            tempLogoBase64 = "";
+            document.getElementById("inputLogoFile").value = "";
+            document.getElementById("logoPreviewContainer").style.display = "none";
+            updateLivePreview();
+        }
+
+        function getCurrentConfigFromForm() {
+            return {
+                judul: document.getElementById("inputJudul").value.trim() || "Safana",
+                subJudul: document.getElementById("inputSubJudul").value.trim() || "Frozen Food",
+                warnaJudul: document.getElementById("colorWarnaJudul").value,
+                warnaOutline: document.getElementById("colorWarnaOutline").value,
+                warnaSubJudul: document.getElementById("colorWarnaSubJudul").value,
+                warnaBgHeader: document.getElementById("colorBgHeader").value,
+                fontFamily: document.getElementById("selectAppFont").value,
+                brandFontFamily: document.getElementById("selectBrandFont").value,
+                bgPrimary: document.getElementById("colorBgPrimary").value,
+                bgSecondary: document.getElementById("colorBgSecondary").value,
+                logoData: tempLogoBase64 || "",
+                darkMode: document.getElementById("toggleDarkMode").checked
+            };
+        }
+
+        function simpanPengaturan() {
+            const configBaru = getCurrentConfigFromForm();
+            localStorage.setItem("headerConfig", JSON.stringify(configBaru));
+            showAlert("Tersimpan!", "Pengaturan tampilan berhasil diperbarui dan disimpan secara lokal.", "success");
+        }
+
+        function exportBackupJSON() {
+            const backupData = {
+                headerConfig: JSON.parse(localStorage.getItem("headerConfig")) || defaultHeaderConfig,
+                dataBarang: JSON.parse(localStorage.getItem("dataBarang")) || [],
+                laporan: JSON.parse(localStorage.getItem("laporan")) || [],
+                operasional: JSON.parse(localStorage.getItem("operasional")) || [],
+                exportDate: new Date().toISOString()
+            };
+
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
+            const dlAnchorElem = document.createElement('a');
+            dlAnchorElem.setAttribute("href", dataStr);
+            dlAnchorElem.setAttribute("download", `Backup_SafanaPOS_${new Date().toISOString().substring(0,10)}.json`);
+            dlAnchorElem.click();
+        }
+
+        function importBackupJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (data.headerConfig) localStorage.setItem("headerConfig", JSON.stringify(data.headerConfig));
+                    if (data.dataBarang) localStorage.setItem("dataBarang", JSON.stringify(data.dataBarang));
+                    if (data.laporan) localStorage.setItem("laporan", JSON.stringify(data.laporan));
+                    if (data.operasional) localStorage.setItem("operasional", JSON.stringify(data.operasional));
+
+                    loadConfigToForm();
+                    showAlert("Import Berhasil", "Seluruh data dan konfigurasi berhasil dipulihkan!", "success");
+                } catch (err) {
+                    showAlert("File Rusak", "Format file JSON tidak valid!", "error");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function resetToDefault() {
+            if (confirm("Apakah Anda yakin ingin mengembalikan tampilan ke standar bawaan pabrik?")) {
+                localStorage.setItem("headerConfig", JSON.stringify(defaultHeaderConfig));
+                loadConfigToForm();
+                showAlert("Reset Berhasil", "Tampilan kembali ke pengaturan awal.", "success");
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            populateFonts();
+            loadConfigToForm();
+        });
+    </script>
+</body>
+</html>

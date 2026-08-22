@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transfer Data P2P Lokal (WebRTC)</title>
+    <!-- Library PeerJS untuk P2P mudah -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background: #f4f6f9; color: #333; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); max-width: 500px; margin: 0 auto 20px; }
+        h2 { color: #0d2240; margin-bottom: 15px; font-size: 1.2rem; }
+        input, button { width: 100%; padding: 10px; margin-top: 8px; border-radius: 8px; border: 1px solid #ccc; font-size: 0.9rem; }
+        button { background: #0284c7; color: white; border: none; font-weight: bold; cursor: pointer; }
+        button:hover { background: #0369a1; }
+        .badge { display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
+        .bg-green { background: #dcfce7; color: #166534; }
+        .bg-red { background: #fee2e2; color: #991b1b; }
+        #logArea { background: #1e293b; color: #38bdf8; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 0.8rem; height: 120px; overflow-y: auto; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <!-- KARTU 1: ID PERANGKAT INI -->
+    <div class="card">
+        <h2>📱 ID Perangkat Ini</h2>
+        <p>ID Unik Anda: <b id="myIdDisplay" style="color: #0284c7;">Memuat ID...</b></p>
+        <p>Status: <span id="statusBadge" class="badge bg-red">Terputus</span></p>
+    </div>
+
+    <!-- KARTU 2: KONEKSI & TRANSFER DATA -->
+    <div class="card">
+        <h2>🔗 Hubungkan ke Perangkat Lain</h2>
+        <label>Masukkan ID Perangkat Tujuan (Owner/Kasir):</label>
+        <input type="text" id="targetIdInput" placeholder="Contoh: safana-owner-123">
+        <button onclick="hubungkanKePeer()">Sambungkan Perangkat</button>
+
+        <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
+
+        <h2>📦 Kirim Data Penjualan / Barang</h2>
+        <button onclick="kirimDataPenjualan()" style="background: #16a34a;">🚀 Kirim Data Sales (Simulasi)</button>
+
+        <div id="logArea">-- Log Aktivitas P2P --<br></div>
+    </div>
+
+    <script>
+        let peer = null;
+        let conn = null;
+
+        // 1. Inisialisasi PeerJS saat halaman dibuka
+        function initPeer() {
+            // Kita buat ID kustom sederhana berdasarkan waktu/pilihan
+            const randomId = "safana-node-" + Math.floor(Math.random() * 1000);
+            
+            peer = new Peer(randomId);
+
+            peer.on('open', (id) => {
+                document.getElementById('myIdDisplay').innerText = id;
+                logToArea("Sistem P2P Siap. ID Perangkat Anda: " + id);
+            });
+
+            // 2. Menerima Koneksi Masuk dari Perangkat Lain (Misal Owner menerima sambungan dari Kasir)
+            peer.on('connection', (incomingConn) => {
+                conn = incomingConn;
+                setupConnectionEvents();
+                logToArea("Terhubung dengan perangkat lain: " + conn.peer);
+            });
+
+            peer.on('error', (err) => {
+                logToArea("Error: " + err.type);
+            });
+        }
+
+        // 3. Menghubungkan secara manual ke perangkat lain
+        function hubungkanKePeer() {
+            const targetId = document.getElementById('targetIdInput').value.trim();
+            if (!targetId) {
+                alert("Masukkan ID Tujuan terlebih dahulu!");
+                return;
+            }
+
+            logToArea("Mencoba menyambungkan ke: " + targetId + "...");
+            conn = peer.connect(targetId);
+            setupConnectionEvents();
+        }
+
+        // 4. Mengatur Event saat Koneksi Terhubung / Menerima Data
+        function setupConnectionEvents() {
+            conn.on('open', () => {
+                document.getElementById('statusBadge').className = "badge bg-green";
+                document.getElementById('statusBadge').innerText = "Terhubung P2P";
+                logToArea("✅ Koneksi P2P Berhasil Terjalin!");
+            });
+
+            // MANAJEMEN PENERIMAAN DATA
+            conn.on('data', (data) => {
+                logToArea("📥 Data Diterima: " + JSON.stringify(data));
+
+                // Jika data berbentuk Sales, simpan otomatis ke localStorage lokal
+                if (data.type === "TRANSAKSI_SALES") {
+                    let laporanLokal = JSON.parse(localStorage.getItem("laporan")) || [];
+                    laporanLokal.push(data.payload);
+                    localStorage.setItem("laporan", JSON.stringify(laporanLokal));
+                    
+                    alert("📥 Berhasil menerima 1 Transaksi Sales baru dari Kasir!");
+                }
+            });
+
+            conn.on('close', () => {
+                document.getElementById('statusBadge').className = "badge bg-red";
+                document.getElementById('statusBadge').innerText = "Terputus";
+                logToArea("Koneksi P2P terputus.");
+            });
+        }
+
+        // 5. Mengirim Data Sales dari Perangkat Pengirim ke Penerima
+        function kirimDataPenjualan() {
+            if (!conn || !conn.open) {
+                alert("Perangkat belum terhubung! Sambungkan ID-nya terlebih dahulu.");
+                return;
+            }
+
+            // Contoh payload data transaksi kasir
+            const contohTransaksi = {
+                type: "TRANSAKSI_SALES",
+                payload: {
+                    idTransaksi: "TRX-" + Date.now(),
+                    total: 150000,
+                    item: "Nugget Safana x 3",
+                    waktu: new Date().toLocaleTimeString()
+                }
+            };
+
+            // Mengirim data instan via WebRTC DataChannel
+            conn.send(contohTransaksi);
+            logToArea("📤 Terkirim: Transaksi " + contohTransaksi.payload.idTransaksi);
+        }
+
+        function logToArea(msg) {
+            const logBox = document.getElementById('logArea');
+            logBox.innerHTML += `> ${msg}<br>`;
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
+        document.addEventListener("DOMContentLoaded", initPeer);
+    </script>
+</body>
+</html>
