@@ -2089,6 +2089,7 @@ body.dark-mode
         }
 
 </style>
+    <script src="employee-id.js"></script>
 </head>
 <body>
 
@@ -2111,7 +2112,6 @@ body.dark-mode
             <a href="stock-opname.html" class="nav-item" data-permission="stock-opname.view"><span>📋</span> Stock Opname</a>
             <a href="laporan.html" class="nav-item" data-permission="laporan.view"><span>📋</span> Laporan</a>
             <a href="shift-closing.html" class="nav-item" data-permission="closing.view"><span>🔒</span> Closing Shift</a>
-            <a href="end-of-day.html" class="nav-item" data-permission="endofday.view"><span>🌙</span> End of Day</a>
         </div>
 
         <!-- Area Konten Utama -->
@@ -2600,20 +2600,6 @@ body.dark-mode
                                 <div class="quick-access-item-text">
                                     <strong>Closing Shift</strong>
                                     <span>Proses akhir shift</span>
-                                </div>
-                                <div class="quick-access-arrow">›</div>
-                            </button>
-
-                            <button
-                                type="button"
-                                class="quick-access-item"
-                                data-permission="endofday.view"
-                                onclick="window.location.href='end-of-day.html'"
-                            >
-                                <div class="quick-access-item-icon">🌙</div>
-                                <div class="quick-access-item-text">
-                                    <strong>End of Day</strong>
-                                    <span>Gabungkan Shift 1 & Shift 2</span>
                                 </div>
                                 <div class="quick-access-arrow">›</div>
                             </button>
@@ -3260,8 +3246,11 @@ body.dark-mode
             <div class="setting-card">
                 <div class="form-section-title">➕ Tambahkan Akun Baru</div>
                 <div class="form-row">
-                    <label>Username / Nama Akun</label>
+                    <label>Username / Nama Karyawan</label>
                     <input type="text" id="inputNewUsername" placeholder="Contoh: kasir2">
+                    <small style="font-size:.65rem;color:#64748b;margin-top:4px;">
+                        Nama Karyawan otomatis sama dengan Username. NIK dibuat otomatis setelah akun disimpan.
+                    </small>
                 </div>
                 <div class="form-row">
                     <label>Password Akun (Harus 8 Karakter)</label>
@@ -4224,6 +4213,11 @@ function escapeHtml(value) {
 
         function renderListAkunModal() {
 
+    if (window.LDMEmployee) {
+        LDMEmployee.ensureMigration();
+    }
+
+
     const akunList =
         getDatabaseAkun();
 
@@ -4242,6 +4236,23 @@ function escapeHtml(value) {
 
 
     akunList.forEach((akun, idx) => {
+
+        const employee =
+            window.LDMEmployee
+                ? LDMEmployee.findByUsername(
+                    akun.username
+                )
+                : null;
+
+        const nikKaryawan =
+            employee?.nikKaryawan ||
+            akun.nikKaryawan ||
+            "-";
+
+        const namaKaryawan =
+            akun.username ||
+            "-";
+
 
         const itemDiv =
             document.createElement("div");
@@ -4296,6 +4307,19 @@ function escapeHtml(value) {
                     ">
                         ${roleLabel}
                         ${isCurrentUser ? " • Akun Anda" : ""}
+                    </div>
+
+                    <div style="
+                        margin-top:4px;
+                        font-size:0.7rem;
+                        color:var(--label-color);
+                        line-height:1.45;
+                    ">
+                        Nama Karyawan:
+                        <b>${escapeHtml(namaKaryawan)}</b>
+                        <br>
+                        NIK:
+                        <b>${escapeHtml(nikKaryawan)}</b>
                     </div>
 
                 </div>
@@ -4590,15 +4614,43 @@ function escapeHtml(value) {
     // TAMBAH AKUN
     // -----------------------------------------
 
+    const employee =
+        window.LDMEmployee
+            ? LDMEmployee.createForAccount({
+                username:
+                    username,
+                role:
+                    role
+            })
+            : null;
+
+
     akunList.push({
 
-        id: Date.now(),
+        id:
+            Date.now(),
 
-        username: username,
+        username:
+            username,
 
-        password: password,
+        namaKaryawan:
+            username,
 
-        role: role
+        employeeId:
+            employee
+                ? employee.employeeId
+                : "",
+
+        nikKaryawan:
+            employee
+                ? employee.nikKaryawan
+                : "",
+
+        password:
+            password,
+
+        role:
+            role
 
     });
 
@@ -4877,6 +4929,35 @@ if (newPassword.trim() !== "") {
     target.role =
         newRole;
 
+    /*
+     * Nama Karyawan selalu mengikuti username.
+     */
+    target.namaKaryawan =
+        newUsername;
+
+
+    if (window.LDMEmployee) {
+
+        const employeeUpdated =
+            LDMEmployee.updateUsername(
+                oldUsername,
+                newUsername,
+                newRole
+            );
+
+
+        if (employeeUpdated) {
+
+            target.employeeId =
+                employeeUpdated.employeeId;
+
+            target.nikKaryawan =
+                employeeUpdated.nikKaryawan;
+
+        }
+
+    }
+
 
     const dataAkunBaru =
     JSON.stringify(
@@ -5051,6 +5132,15 @@ function hapusAkun(idx) {
         "daftarAkun",
         JSON.stringify(akunList)
     );
+
+
+    if (window.LDMEmployee) {
+
+        LDMEmployee.deactivateByUsername(
+            target.username
+        );
+
+    }
 
 
     renderListAkunModal();
@@ -9359,10 +9449,6 @@ const ROLE_PERMISSIONS = {
     "closing.view",
     "closing.approve",
 
-    "endofday.view",
-    "endofday.finalize",
-    "endofday.delete",
-
     "akun.view",
     "akun.manage",
 
@@ -9390,10 +9476,7 @@ const ROLE_PERMISSIONS = {
 
     "absensi.view",
 
-    "closing.view",
-
-    "endofday.view",
-    "endofday.finalize"
+    "closing.view"
 ],
 
 
@@ -9410,12 +9493,9 @@ const ROLE_PERMISSIONS = {
     "stockopname.view",
     "stockopname.create",
 
-    "absensi.view"
+    "absensi.view",
 
-    /*
-     * Role Kasir tidak mempunyai closing.view.
-     * Menu dan Quick Access Closing Shift otomatis disembunyikan.
-     */
+    "closing.view"
 ]
 
 };
