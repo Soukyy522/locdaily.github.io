@@ -2090,6 +2090,1028 @@ body.dark-mode
 
 </style>
     <script src="employee-id.js"></script>
+
+<script id="ldmCompactNavRoleEarly">
+(function(){
+    try{
+        const role=String(
+            localStorage.getItem("userRole")
+            || localStorage.getItem("role")
+            || ""
+        ).trim().toLowerCase();
+        document.documentElement.setAttribute("data-ldm-role",role);
+    }catch(e){}
+})();
+</script>
+<style id="ldmCompactNavigationStyle">
+    .nav-bar{
+        overflow-y:auto !important;
+        overflow-x:hidden !important;
+        scrollbar-width:thin;
+        scrollbar-color:rgba(148,163,184,.38) transparent;
+    }
+    .nav-bar::-webkit-scrollbar{width:5px}
+    .nav-bar::-webkit-scrollbar-track{background:transparent}
+    .nav-bar::-webkit-scrollbar-thumb{
+        background:rgba(148,163,184,.34);
+        border-radius:20px;
+    }
+    .nav-header-mobile{
+        font-size:.78rem !important;
+        padding:4px 2px 8px !important;
+        margin-bottom:4px !important;
+        min-height:30px;
+    }
+    .nav-item{
+        min-height:34px !important;
+        padding:7px 9px !important;
+        margin:0 0 2px 0 !important;
+        gap:8px !important;
+        border-radius:8px !important;
+        font-size:.73rem !important;
+        line-height:1.15 !important;
+        flex-shrink:0;
+    }
+    .nav-item > span:first-child{
+        display:inline-flex;
+        width:20px;
+        min-width:20px;
+        height:20px;
+        align-items:center;
+        justify-content:center;
+        font-size:.93rem !important;
+        line-height:1 !important;
+    }
+    .nav-item .nav-badge{
+        transform:scale(.82);
+        transform-origin:center;
+    }
+
+    /* Kasir: sembunyikan route yang memang tidak dapat dibuka. */
+    html[data-ldm-role="kasir"] .nav-bar a[href="barang.html"],
+    html[data-ldm-role="kasir"] .nav-bar a[href="supplier.html"],
+    html[data-ldm-role="kasir"] .nav-bar a[href="Purchase-Order.html"],
+    html[data-ldm-role="kasir"] .nav-bar a[href="goods.receipt.html"],
+    html[data-ldm-role="kasir"] .nav-bar a[href="shift-closing.html"],
+    html[data-ldm-role="kasir"] .nav-bar a[href="eod.html"],
+    html[data-ldm-role="kasir"] .nav-bar a[href="pengeluaran.html"],
+    html[data-ldm-role="kasir"] .nav-bar a[href="backup%20%26%20restore.html"],
+    html[data-ldm-role="kasir"] .nav-bar a[href="backup & restore.html"]{
+        display:none !important;
+    }
+
+    @media (min-width:768px){
+        .nav-bar{
+            width:205px !important;
+            min-width:205px !important;
+            padding:14px 10px !important;
+            gap:2px !important;
+        }
+        .nav-item{
+            padding:7px 9px !important;
+            font-size:.73rem !important;
+        }
+    }
+
+    @media (max-width:767px){
+        .nav-bar{
+            width:min(82vw,238px) !important;
+            padding:10px 9px !important;
+            gap:2px !important;
+        }
+        .nav-item{
+            min-height:33px !important;
+            padding:7px 9px !important;
+            font-size:.72rem !important;
+        }
+        .nav-header-mobile{font-size:.76rem !important}
+    }
+</style>
+
+
+<!-- =========================================================
+     LOCDailyMar RESPONSIVE MEGA MENU
+     Desktop  : Mega Menu
+     HP/Tablet: Hamburger Drawer
+     ========================================================= -->
+<style id="ldmMegaMenuResponsiveStyle">
+    .ldm-mega-nav-shell{
+        display:none;
+    }
+
+    /* =====================================================
+       DESKTOP MEGA MENU
+       ===================================================== */
+    @media (min-width:900px){
+        /*
+         * Sidebar lama hanya dipakai sebagai sumber struktur/menu
+         * dan sebagai menu mobile. Desktop memakai Mega Menu.
+         */
+        .nav-bar,
+        .nav-overlay,
+        .btn-toggle-menu,
+        .nav-header-mobile{
+            display:none !important;
+        }
+
+        .app-layout{
+            display:flex !important;
+            flex-direction:column !important;
+            min-height:100vh !important;
+            width:100% !important;
+        }
+
+        .main-content{
+            width:100% !important;
+            max-width:none !important;
+            padding:24px 28px 30px !important;
+            margin:0 !important;
+        }
+
+        .ldm-mega-nav-shell{
+            display:block;
+            position:sticky;
+            top:0;
+            z-index:1200;
+            width:100%;
+            background:var(--nav-desktop-bg);
+            border-bottom:1px solid var(--border-color);
+            box-shadow:0 7px 24px rgba(15,23,42,.08);
+        }
+
+        .ldm-mega-nav{
+            position:relative;
+            width:100%;
+            min-height:58px;
+            display:flex;
+            align-items:center;
+            gap:8px;
+            padding:9px 22px;
+        }
+
+        .ldm-mega-trigger{
+            height:38px;
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            gap:8px;
+            border:1px solid rgba(255,193,7,.45);
+            border-radius:10px;
+            padding:0 14px;
+            cursor:pointer;
+            background:var(--accent-color);
+            color:#0d2240;
+            font-size:.78rem;
+            font-weight:900;
+            white-space:nowrap;
+            transition:.18s ease;
+        }
+
+        .ldm-mega-trigger:hover,
+        .ldm-mega-nav-shell.open .ldm-mega-trigger{
+            transform:translateY(-1px);
+            box-shadow:0 7px 18px rgba(0,0,0,.14);
+        }
+
+        .ldm-mega-trigger-arrow{
+            font-size:.62rem;
+            transition:transform .18s ease;
+        }
+
+        .ldm-mega-nav-shell.open .ldm-mega-trigger-arrow{
+            transform:rotate(180deg);
+        }
+
+        .ldm-mega-quick{
+            display:flex;
+            align-items:center;
+            gap:4px;
+            min-width:0;
+        }
+
+        .ldm-mega-quick a{
+            position:relative;
+            display:inline-flex;
+            align-items:center;
+            gap:6px;
+            height:36px;
+            padding:0 10px;
+            border-radius:9px;
+            color:#94a3b8;
+            text-decoration:none;
+            font-size:.72rem;
+            font-weight:750;
+            white-space:nowrap;
+            transition:.18s ease;
+        }
+
+        .ldm-mega-quick a:hover{
+            color:#f8fafc;
+            background:rgba(148,163,184,.12);
+        }
+
+        .ldm-mega-quick a.active{
+            color:#0d2240;
+            background:var(--accent-color);
+        }
+
+        .ldm-mega-session{
+            margin-left:auto;
+            min-width:0;
+            display:flex;
+            align-items:center;
+            gap:7px;
+            color:#94a3b8;
+            font-size:.67rem;
+            font-weight:700;
+        }
+
+        .ldm-mega-role{
+            display:inline-flex;
+            align-items:center;
+            gap:5px;
+            padding:5px 9px;
+            border-radius:999px;
+            background:rgba(148,163,184,.10);
+            border:1px solid rgba(148,163,184,.15);
+            color:#cbd5e1;
+            text-transform:capitalize;
+            white-space:nowrap;
+        }
+
+        .ldm-mega-panel{
+            position:absolute;
+            left:22px;
+            top:calc(100% - 3px);
+            width:min(980px, calc(100vw - 44px));
+            visibility:hidden;
+            opacity:0;
+            pointer-events:none;
+            transform:translateY(-5px);
+            transition:
+                opacity .16s ease,
+                transform .16s ease,
+                visibility .16s ease;
+            background:var(--bg-secondary);
+            color:var(--text-color);
+            border:1px solid var(--border-color);
+            border-radius:0 0 16px 16px;
+            box-shadow:0 24px 55px rgba(15,23,42,.24);
+            padding:16px;
+        }
+
+        .ldm-mega-nav-shell.open .ldm-mega-panel{
+            visibility:visible;
+            opacity:1;
+            pointer-events:auto;
+            transform:translateY(0);
+        }
+
+        .ldm-mega-panel-top{
+            display:flex;
+            justify-content:space-between;
+            gap:18px;
+            align-items:flex-start;
+            padding:1px 3px 13px;
+            border-bottom:1px solid var(--border-color);
+            margin-bottom:13px;
+        }
+
+        .ldm-mega-panel-top strong{
+            display:block;
+            color:var(--heading-color);
+            font-size:.84rem;
+        }
+
+        .ldm-mega-panel-top p{
+            margin-top:3px;
+            color:#64748b;
+            font-size:.63rem;
+            line-height:1.45;
+        }
+
+        .ldm-mega-panel-close{
+            border:0;
+            background:transparent;
+            color:#64748b;
+            cursor:pointer;
+            font-size:.72rem;
+            font-weight:800;
+            padding:5px 7px;
+            border-radius:7px;
+        }
+
+        .ldm-mega-panel-close:hover{
+            background:rgba(148,163,184,.10);
+            color:var(--heading-color);
+        }
+
+        .ldm-mega-grid{
+            display:grid;
+            grid-template-columns:repeat(5,minmax(0,1fr));
+            gap:10px;
+        }
+
+        .ldm-mega-group{
+            min-width:0;
+            padding:10px;
+            border-radius:11px;
+            background:rgba(148,163,184,.045);
+            border:1px solid transparent;
+        }
+
+        .ldm-mega-group:hover{
+            border-color:var(--border-color);
+        }
+
+        .ldm-mega-group-title{
+            display:flex;
+            align-items:center;
+            gap:6px;
+            margin-bottom:7px;
+            color:#64748b;
+            font-size:.61rem;
+            font-weight:900;
+            letter-spacing:.055em;
+            text-transform:uppercase;
+        }
+
+        .ldm-mega-links{
+            display:flex;
+            flex-direction:column;
+            gap:3px;
+        }
+
+        .ldm-mega-link{
+            position:relative;
+            min-height:34px;
+            display:flex;
+            align-items:center;
+            gap:8px;
+            padding:7px 8px;
+            border-radius:8px;
+            text-decoration:none;
+            color:var(--text-color);
+            font-size:.7rem;
+            font-weight:700;
+            line-height:1.2;
+            transition:.15s ease;
+        }
+
+        .ldm-mega-link:hover{
+            background:rgba(2,132,199,.08);
+            color:#0284c7;
+        }
+
+        .ldm-mega-link.active{
+            background:var(--accent-color);
+            color:#0d2240;
+        }
+
+        .ldm-mega-icon{
+            width:22px;
+            height:22px;
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            flex:0 0 22px;
+            border-radius:7px;
+            background:rgba(148,163,184,.08);
+            font-size:.88rem;
+        }
+
+        .ldm-mega-link.active .ldm-mega-icon{
+            background:rgba(255,255,255,.35);
+        }
+
+        .ldm-mega-badge{
+            display:none;
+            margin-left:auto;
+            min-width:18px;
+            height:18px;
+            padding:0 5px;
+            align-items:center;
+            justify-content:center;
+            border-radius:999px;
+            background:#ef4444;
+            color:#fff;
+            font-size:.55rem;
+            font-weight:900;
+        }
+
+        @media (max-width:1120px){
+            .ldm-mega-grid{
+                grid-template-columns:repeat(3,minmax(0,1fr));
+            }
+
+            .ldm-mega-quick a:nth-child(n+4){
+                display:none;
+            }
+        }
+    }
+
+    /* =====================================================
+       HP / TABLET: HAMBURGER MENU
+       ===================================================== */
+    @media (max-width:899px){
+        .ldm-mega-nav-shell{
+            display:none !important;
+        }
+
+        .app-layout{
+            display:flex !important;
+            flex-direction:column !important;
+            min-height:100vh !important;
+        }
+
+        .btn-toggle-menu{
+            display:inline-flex !important;
+        }
+
+        .nav-bar{
+            position:fixed !important;
+            top:0 !important;
+            left:-270px !important;
+            width:min(82vw,250px) !important;
+            min-width:0 !important;
+            height:100dvh !important;
+            padding:11px 10px !important;
+            flex-direction:column !important;
+            justify-content:flex-start !important;
+            gap:3px !important;
+            z-index:999 !important;
+            border-right:1px solid var(--border-color) !important;
+            box-shadow:3px 0 18px rgba(15,23,42,.28) !important;
+            overflow-y:auto !important;
+            transition:left .25s ease !important;
+        }
+
+        .nav-bar.active{
+            left:0 !important;
+        }
+
+        .nav-header-mobile{
+            display:flex !important;
+            padding:5px 3px 9px !important;
+            margin-bottom:3px !important;
+            font-size:.76rem !important;
+        }
+
+        .nav-item{
+            min-height:35px !important;
+            padding:7px 9px !important;
+            margin:0 !important;
+            gap:8px !important;
+            border-radius:8px !important;
+            font-size:.72rem !important;
+        }
+
+        .nav-item > span:first-child{
+            width:20px !important;
+            min-width:20px !important;
+            font-size:.92rem !important;
+        }
+
+        .main-content{
+            width:100% !important;
+            margin:0 !important;
+            padding:12px !important;
+            padding-bottom:28px !important;
+        }
+    }
+</style>
+
+
+<script id="ldmEodMenuAvailabilityEarly">
+(function(){
+    function readArray(key){
+        try{
+            const value=JSON.parse(localStorage.getItem(key)||"[]");
+            return Array.isArray(value)?value:[];
+        }catch(e){
+            return [];
+        }
+    }
+
+    function witaDate(value){
+        const source=value instanceof Date?value:new Date(value??Date.now());
+        const time=isNaN(source)?Date.now():source.getTime();
+        const d=new Date(time+(8*60*60*1000));
+        return (
+            d.getUTCFullYear()+"-"+
+            String(d.getUTCMonth()+1).padStart(2,"0")+"-"+
+            String(d.getUTCDate()).padStart(2,"0")
+        );
+    }
+
+    function recordDate(item){
+        if(!item)return "";
+        const raw=
+            item.waktu_teks
+            || item.tanggal
+            || item.tgl
+            || item.date
+            || item.waktu
+            || item.created_at
+            || item.timestamp
+            || "";
+
+        if(typeof raw==="string" && /^\d{4}-\d{2}-\d{2}/.test(raw)){
+            return raw.slice(0,10);
+        }
+
+        const d=new Date(raw);
+        return isNaN(d)?"":witaDate(d);
+    }
+
+    function cashierName(item){
+        return String(
+            item?.kasir
+            || item?.user
+            || item?.username
+            || item?.admin
+            || ""
+        ).trim().toLowerCase();
+    }
+
+    function shiftName(value){
+        return String(value||"").trim().toLowerCase();
+    }
+
+    function isReady(){
+        const today=witaDate(new Date());
+        const laporan=readArray("laporan");
+        const transaksi=(laporan.length?laporan:readArray("dataLaporan"))
+            .filter(item=>recordDate(item)===today);
+
+        const activeAccounts=new Set(
+            transaksi
+                .map(cashierName)
+                .filter(Boolean)
+        );
+
+        if(activeAccounts.size===0){
+            return false;
+        }
+
+        const closingToday=readArray("shiftClosingLog")
+            .filter(item=>String(item?.tanggal||"").slice(0,10)===today);
+
+        const closedAccounts=new Set(
+            closingToday
+                .map(item=>String(item?.kasir||"").trim().toLowerCase())
+                .filter(Boolean)
+        );
+
+        const allClosed=
+            [...activeAccounts]
+                .every(account=>closedAccounts.has(account));
+
+        const hasShift1=closingToday.some(
+            item=>shiftName(item?.shift)==="shift 1"
+        );
+
+        const hasShift2=closingToday.some(
+            item=>shiftName(item?.shift)==="shift 2"
+        );
+
+        const sessionsToday=readArray("shiftSessions").filter(s=>String(s.tanggal||"")===today&&String(s.status||"").toUpperCase()!=="CANCELLED");
+        const txShiftIds=[...new Set(transaksi.map(t=>String(t.shiftId||"")).filter(Boolean))];
+        const closedShiftIds=new Set(closingToday.map(l=>String(l.shiftId||"")).filter(Boolean));
+        const sessionById=new Map(sessionsToday.map(s=>[String(s.id),s]));
+        const exactReady=txShiftIds.every(id=>String(sessionById.get(id)?.status||"").toUpperCase()==="CLOSED"&&closedShiftIds.has(id));
+        const noOpen=sessionsToday.every(s=>!["ACTIVE","CLOSING"].includes(String(s.status||"").toUpperCase()));
+        return allClosed && hasShift1 && hasShift2 && exactReady && noOpen;
+    }
+
+    try{
+        document.documentElement.setAttribute(
+            "data-ldm-eod-ready",
+            isReady()?"true":"false"
+        );
+    }catch(e){
+        document.documentElement.setAttribute(
+            "data-ldm-eod-ready",
+            "false"
+        );
+    }
+})();
+</script>
+
+
+<style id="ldmMobileTouchAndEodStyle">
+    /*
+     * End of Day disembunyikan sampai seluruh akun yang transaksi
+     * sudah Closing Shift dan Shift 1 + Shift 2 tersedia.
+     * Berlaku untuk Mega Menu desktop dan Hamburger Menu HP.
+     */
+    html:not([data-ldm-eod-ready="true"]) a[href="eod.html"]{
+        display:none !important;
+    }
+
+    /*
+     * Mobile / tablet hanya Hamburger Menu.
+     * Target sentuh dibuat lebih lega agar nyaman ditekan dengan jari.
+     */
+    @media (max-width:899px){
+        .ldm-mega-nav-shell{
+            display:none !important;
+        }
+
+        .nav-bar{
+            width:min(86vw,270px) !important;
+            padding:14px 11px 20px !important;
+            gap:6px !important;
+        }
+
+        .nav-header-mobile{
+            min-height:42px !important;
+            padding:7px 5px 12px !important;
+            margin-bottom:5px !important;
+            font-size:.8rem !important;
+        }
+
+        .nav-item{
+            min-height:46px !important;
+            padding:11px 12px !important;
+            margin:0 !important;
+            gap:11px !important;
+            border-radius:10px !important;
+            font-size:.78rem !important;
+            line-height:1.22 !important;
+            touch-action:manipulation;
+            -webkit-tap-highlight-color:rgba(255,193,7,.18);
+        }
+
+        .nav-item + .nav-item{
+            margin-top:2px !important;
+        }
+
+        .nav-item > span:first-child{
+            width:24px !important;
+            min-width:24px !important;
+            height:24px !important;
+            font-size:1rem !important;
+        }
+
+        .btn-toggle-menu{
+            min-width:42px !important;
+            min-height:42px !important;
+            width:42px !important;
+            height:42px !important;
+            align-items:center !important;
+            justify-content:center !important;
+            border-radius:10px !important;
+            touch-action:manipulation;
+        }
+
+        .nav-overlay.active{
+            display:block !important;
+        }
+    }
+
+    @media (max-width:420px){
+        .nav-bar{
+            width:min(88vw,268px) !important;
+        }
+
+        .nav-item{
+            min-height:48px !important;
+            padding:12px !important;
+            font-size:.79rem !important;
+        }
+    }
+</style>
+
+
+<style id="ldmThemedDialogStyle">
+    .ldm-dialog-overlay{
+        position:fixed;
+        inset:0;
+        z-index:999999;
+        display:none;
+        align-items:center;
+        justify-content:center;
+        padding:16px;
+        background:rgba(15,23,42,.58);
+        backdrop-filter:blur(3px);
+    }
+
+    .ldm-dialog-overlay.show{
+        display:flex;
+    }
+
+    .ldm-dialog-card{
+        width:min(430px,100%);
+        max-height:min(88dvh,620px);
+        overflow:auto;
+        background:var(--bg-secondary,#fff);
+        color:var(--text-color,#334155);
+        border:1px solid var(--border-color,#e2e8f0);
+        border-radius:16px;
+        box-shadow:0 24px 60px rgba(15,23,42,.28);
+        padding:17px;
+        animation:ldmDialogIn .15s ease-out;
+    }
+
+    @keyframes ldmDialogIn{
+        from{opacity:0;transform:translateY(8px) scale(.985)}
+        to{opacity:1;transform:translateY(0) scale(1)}
+    }
+
+    .ldm-dialog-top{
+        display:flex;
+        gap:11px;
+        align-items:flex-start;
+    }
+
+    .ldm-dialog-icon{
+        width:38px;
+        height:38px;
+        flex:0 0 38px;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        border-radius:11px;
+        background:rgba(2,132,199,.10);
+        font-size:1.15rem;
+    }
+
+    .ldm-dialog-title{
+        margin:1px 0 4px;
+        color:var(--heading-color,#0f172a);
+        font-size:.92rem;
+        font-weight:850;
+        line-height:1.35;
+    }
+
+    .ldm-dialog-message{
+        color:var(--label-color,#64748b);
+        font-size:.72rem;
+        line-height:1.65;
+        white-space:pre-wrap;
+    }
+
+    .ldm-dialog-input{
+        width:100%;
+        min-height:44px;
+        margin-top:13px;
+        padding:10px 11px;
+        border:1px solid var(--border-color,#cbd5e1);
+        border-radius:9px;
+        background:var(--bg-primary,#f8fafc);
+        color:var(--text-color,#334155);
+        font:inherit;
+        font-size:.78rem;
+        outline:none;
+    }
+
+    .ldm-dialog-input:focus{
+        border-color:#0284c7;
+        box-shadow:0 0 0 3px rgba(2,132,199,.10);
+    }
+
+    .ldm-dialog-actions{
+        display:flex;
+        justify-content:flex-end;
+        gap:8px;
+        margin-top:15px;
+    }
+
+    .ldm-dialog-btn{
+        min-height:40px;
+        border:0;
+        border-radius:9px;
+        padding:8px 14px;
+        cursor:pointer;
+        font:inherit;
+        font-size:.72rem;
+        font-weight:850;
+        transition:.15s ease;
+    }
+
+    .ldm-dialog-btn:hover{
+        transform:translateY(-1px);
+    }
+
+    .ldm-dialog-btn.cancel{
+        background:var(--bg-primary,#f1f5f9);
+        color:var(--text-color,#475569);
+        border:1px solid var(--border-color,#e2e8f0);
+    }
+
+    .ldm-dialog-btn.ok{
+        background:#0d2240;
+        color:#fff;
+    }
+
+    .ldm-dialog-btn.danger{
+        background:#dc2626;
+        color:#fff;
+    }
+
+    @media(max-width:600px){
+        .ldm-dialog-overlay{
+            align-items:flex-end;
+            padding:8px;
+        }
+
+        .ldm-dialog-card{
+            width:100%;
+            border-radius:17px 17px 0 0;
+            padding:15px;
+        }
+
+        .ldm-dialog-actions{
+            display:grid;
+            grid-template-columns:1fr 1fr;
+        }
+
+        .ldm-dialog-actions.single{
+            grid-template-columns:1fr;
+        }
+
+        .ldm-dialog-btn{
+            min-height:46px;
+            width:100%;
+            touch-action:manipulation;
+        }
+    }
+</style>
+
+
+<script id="ldmThemedDialogScript">
+(function(){
+    if(window.ldmDialog)return;
+
+    let activeResolve=null;
+
+    function ensure(){
+        let overlay=document.getElementById("ldmDialogOverlay");
+        if(overlay)return overlay;
+
+        overlay=document.createElement("div");
+        overlay.id="ldmDialogOverlay";
+        overlay.className="ldm-dialog-overlay";
+        overlay.innerHTML=`
+            <div class="ldm-dialog-card" role="dialog" aria-modal="true">
+                <div class="ldm-dialog-top">
+                    <div class="ldm-dialog-icon" id="ldmDialogIcon">ℹ️</div>
+                    <div style="min-width:0;flex:1">
+                        <div class="ldm-dialog-title" id="ldmDialogTitle">Informasi</div>
+                        <div class="ldm-dialog-message" id="ldmDialogMessage"></div>
+                    </div>
+                </div>
+
+                <input
+                    id="ldmDialogInput"
+                    class="ldm-dialog-input"
+                    style="display:none"
+                    autocomplete="off"
+                >
+
+                <div class="ldm-dialog-actions" id="ldmDialogActions">
+                    <button type="button" class="ldm-dialog-btn cancel" id="ldmDialogCancel">Batal</button>
+                    <button type="button" class="ldm-dialog-btn ok" id="ldmDialogOk">OK</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+
+        overlay.addEventListener("keydown",event=>{
+            if(event.key==="Escape"){
+                document.getElementById("ldmDialogCancel")?.click();
+            }
+        });
+
+        return overlay;
+    }
+
+    function iconFor(type){
+        return {
+            success:"✅",
+            danger:"🗑️",
+            warning:"⚠️",
+            question:"❓",
+            info:"ℹ️"
+        }[type] || "ℹ️";
+    }
+
+    function open(options={}){
+        return new Promise(resolve=>{
+            const overlay=ensure();
+            const title=overlay.querySelector("#ldmDialogTitle");
+            const message=overlay.querySelector("#ldmDialogMessage");
+            const icon=overlay.querySelector("#ldmDialogIcon");
+            const input=overlay.querySelector("#ldmDialogInput");
+            const actions=overlay.querySelector("#ldmDialogActions");
+            const cancel=overlay.querySelector("#ldmDialogCancel");
+            const ok=overlay.querySelector("#ldmDialogOk");
+
+            title.textContent=String(options.title||"Informasi");
+            message.textContent=String(options.message||"");
+            icon.textContent=iconFor(options.type||"info");
+
+            const mode=options.mode||"alert";
+            const needsInput=mode==="prompt";
+
+            input.style.display=needsInput?"block":"none";
+            input.value=needsInput?String(options.defaultValue||""):"";
+            input.placeholder=String(options.placeholder||"");
+
+            cancel.style.display=mode==="alert"?"none":"inline-flex";
+            actions.classList.toggle("single",mode==="alert");
+
+            ok.textContent=String(
+                options.okText
+                || (mode==="confirm"?"Lanjutkan":"OK")
+            );
+
+            cancel.textContent=String(options.cancelText||"Batal");
+
+            ok.classList.toggle(
+                "danger",
+                options.type==="danger"
+            );
+
+            function cleanup(result){
+                overlay.classList.remove("show");
+                ok.onclick=null;
+                cancel.onclick=null;
+                activeResolve=null;
+                resolve(result);
+            }
+
+            activeResolve=cleanup;
+
+            ok.onclick=()=>{
+                if(mode==="prompt"){
+                    cleanup(input.value);
+                }else{
+                    cleanup(true);
+                }
+            };
+
+            cancel.onclick=()=>{
+                cleanup(
+                    mode==="prompt"
+                        ? null
+                        : false
+                );
+            };
+
+            overlay.classList.add("show");
+
+            setTimeout(()=>{
+                if(needsInput){
+                    input.focus();
+                    input.select();
+                }else{
+                    ok.focus();
+                }
+            },20);
+        });
+    }
+
+    window.ldmDialog={
+        alert(title,message,type="info"){
+            return open({
+                mode:"alert",
+                title,
+                message,
+                type,
+                okText:"OK"
+            });
+        },
+
+        confirm(title,message,type="question",options={}){
+            return open({
+                mode:"confirm",
+                title,
+                message,
+                type,
+                okText:options.okText||"Lanjutkan",
+                cancelText:options.cancelText||"Batal"
+            });
+        },
+
+        prompt(title,message,defaultValue="",options={}){
+            return open({
+                mode:"prompt",
+                title,
+                message,
+                type:options.type||"question",
+                defaultValue,
+                placeholder:options.placeholder||"",
+                okText:options.okText||"Simpan",
+                cancelText:options.cancelText||"Batal"
+            });
+        }
+    };
+})();
+</script>
+
 </head>
 <body>
 
@@ -2100,18 +3122,22 @@ body.dark-mode
         <!-- Navigasi Sidebar / Bottombar -->
         <div class="nav-bar" id="navSidebar">
             <div class="nav-header-mobile">
-                <span>📌 Navigasi Menu</span>
+                <span>☰ Menu</span>
                 <button class="btn-close-menu" onclick="tutupMenuNavigasi()">✕</button>
             </div>
             <a href="dashboard.html" class="nav-item active" data-permission="dashboard.view"><span>📊</span> Dashboard</a>
             <a href="absensi.html" class="nav-item" data-permission="absensi.view"><span>📝</span> Absensi</a>
-            <a href="kasir.html" class="nav-item" data-permission="kasir.access" onclick="return verifikasiAksesKasir(event)"><span>💵</span> Kasir</a>
+            <a href="kasir.html" class="nav-item" data-permission="kasir.access" onclick="return verifikasiAksesKasir(event)"><span>💵</span> Kasir</a><a href="shift-management.html" class="nav-item" data-permission="shiftmanagement.view"><span>🕒</span> Shift Management</a><a href="retur.html" class="nav-item" data-permission="retur.view"><span>↩️</span> Retur</a>
             <a href="barang.html" class="nav-item" data-permission="barang.view"><span>📦</span> Barang<div class="nav-badge" id="navBadge">!</div></a>
+            <a href="supplier.html" class="nav-item" data-permission="supplier.view"><span>🏢</span> Supplier</a>
             <a href="Purchase-Order.html" class="nav-item" data-permission="purchaseorder.view"><span>🛒</span> Purchase Order <div class="nav-badge" id="pendingPOBadge" style="display:none;">0</div></a>
             <a href="goods.receipt.html" class="nav-item" data-permission="goodsreceipt.view"> <span>📥</span> Goods Receipt <div class="nav-badge" id="pendingGRBadge" style="display:none;">0</div></a>
-            <a href="stock-opname.html" class="nav-item" data-permission="stock-opname.view"><span>📋</span> Stock Opname</a>
+            <a href="kartu-stok.html" class="nav-item"><span>📒</span> Kartu Stok</a><a href="stock-opname.html" class="nav-item" data-permission="stockopname.view"><span>📋</span> Stock Opname</a>
             <a href="laporan.html" class="nav-item" data-permission="laporan.view"><span>📋</span> Laporan</a>
             <a href="shift-closing.html" class="nav-item" data-permission="closing.view"><span>🔒</span> Closing Shift</a>
+            <a href="eod.html" class="nav-item" data-permission="endofday.view"><span>🌙</span> End of Day</a>
+            <a href="pengeluaran.html" class="nav-item" data-permission="pengeluaran.view"><span>💸</span> Pengeluaran</a>
+            <a href="backup%20%26%20restore.html" class="nav-item" data-permission="backup.view"><span>💾</span> Backup & Restore</a>
         </div>
 
         <!-- Area Konten Utama -->
@@ -2604,6 +3630,16 @@ body.dark-mode
                                 <div class="quick-access-arrow">›</div>
                             </button>
 
+                            <button type="button" class="quick-access-item" data-permission="endofday.view" onclick="window.location.href='eod.html'">
+                                <div class="quick-access-item-icon">🌙</div><div class="quick-access-item-text"><strong>End of Day</strong><span>Rekap akhir hari</span></div><div class="quick-access-arrow">›</div>
+                            </button>
+                            <button type="button" class="quick-access-item" data-permission="pengeluaran.view" onclick="window.location.href='pengeluaran.html'">
+                                <div class="quick-access-item-icon">💸</div><div class="quick-access-item-text"><strong>Pengeluaran</strong><span>Catat biaya operasional toko</span></div><div class="quick-access-arrow">›</div>
+                            </button>
+                            <button type="button" class="quick-access-item" data-permission="backup.view" onclick="window.location.href='backup%20%26%20restore.html'">
+                                <div class="quick-access-item-icon">💾</div><div class="quick-access-item-text"><strong>Backup Data</strong><span>Simpan salinan data aplikasi</span></div><div class="quick-access-arrow">›</div>
+                            </button>
+
                         </div>
                     </div>
                 </div>
@@ -2957,12 +3993,9 @@ body.dark-mode
                         </div>
 
                         <div class="operasional-form" id="formOperasionalContainer">
-                            <h5>+ Biaya Operasional Hari Ini</h5>
-                            <div class="input-group">
-                                <input type="text" id="ketOperasional" placeholder="Keterangan (misal: Plastik)">
-                                <input type="number" id="nominalOperasional" placeholder="Rp Nominal">
-                                <button type="button" onclick="tambahOperasional()">Simpan</button>
-                            </div>
+                            <h5>💸 Pengeluaran Toko</h5>
+                            <div style="font-size:.68rem;color:#64748b;line-height:1.5;margin-bottom:8px;">Pencatatan biaya dipusatkan di halaman Pengeluaran agar kategori, metode pembayaran, dan mutasi kas dapat tercatat rapi.</div>
+                            <button type="button" onclick="window.location.href='pengeluaran.html'" style="width:100%;background:#0d2240;color:#ffc107;border:1px solid #ffc107;padding:8px 12px;border-radius:7px;font-weight:700;cursor:pointer;">Buka Pengeluaran</button>
                         </div>
                     </div>
                 </div>
@@ -3615,8 +4648,13 @@ function logout() {
                 const sudahAbsen = userTodayLogs.some(a => a.jenis === "Masuk" || a.jenis === "Hadir");
 
                 if (!sudahAbsen) {
-                    alert("Kamu belum melakukan Absensi masuk hari ini, segera absen terlebih dahulu!");
-                    window.location.href = "absensi.html";
+                    ldmDialog.alert(
+                        "Absensi Belum Dilakukan",
+                        "Kamu belum melakukan Absensi masuk hari ini. Silakan melakukan absensi terlebih dahulu.",
+                        "warning"
+                    ).then(
+                        () => window.location.href = "absensi.html"
+                    );
                 }
             }
 
@@ -9424,6 +10462,9 @@ const ROLE_PERMISSIONS = {
     "barang.view",
     "barang.add",
     "barang.edit",
+
+    "supplier.view",
+    "supplier.manage",
     "barang.delete",
     "barang.price",
 
@@ -9432,6 +10473,7 @@ const ROLE_PERMISSIONS = {
     "laporan.view",
     "laporan.delete",
 
+    "kartustok.view",
     "stockopname.view",
     "stockopname.create",
     "stockopname.approve",
@@ -9448,12 +10490,25 @@ const ROLE_PERMISSIONS = {
 
     "closing.view",
     "closing.approve",
+    "endofday.view",
+    "pengeluaran.view",
+    "pengeluaran.create",
+    "pengeluaran.delete",
+    "backup.view",
+    "backup.restore",
 
     "akun.view",
     "akun.manage",
 
-    "settings.view"
-],
+    "settings.view",
+
+    "shiftmanagement.view",
+    "shiftmanagement.start",
+    "shiftmanagement.manage",
+    "retur.view",
+    "retur.create",
+    "retur.approve"
+    ],
 
 
     admin: [
@@ -9464,10 +10519,14 @@ const ROLE_PERMISSIONS = {
     "barang.add",
     "barang.edit",
 
+    "supplier.view",
+    "supplier.manage",
+
     "kasir.access",
 
     "laporan.view",
 
+    "kartustok.view",
     "stockopname.view",
     "stockopname.create",
 
@@ -9476,27 +10535,39 @@ const ROLE_PERMISSIONS = {
 
     "absensi.view",
 
-    "closing.view"
-],
+    "closing.view",
+    "endofday.view",
+    "pengeluaran.view",
+    "pengeluaran.create",
+    "backup.view",
+
+    "shiftmanagement.view",
+    "shiftmanagement.start",
+    "shiftmanagement.manage",
+    "retur.view",
+    "retur.create"
+    ],
 
 
     kasir: [
     "dashboard.view",
     "dashboard.kasir",
 
-    "barang.view",
-
     "kasir.access",
 
     "laporan.view",
 
+    "kartustok.view",
     "stockopname.view",
     "stockopname.create",
 
     "absensi.view",
 
-    "closing.view"
-]
+    "shiftmanagement.view",
+    "shiftmanagement.start",
+    "retur.view",
+    "retur.create"
+    ]
 
 };
 
@@ -9605,5 +10676,631 @@ window.addEventListener(
     }
 );
     </script>
+
+<script id="ldmCompactNavigationScript">
+(function(){
+    const ACCESS={
+        "dashboard.html":["owner","admin","kasir"],
+        "absensi.html":["owner","admin","kasir"],
+        "kasir.html":["owner","admin","kasir"],
+        "shift-management.html":["owner","admin","kasir"],
+        "retur.html":["owner","admin","kasir"],
+        "barang.html":["owner","admin"],
+        "supplier.html":["owner","admin"],
+        "Purchase-Order.html":["owner","admin"],
+        "goods.receipt.html":["owner","admin"],
+        "kartu-stok.html":["owner","admin","kasir"],
+        "stock-opname.html":["owner","admin","kasir"],
+        "laporan.html":["owner","admin","kasir"],
+        "shift-closing.html":["owner","admin"],
+        "eod.html":["owner","admin"],
+        "pengeluaran.html":["owner","admin"],
+        "backup%20%26%20restore.html":["owner","admin"],
+        "backup & restore.html":["owner","admin"]
+    };
+
+    function baseName(value){
+        let href=String(value||"").split("#")[0].split("?")[0];
+        try{href=decodeURIComponent(href)}catch(e){}
+        href=href.replace(/^\.\//,"");
+        return href.split("/").pop()||href;
+    }
+
+    function getRole(){
+        return String(
+            localStorage.getItem("userRole")
+            || localStorage.getItem("role")
+            || ""
+        ).trim().toLowerCase();
+    }
+
+    function applyCompactNav(){
+        const role=getRole();
+        document.documentElement.setAttribute("data-ldm-role",role);
+
+        document.querySelectorAll(".nav-bar a.nav-item[href]").forEach(link=>{
+            const allowed=ACCESS[baseName(link.getAttribute("href"))];
+            if(!allowed)return;
+
+            if(role && !allowed.includes(role)){
+                link.style.setProperty("display","none","important");
+            }else if(role){
+                link.style.removeProperty("display");
+            }
+        });
+    }
+
+    if(document.readyState==="loading"){
+        document.addEventListener(
+            "DOMContentLoaded",
+            applyCompactNav,
+            {once:true}
+        );
+    }else{
+        applyCompactNav();
+    }
+
+    window.addEventListener(
+        "load",
+        ()=>setTimeout(applyCompactNav,0),
+        {once:true}
+    );
+})();
+</script>
+
+
+<script id="ldmMegaMenuResponsiveScript">
+(function(){
+    const ROUTES=[
+        {page:"dashboard.html", icon:"📊", label:"Dashboard", group:"Utama", roles:["owner","admin","kasir"], quick:true},
+        {page:"absensi.html", icon:"📝", label:"Absensi", group:"Utama", roles:["owner","admin","kasir"]},
+        {page:"kasir.html", icon:"💵", label:"Kasir", group:"Utama", roles:["owner","admin","kasir"], quick:true},
+        {page:"shift-management.html", icon:"🕒", label:"Shift Management", group:"Utama", roles:["owner","admin","kasir"]},
+        {page:"retur.html", icon:"↩️", label:"Retur", group:"Keuangan & Laporan", roles:["owner","admin","kasir"]},
+
+        {page:"barang.html", icon:"📦", label:"Barang", group:"Inventori", roles:["owner","admin"], badge:"navBadge"},
+        {page:"kartu-stok.html", icon:"📒", label:"Kartu Stok", group:"Inventori", roles:["owner","admin","kasir"]},
+        {page:"stock-opname.html", icon:"📋", label:"Stock Opname", group:"Inventori", roles:["owner","admin","kasir"]},
+
+        {page:"supplier.html", icon:"🏢", label:"Supplier", group:"Supplier & Pembelian", roles:["owner","admin"]},
+        {page:"Purchase-Order.html", icon:"🛒", label:"Purchase Order", group:"Supplier & Pembelian", roles:["owner","admin"], badge:"pendingPOBadge"},
+        {page:"goods.receipt.html", icon:"📥", label:"Goods Receipt", group:"Supplier & Pembelian", roles:["owner","admin"], badge:"pendingGRBadge"},
+
+        {page:"laporan.html", icon:"📑", label:"Laporan", group:"Keuangan & Laporan", roles:["owner","admin","kasir"], quick:true},
+        {page:"pengeluaran.html", icon:"💸", label:"Pengeluaran", group:"Keuangan & Laporan", roles:["owner","admin"]},
+
+        {page:"shift-closing.html", icon:"🔒", label:"Closing Shift", group:"Closing & Data", roles:["owner","admin"]},
+        {page:"eod.html", icon:"🌙", label:"End of Day", group:"Closing & Data", roles:["owner","admin"]},
+        {page:"backup%20%26%20restore.html", icon:"💾", label:"Backup & Restore", group:"Closing & Data", roles:["owner","admin"]}
+    ];
+
+    const GROUP_META={
+        "Utama":"⚡",
+        "Inventori":"📦",
+        "Supplier & Pembelian":"🏢",
+        "Keuangan & Laporan":"📑",
+        "Closing & Data":"🔐"
+    };
+
+    function getSession(){
+        try{
+            if(typeof window.getSecuritySession==="function"){
+                const session=window.getSecuritySession();
+                if(session)return session;
+            }
+        }catch(e){}
+
+        return {
+            username:
+                localStorage.getItem("activeUsername")
+                || localStorage.getItem("loggedInUser")
+                || localStorage.getItem("username")
+                || "",
+            role:
+                localStorage.getItem("userRole")
+                || localStorage.getItem("role")
+                || ""
+        };
+    }
+
+    function normalizeRole(value){
+        return String(value||"").trim().toLowerCase();
+    }
+
+    function currentPage(){
+        let path=location.pathname.split("/").pop()||"dashboard.html";
+        try{path=decodeURIComponent(path)}catch(e){}
+        if(!path)path="dashboard.html";
+        return path;
+    }
+
+    function esc(value){
+        return String(value??"")
+            .replace(/&/g,"&amp;")
+            .replace(/</g,"&lt;")
+            .replace(/>/g,"&gt;")
+            .replace(/"/g,"&quot;")
+            .replace(/'/g,"&#039;");
+    }
+
+    function routeHref(page){
+        return page;
+    }
+
+    function routeAllowed(route,role){
+        return route.roles.includes(role);
+    }
+
+    function kasirOnClick(route){
+        if(route.page!=="kasir.html")return "";
+        return ` onclick="return window.verifikasiAksesKasir ? window.verifikasiAksesKasir(event) : true"`;
+    }
+
+    function linkHTML(route,current,klass="ldm-mega-link"){
+        const active=current===decodeURIComponent(route.page) || current===route.page;
+        return `
+            <a
+                href="${routeHref(route.page)}"
+                class="${klass}${active?" active":""}"
+                data-mega-route="${esc(route.page)}"
+                ${kasirOnClick(route)}
+            >
+                <span class="ldm-mega-icon">${route.icon}</span>
+                <span>${esc(route.label)}</span>
+                ${
+                    route.badge
+                        ? `<span class="ldm-mega-badge" data-source-badge="${esc(route.badge)}"></span>`
+                        : ""
+                }
+            </a>
+        `;
+    }
+
+    function buildMegaMenu(){
+        if(document.getElementById("ldmMegaNavShell"))return;
+
+        const app=document.querySelector(".app-layout");
+        const main=document.querySelector(".main-content");
+        if(!app || !main)return;
+
+        const session=getSession();
+        const role=normalizeRole(session?.role);
+
+        if(!role)return;
+
+        const visible=ROUTES.filter(route=>routeAllowed(route,role));
+        const current=currentPage();
+
+        const grouped={};
+        visible.forEach(route=>{
+            if(!grouped[route.group])grouped[route.group]=[];
+            grouped[route.group].push(route);
+        });
+
+        const groupsHTML=Object.entries(grouped)
+            .filter(([,routes])=>routes.length)
+            .map(([name,routes])=>`
+                <section class="ldm-mega-group">
+                    <div class="ldm-mega-group-title">
+                        <span>${GROUP_META[name]||"•"}</span>
+                        <span>${esc(name)}</span>
+                    </div>
+                    <div class="ldm-mega-links">
+                        ${routes.map(route=>linkHTML(route,current)).join("")}
+                    </div>
+                </section>
+            `)
+            .join("");
+
+        const quickHTML=visible
+            .filter(route=>route.quick)
+            .map(route=>{
+                const active=current===decodeURIComponent(route.page) || current===route.page;
+                return `
+                    <a
+                        href="${routeHref(route.page)}"
+                        class="${active?"active":""}"
+                        ${kasirOnClick(route)}
+                    >
+                        <span>${route.icon}</span>
+                        <span>${esc(route.label)}</span>
+                    </a>
+                `;
+            })
+            .join("");
+
+        const shell=document.createElement("div");
+        shell.className="ldm-mega-nav-shell";
+        shell.id="ldmMegaNavShell";
+
+        shell.innerHTML=`
+            <nav class="ldm-mega-nav" aria-label="Navigasi Mega Menu">
+                <button
+                    type="button"
+                    class="ldm-mega-trigger"
+                    id="ldmMegaTrigger"
+                    aria-haspopup="true"
+                    aria-expanded="false"
+                >
+                    <span>☷</span>
+                    <span>Mega Menu</span>
+                    <span class="ldm-mega-trigger-arrow">▼</span>
+                </button>
+
+                <div class="ldm-mega-quick">
+                    ${quickHTML}
+                </div>
+
+                <div class="ldm-mega-session">
+                    <span class="ldm-mega-role">
+                        👤 ${esc(role)}
+                    </span>
+                </div>
+
+                <div class="ldm-mega-panel" id="ldmMegaPanel">
+                    <div class="ldm-mega-panel-top">
+                        <div>
+                            <strong>Navigasi LocDailyMar</strong>
+                            <p>Semua menu dikelompokkan agar akses desktop lebih cepat dan tidak memenuhi sisi layar.</p>
+                        </div>
+                        <button type="button" class="ldm-mega-panel-close" id="ldmMegaClose">
+                            ✕ Tutup
+                        </button>
+                    </div>
+
+                    <div class="ldm-mega-grid">
+                        ${groupsHTML}
+                    </div>
+                </div>
+            </nav>
+        `;
+
+        app.insertBefore(shell,main);
+
+        const trigger=shell.querySelector("#ldmMegaTrigger");
+        const close=shell.querySelector("#ldmMegaClose");
+
+        function setOpen(open){
+            shell.classList.toggle("open",Boolean(open));
+            trigger?.setAttribute("aria-expanded",open?"true":"false");
+        }
+
+        trigger?.addEventListener("click",event=>{
+            event.stopPropagation();
+            setOpen(!shell.classList.contains("open"));
+        });
+
+        close?.addEventListener("click",()=>{
+            setOpen(false);
+            trigger?.focus();
+        });
+
+        /*
+         * Desktop tetap nyaman untuk mouse: hover membuka Mega Menu.
+         * Click tetap tersedia untuk trackpad/touch desktop.
+         */
+        let hoverTimer=null;
+
+        shell.addEventListener("mouseenter",()=>{
+            if(window.matchMedia("(min-width:900px)").matches){
+                clearTimeout(hoverTimer);
+                setOpen(true);
+            }
+        });
+
+        shell.addEventListener("mouseleave",()=>{
+            if(window.matchMedia("(min-width:900px)").matches){
+                clearTimeout(hoverTimer);
+                hoverTimer=setTimeout(()=>setOpen(false),180);
+            }
+        });
+
+        document.addEventListener("click",event=>{
+            if(!shell.contains(event.target)){
+                setOpen(false);
+            }
+        });
+
+        document.addEventListener("keydown",event=>{
+            if(event.key==="Escape"){
+                setOpen(false);
+            }
+        });
+
+        syncBadges();
+
+        /*
+         * Badge menu lama (stok/PO/GR) tetap menjadi sumber.
+         * MutationObserver membuat badge Mega Menu mengikuti perubahan.
+         */
+        ["navBadge","pendingPOBadge","pendingGRBadge"].forEach(id=>{
+            const source=document.getElementById(id);
+            if(!source)return;
+
+            const observer=new MutationObserver(syncBadges);
+            observer.observe(source,{
+                attributes:true,
+                childList:true,
+                subtree:true,
+                characterData:true,
+                attributeFilter:["style","class"]
+            });
+        });
+    }
+
+    function syncBadges(){
+        document.querySelectorAll("[data-source-badge]").forEach(target=>{
+            const source=document.getElementById(target.dataset.sourceBadge);
+            if(!source){
+                target.style.display="none";
+                return;
+            }
+
+            const text=String(source.textContent||"").trim();
+            const computed=getComputedStyle(source);
+            const visible=
+                computed.display!=="none"
+                && computed.visibility!=="hidden"
+                && text
+                && text!=="0";
+
+            if(visible){
+                target.textContent=text;
+                target.style.display="inline-flex";
+            }else{
+                target.style.display="none";
+            }
+        });
+    }
+
+    if(document.readyState==="loading"){
+        document.addEventListener(
+            "DOMContentLoaded",
+            ()=>{
+                buildMegaMenu();
+                setTimeout(syncBadges,250);
+                setTimeout(syncBadges,900);
+            },
+            {once:true}
+        );
+    }else{
+        buildMegaMenu();
+        setTimeout(syncBadges,250);
+        setTimeout(syncBadges,900);
+    }
+})();
+</script>
+
+
+<script id="ldmEodMenuAvailabilityScript">
+(function(){
+    function readArray(key){
+        try{
+            const value=JSON.parse(localStorage.getItem(key)||"[]");
+            return Array.isArray(value)?value:[];
+        }catch(e){
+            return [];
+        }
+    }
+
+    function witaDate(value){
+        const source=value instanceof Date?value:new Date(value??Date.now());
+        const time=isNaN(source)?Date.now():source.getTime();
+        const d=new Date(time+(8*60*60*1000));
+
+        return (
+            d.getUTCFullYear()+"-"+
+            String(d.getUTCMonth()+1).padStart(2,"0")+"-"+
+            String(d.getUTCDate()).padStart(2,"0")
+        );
+    }
+
+    function recordDate(item){
+        if(!item)return "";
+
+        const raw=
+            item.waktu_teks
+            || item.tanggal
+            || item.tgl
+            || item.date
+            || item.waktu
+            || item.created_at
+            || item.timestamp
+            || "";
+
+        if(
+            typeof raw==="string"
+            &&
+            /^\d{4}-\d{2}-\d{2}/.test(raw)
+        ){
+            return raw.slice(0,10);
+        }
+
+        const d=new Date(raw);
+        return isNaN(d)?"":witaDate(d);
+    }
+
+    function cashierName(item){
+        return String(
+            item?.kasir
+            || item?.user
+            || item?.username
+            || item?.admin
+            || ""
+        ).trim().toLowerCase();
+    }
+
+    function shiftName(value){
+        return String(value||"").trim().toLowerCase();
+    }
+
+    function calculateReadiness(){
+        const today=witaDate(new Date());
+
+        const laporan=readArray("laporan");
+
+        const transactions=(
+            laporan.length
+                ? laporan
+                : readArray("dataLaporan")
+        ).filter(item=>recordDate(item)===today);
+
+        const activeAccounts=new Set(
+            transactions
+                .map(cashierName)
+                .filter(Boolean)
+        );
+
+        if(activeAccounts.size===0){
+            return {
+                ready:false,
+                activeAccounts:[],
+                pendingAccounts:[],
+                hasShift1:false,
+                hasShift2:false
+            };
+        }
+
+        const closingToday=readArray("shiftClosingLog")
+            .filter(
+                item=>
+                    String(item?.tanggal||"").slice(0,10)===today
+            );
+
+        const closedAccounts=new Set(
+            closingToday
+                .map(
+                    item=>
+                        String(item?.kasir||"")
+                            .trim()
+                            .toLowerCase()
+                )
+                .filter(Boolean)
+        );
+
+        const pendingAccounts=
+            [...activeAccounts]
+                .filter(account=>!closedAccounts.has(account));
+
+        const hasShift1=
+            closingToday.some(
+                item=>shiftName(item?.shift)==="shift 1"
+            );
+
+        const hasShift2=
+            closingToday.some(
+                item=>shiftName(item?.shift)==="shift 2"
+            );
+
+        return {
+            ready:
+                pendingAccounts.length===0
+                && hasShift1
+                && hasShift2
+                && (function(){
+                    const sessionsToday=readArray("shiftSessions").filter(s=>String(s.tanggal||"")===today&&String(s.status||"").toUpperCase()!=="CANCELLED");
+                    const txShiftIds=[...new Set(transactions.map(t=>String(t.shiftId||"")).filter(Boolean))];
+                    const closingShiftIds=new Set(closingToday.map(l=>String(l.shiftId||"")).filter(Boolean));
+                    const byId=new Map(sessionsToday.map(s=>[String(s.id),s]));
+                    const exact=txShiftIds.every(id=>String(byId.get(id)?.status||"").toUpperCase()==="CLOSED"&&closingShiftIds.has(id));
+                    const noOpen=sessionsToday.every(s=>!["ACTIVE","CLOSING"].includes(String(s.status||"").toUpperCase()));
+                    return exact&&noOpen;
+                })(),
+            activeAccounts:[...activeAccounts],
+            pendingAccounts,
+            hasShift1,
+            hasShift2
+        };
+    }
+
+    let lastState=null;
+
+    function sync(){
+        const result=calculateReadiness();
+        const next=result.ready?"true":"false";
+
+        document.documentElement.setAttribute(
+            "data-ldm-eod-ready",
+            next
+        );
+
+        /*
+         * Beri title diagnostik pada link bila link sedang tersembunyi.
+         * Tidak mengubah akses halaman langsung, hanya visibilitas menu.
+         */
+        document.querySelectorAll('a[href="eod.html"]').forEach(link=>{
+            if(result.ready){
+                link.removeAttribute("data-eod-waiting");
+                link.title="End of Day siap karena seluruh Closing Shift wajib sudah lengkap.";
+            }else{
+                link.setAttribute("data-eod-waiting","true");
+                link.title="End of Day akan muncul setelah semua akun transaksi Closing Shift dan Shift 1 + Shift 2 tersedia.";
+            }
+        });
+
+        if(lastState!==next){
+            lastState=next;
+            window.dispatchEvent(
+                new CustomEvent(
+                    "ldm-eod-menu-readiness",
+                    {detail:result}
+                )
+            );
+        }
+
+        return result;
+    }
+
+    window.LDMEodMenuAvailability={
+        check:sync,
+        calculate:calculateReadiness
+    };
+
+    if(document.readyState==="loading"){
+        document.addEventListener(
+            "DOMContentLoaded",
+            sync,
+            {once:true}
+        );
+    }else{
+        sync();
+    }
+
+    /*
+     * storage event berlaku untuk tab lain.
+     */
+    window.addEventListener("storage",event=>{
+        if(
+            [
+                "laporan",
+                "dataLaporan",
+                "shiftClosingLog",
+                "shiftSessions",
+                "dataRetur"
+            ].includes(event.key)
+        ){
+            sync();
+        }
+    });
+
+    window.addEventListener("focus",sync);
+
+    document.addEventListener("visibilitychange",()=>{
+        if(!document.hidden)sync();
+    });
+
+    /*
+     * storage event tidak ditembakkan ke halaman yang melakukan
+     * setItem sendiri. Poll ringan ini membuat menu muncul segera
+     * setelah Closing Shift disimpan di halaman yang sama.
+     */
+    setInterval(()=>{
+        if(!document.hidden){
+            sync();
+        }
+    },2000);
+})();
+</script>
+
 </body>
 </html>
