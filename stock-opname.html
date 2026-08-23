@@ -1665,7 +1665,7 @@
             </div>
             <a href="dashboard.html" class="nav-item"><span>📊</span> Dashboard</a>
             <a href="absensi.html" class="nav-item"><span>📝</span> Absensi</a>
-            <a href="kasir.html" class="nav-item" onclick="return verifikasiAksesKasir(event)"><span>💵</span> Kasir</a><a href="shift-management.html" class="nav-item"><span>🕒</span> Shift Management</a><a href="retur.html" class="nav-item"><span>↩️</span> Retur</a>
+            <a href="kasir.html" class="nav-item" onclick="return verifikasiAksesKasir(event)"><span>💵</span> Kasir</a><a href="retur.html" class="nav-item"><span>↩️</span> Retur</a>
             <a href="barang.html" class="nav-item"><span>📦</span> Barang<div class="nav-badge" id="navBadge">!</div></a><a href="supplier.html" class="nav-item" data-role-access="owner,admin"><span>🏢</span> Supplier</a>
             <a href="Purchase-Order.html" class="nav-item" data-role-access="owner,admin"><span>🛒</span> Purchase Order</a>
             <a href="goods.receipt.html" class="nav-item" data-role-access="owner,admin"><span>📥</span> Goods Receipt</a>
@@ -4162,7 +4162,6 @@ document.addEventListener(
         "dashboard.html":["owner","admin","kasir"],
         "absensi.html":["owner","admin","kasir"],
         "kasir.html":["owner","admin","kasir"],
-        "shift-management.html":["owner","admin","kasir"],
         "retur.html":["owner","admin","kasir"],
         "barang.html":["owner","admin"],
         "supplier.html":["owner","admin"],
@@ -4234,7 +4233,6 @@ document.addEventListener(
         {page:"dashboard.html", icon:"📊", label:"Dashboard", group:"Utama", roles:["owner","admin","kasir"], quick:true},
         {page:"absensi.html", icon:"📝", label:"Absensi", group:"Utama", roles:["owner","admin","kasir"]},
         {page:"kasir.html", icon:"💵", label:"Kasir", group:"Utama", roles:["owner","admin","kasir"], quick:true},
-        {page:"shift-management.html", icon:"🕒", label:"Shift Management", group:"Utama", roles:["owner","admin","kasir"]},
         {page:"retur.html", icon:"↩️", label:"Retur", group:"Keuangan & Laporan", roles:["owner","admin","kasir"]},
 
         {page:"barang.html", icon:"📦", label:"Barang", group:"Inventori", roles:["owner","admin"], badge:"navBadge"},
