@@ -13,9 +13,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="icon.png">
 
     <!-- Icon untuk Apple (iOS) -->
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-
-    <script>
+<script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('./sw.js')
@@ -743,8 +741,25 @@
         const raw =
             localStorage.getItem("daftarAkun");
 
+        /*
+         * Jika database akun belum pernah dibuat pada browser ini,
+         * buat akun default langsung dari halaman Login.
+         * Sebelumnya akun default hanya dibuat dari absensi.html,
+         * sehingga browser baru bisa selalu gagal login.
+         */
         if (!raw) {
-            return [];
+            const defaultAccounts = [
+                { id: 1, username: "owner", password: "123", role: "owner" },
+                { id: 2, username: "admin", password: "123", role: "admin" },
+                { id: 3, username: "cornermar", password: "CM123456", role: "owner" }
+            ];
+
+            localStorage.setItem(
+                "daftarAkun",
+                JSON.stringify(defaultAccounts)
+            );
+
+            return defaultAccounts;
         }
 
         const data =
@@ -988,11 +1003,13 @@ async function migrateOldAccounts() {
          * password plaintext
          */
 
-        if (
-            account.password &&
-            !account.passwordHash
-        ) {
+        if (account.password) {
 
+            /*
+             * Jika versi lama menyimpan password plaintext sekaligus
+             * passwordHash yang sudah usang, anggap password plaintext
+             * sebagai nilai terbaru, lalu bangun ulang hash.
+             */
             account.passwordHash =
                 await hashPassword(
                     account.password
