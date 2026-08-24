@@ -3146,8 +3146,8 @@ body.dark-mode
                     </div>
                 </div>
                 <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-                    <!-- Tombol Edit Akun (Owner & Admin) -->
-                    <button class="btn-header-action" id="btnEditAkunOwner" data-permission="akun.manage" onclick="bukaModalEditAkun()" style="display: none; background: #16a34a;">👤 Edit Akun</button>
+                    <!-- Tombol Edit Akun (Hanya muncul jika ROLE OWNER) -->
+                    <button class="btn-header-action" id="btnEditAkunOwner" onclick="bukaModalEditAkun()" style="display: none; background: #16a34a;">👤 Edit Akun</button>
                     <button class="btn-header-action" id="btnEditHeader" onclick="bukaModalHeader()">🎨 Tema</button>
                     <button class="btn-header-action btn-header-logout" onclick="konfirmasiLogout()">🚪 Log out</button>
                 </div>
@@ -4258,7 +4258,7 @@ body.dark-mode
 
         </div>
     </div>
-    <!-- MODAL EDIT AKUN (OWNER & ADMIN) -->
+    <!-- MODAL EDIT AKUN (KHUSUS ROLE OWNER) -->
     <div class="modal" id="modalEditAkun">
         <div class="modal-content" style="max-width: 580px;">
             <div class="modal-header-title">
@@ -5204,19 +5204,11 @@ function escapeHtml(value) {
 }
 
         function bukaModalEditAkun() {
-            const role = String(
-                localStorage.getItem("userRole") || ""
-            ).trim().toLowerCase();
-
-            if (role !== "owner" && role !== "admin") {
-                tampilkanAlertCustom(
-                    "Akses Ditolak",
-                    "Hanya pengguna dengan ROLE OWNER atau ADMIN yang dapat mengakses menu Edit Akun!",
-                    "danger"
-                );
+            const role = localStorage.getItem("userRole") || "admin";
+            if (role !== "owner") {
+                tampilkanAlertCustom("Akses Ditolak", "Hanya pengguna dengan ROLE OWNER yang dapat mengakses menu Edit Akun!", "danger");
                 return;
             }
-
             renderListAkunModal();
             document.getElementById("modalEditAkun").style.display = "flex";
         }
@@ -6930,14 +6922,6 @@ function renderOwnerPendingNotifications(
 
             viewAdmin.style.display =
                 "block";
-
-        }
-
-
-        if (btnEditAkunOwner) {
-
-            btnEditAkunOwner.style.display =
-                "inline-flex";
 
         }
 
@@ -10547,8 +10531,7 @@ const ROLE_PERMISSIONS = {
     "pengeluaran.create",
     "backup.view",
 
-    "akun.view",
-    "akun.manage",
+
 
     "retur.view",
     "retur.create"
