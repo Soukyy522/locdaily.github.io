@@ -1087,14 +1087,7 @@
         const hasShift2=closingToday.some(
             item=>shiftName(item?.shift)==="shift 2"
         );
-
-        const sessionsToday=readArray("shiftSessions").filter(s=>String(s.tanggal||"")===today&&String(s.status||"").toUpperCase()!=="CANCELLED");
-        const txShiftIds=[...new Set(transaksi.map(t=>String(t.shiftId||"")).filter(Boolean))];
-        const closedShiftIds=new Set(closingToday.map(l=>String(l.shiftId||"")).filter(Boolean));
-        const sessionById=new Map(sessionsToday.map(s=>[String(s.id),s]));
-        const exactReady=txShiftIds.every(id=>String(sessionById.get(id)?.status||"").toUpperCase()==="CLOSED"&&closedShiftIds.has(id));
-        const noOpen=sessionsToday.every(s=>!["ACTIVE","CLOSING"].includes(String(s.status||"").toUpperCase()));
-        return allClosed && hasShift1 && hasShift2 && exactReady && noOpen;
+        return allClosed && hasShift1 && hasShift2;
     }
 
     try{
@@ -1526,126 +1519,7 @@
 </script>
 
 
-<style id="ldmKasirShiftIndicatorStyle">
-    .kasir-shift-indicator{
-        margin:10px 0 12px;
-        min-height:48px;
-        display:flex;
-        align-items:center;
-        justify-content:space-between;
-        gap:10px;
-        padding:9px 12px;
-        border:1px solid var(--border-color);
-        border-radius:11px;
-        background:var(--bg-secondary);
-        transition:.18s ease;
-    }
 
-    .kasir-shift-indicator.active{
-        border-color:rgba(22,163,74,.32);
-        background:rgba(22,163,74,.075);
-    }
-
-    .kasir-shift-indicator.inactive{
-        border-color:rgba(220,38,38,.28);
-        background:rgba(220,38,38,.055);
-    }
-
-    .kasir-shift-status-left{
-        min-width:0;
-        display:flex;
-        align-items:center;
-        gap:9px;
-    }
-
-    .kasir-shift-dot{
-        width:11px;
-        height:11px;
-        flex:0 0 11px;
-        border-radius:999px;
-        box-shadow:0 0 0 4px rgba(148,163,184,.10);
-    }
-
-    .kasir-shift-indicator.active .kasir-shift-dot{
-        background:#16a34a;
-        box-shadow:0 0 0 4px rgba(22,163,74,.13);
-    }
-
-    .kasir-shift-indicator.inactive .kasir-shift-dot{
-        background:#dc2626;
-        box-shadow:0 0 0 4px rgba(220,38,38,.11);
-    }
-
-    .kasir-shift-title{
-        color:var(--heading-color);
-        font-size:.72rem;
-        font-weight:850;
-        line-height:1.25;
-    }
-
-    .kasir-shift-sub{
-        margin-top:2px;
-        color:var(--label-color);
-        font-size:.61rem;
-        line-height:1.4;
-    }
-
-    .kasir-shift-code{
-        display:inline-flex;
-        align-items:center;
-        max-width:100%;
-        padding:5px 8px;
-        border-radius:8px;
-        background:rgba(22,163,74,.11);
-        color:#15803d;
-        font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
-        font-size:.63rem;
-        font-weight:850;
-        white-space:nowrap;
-    }
-
-    .kasir-shift-open{
-        flex:0 0 auto;
-        border:1px solid var(--border-color);
-        border-radius:8px;
-        background:var(--bg-primary);
-        color:var(--text-color);
-        padding:7px 9px;
-        text-decoration:none;
-        font-size:.62rem;
-        font-weight:800;
-    }
-
-    @media(max-width:650px){
-        .kasir-shift-indicator{
-            margin:8px 0 10px;
-            padding:9px 10px;
-            min-height:52px;
-        }
-
-        .kasir-shift-code{
-            font-size:.58rem;
-            max-width:66vw;
-            overflow:hidden;
-            text-overflow:ellipsis;
-        }
-
-        .kasir-shift-open{
-            min-width:42px;
-            min-height:42px;
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            padding:7px;
-            font-size:0;
-        }
-
-        .kasir-shift-open::before{
-            content:"🕒";
-            font-size:.95rem;
-        }
-    }
-</style>
 
 </head>
 <body>
@@ -1691,37 +1565,7 @@
                     <span class="shortcut-hint">F2/F4: Cari | F8: Bayar</span>
                 </div>
             </div>
-
-            <div
-                id="kasirShiftIndicator"
-                class="kasir-shift-indicator inactive"
-                aria-live="polite"
-            >
-                <div class="kasir-shift-status-left">
-                    <span class="kasir-shift-dot"></span>
-                    <div style="min-width:0">
-                        <div id="kasirShiftIndicatorTitle" class="kasir-shift-title">
-                            Shift Tidak Aktif
-                        </div>
-                        <div id="kasirShiftIndicatorSub" class="kasir-shift-sub">
-                            Memeriksa sesi shift...
-                        </div>
-                        <div id="kasirShiftIndicatorCodeWrap" style="display:none;margin-top:5px">
-                            <span id="kasirShiftIndicatorCode" class="kasir-shift-code"></span>
-                        </div>
-                    </div>
-                </div>
-
-                <a
-                    class="kasir-shift-open"
-                    href="absensi.html"
-                    title="Buka Absensi & Shift"
-                >
-                    Shift Management
-                </a>
-            </div>
-
-            <div class="kasir-grid">
+<div class="kasir-grid">
                 <div>
                     <div class="box-form">
                         <div class="row">
@@ -3469,17 +3313,8 @@ function tambahItem() {
         }
 
 
-        function getShiftSessionsKasir() {
-            try {
-                const data = JSON.parse(localStorage.getItem("shiftSessions") || "[]");
-                return Array.isArray(data) ? data : [];
-            } catch (e) {
-                return [];
-            }
-        }
-
-        function getActiveShiftSessionForKasir() {
-            const user = String(
+        function getAbsensiAktifKasir() {
+            const username = String(
                 localStorage.getItem("currentUser")
                 || localStorage.getItem("activeUsername")
                 || localStorage.getItem("loggedInUser")
@@ -3487,31 +3322,40 @@ function tambahItem() {
                 || ""
             ).trim().toLowerCase();
 
-            if (!user) return null;
+            if (!username) return null;
 
-            const now = new Date(Date.now() + 8 * 60 * 60 * 1000);
-            const today = `${now.getUTCFullYear()}-${String(now.getUTCMonth()+1).padStart(2,"0")}-${String(now.getUTCDate()).padStart(2,"0")}`;
+            const today =
+                typeof getTanggalWITA === "function"
+                    ? getTanggalWITA()
+                    : new Date().toISOString().slice(0,10);
 
-            return getShiftSessionsKasir().find(session =>
-                String(session.kasir || "").trim().toLowerCase() === user
-                && String(session.status || "").toUpperCase() === "ACTIVE"
-                && String(session.tanggal || "") === today
-            ) || null;
-        }
-
-        function pastikanShiftAktifUntukTransaksi() {
-            const session = getActiveShiftSessionForKasir();
-
-            if (!session) {
-                tampilkanAlertModal(
-                    "Shift Belum Aktif",
-                    "Transaksi tidak dapat diproses. Buka Absensi dan lakukan Absen Masuk / mulai Shift ACTIVE terlebih dahulu.",
-                    "🕒"
+            let logs = [];
+            try {
+                const parsed = JSON.parse(
+                    localStorage.getItem("dataAbsensi") || "[]"
                 );
-                return null;
-            }
+                logs = Array.isArray(parsed) ? parsed : [];
+            } catch (e) {}
 
-            return session;
+            const rows = logs
+                .filter(a =>
+                    String(a.username || "").trim().toLowerCase() === username
+                    && String(a.tanggal || "") === today
+                )
+                .sort((x,y) => Number(x.id || 0) - Number(y.id || 0));
+
+            const masuk = [...rows].reverse().find(
+                a => a.jenis === "Masuk" || a.jenis === "Hadir"
+            );
+
+            if (!masuk) return null;
+
+            const sudahKeluar = rows.some(
+                a => a.jenis === "Keluar"
+                    && Number(a.id || 0) > Number(masuk.id || 0)
+            );
+
+            return sudahKeluar ? null : masuk;
         }
 
         function simpanKeLaporan(metode, detailKombinasi = null) {
@@ -3565,9 +3409,9 @@ function tambahItem() {
                 tanggal: tglToday,
                 waktu_teks: waktuTeks,
                 kasir: kasirAktif,
-                shiftId: (getActiveShiftSessionForKasir() || {}).id || "",
-                shift: (getActiveShiftSessionForKasir() || {}).shift || "",
-                shiftStartedAt: (getActiveShiftSessionForKasir() || {}).startedAt || "",
+                shiftId: "",
+                shift: (getAbsensiAktifKasir() || {}).shift || "",
+                shiftStartedAt: "",
                 barang: namaBarangStr,
                 keranjang: JSON.parse(JSON.stringify(keranjang)),
                 subtotal: subtotalBelanja,
@@ -3611,8 +3455,6 @@ function tambahItem() {
         }
 
         function prosesBayar() {
-            if (!pastikanShiftAktifUntukTransaksi()) return;
-
             if (keranjang.length === 0) {
                 tampilkanAlertModal("Keranjang Kosong", "Belum ada barang di dalam keranjang belanja!", "⚠️");
                 return;
@@ -3634,8 +3476,6 @@ function tambahItem() {
         }
 
         function bukaPopupQris() {
-            if (!pastikanShiftAktifUntukTransaksi()) return;
-
             if (keranjang.length === 0) {
                 tampilkanAlertModal("Keranjang Kosong", "Belum ada barang di dalam keranjang belanja!", "⚠️");
                 return;
@@ -3669,11 +3509,6 @@ function tambahItem() {
         }
 
         function prosesBayarQris() {
-            if (!pastikanShiftAktifUntukTransaksi()) {
-                tutupPopupQris();
-                return;
-            }
-
             let sisaNonTunai = Math.max(0, totalAkhir - uang);
             let detailKombinasi = null;
 
@@ -5509,16 +5344,7 @@ document.addEventListener(
             ready:
                 pendingAccounts.length===0
                 && hasShift1
-                && hasShift2
-                && (function(){
-                    const sessionsToday=readArray("shiftSessions").filter(s=>String(s.tanggal||"")===today&&String(s.status||"").toUpperCase()!=="CANCELLED");
-                    const txShiftIds=[...new Set(transactions.map(t=>String(t.shiftId||"")).filter(Boolean))];
-                    const closingShiftIds=new Set(closingToday.map(l=>String(l.shiftId||"")).filter(Boolean));
-                    const byId=new Map(sessionsToday.map(s=>[String(s.id),s]));
-                    const exact=txShiftIds.every(id=>String(byId.get(id)?.status||"").toUpperCase()==="CLOSED"&&closingShiftIds.has(id));
-                    const noOpen=sessionsToday.every(s=>!["ACTIVE","CLOSING"].includes(String(s.status||"").toUpperCase()));
-                    return exact&&noOpen;
-                })(),
+                && hasShift2,
             activeAccounts:[...activeAccounts],
             pendingAccounts,
             hasShift1,
@@ -5588,7 +5414,6 @@ document.addEventListener(
                 "laporan",
                 "dataLaporan",
                 "shiftClosingLog",
-                "shiftSessions",
                 "dataRetur"
             ].includes(event.key)
         ){
@@ -5616,149 +5441,7 @@ document.addEventListener(
 </script>
 
 
-<script id="ldmKasirShiftIndicatorScript">
-(function(){
-    function getAccountName(){
-        return String(
-            localStorage.getItem("currentUser")
-            || localStorage.getItem("activeUsername")
-            || localStorage.getItem("loggedInUser")
-            || localStorage.getItem("username")
-            || "-"
-        ).trim();
-    }
 
-    function renderKasirShiftIndicator(){
-        const box=
-            document.getElementById(
-                "kasirShiftIndicator"
-            );
-
-        if(!box)return;
-
-        const title=
-            document.getElementById(
-                "kasirShiftIndicatorTitle"
-            );
-
-        const sub=
-            document.getElementById(
-                "kasirShiftIndicatorSub"
-            );
-
-        const codeWrap=
-            document.getElementById(
-                "kasirShiftIndicatorCodeWrap"
-            );
-
-        const code=
-            document.getElementById(
-                "kasirShiftIndicatorCode"
-            );
-
-        const account=getAccountName();
-
-        let session=null;
-
-        try{
-            if(
-                typeof getActiveShiftSessionForKasir
-                ===
-                "function"
-            ){
-                session=
-                    getActiveShiftSessionForKasir();
-            }
-        }catch(e){}
-
-        if(session){
-            box.classList.remove("inactive");
-            box.classList.add("active");
-
-            title.textContent=
-                "Shift Aktif";
-
-            sub.textContent=
-                `${account} • ${session.shift||"Shift"} • mulai ${session.mulai||"-"}`;
-
-            code.textContent=
-                String(session.id||"-");
-
-            codeWrap.style.display="block";
-        }else{
-            box.classList.remove("active");
-            box.classList.add("inactive");
-
-            title.textContent=
-                "Shift Tidak Aktif";
-
-            sub.textContent=
-                `${account} • belum memiliki sesi ACTIVE`;
-
-            code.textContent="";
-            codeWrap.style.display="none";
-        }
-    }
-
-    window.renderKasirShiftIndicator=
-        renderKasirShiftIndicator;
-
-    if(document.readyState==="loading"){
-        document.addEventListener(
-            "DOMContentLoaded",
-            ()=>{
-                setTimeout(
-                    renderKasirShiftIndicator,
-                    80
-                );
-            },
-            {once:true}
-        );
-    }else{
-        setTimeout(
-            renderKasirShiftIndicator,
-            80
-        );
-    }
-
-    window.addEventListener(
-        "storage",
-        event=>{
-            if(
-                [
-                    "shiftSessions",
-                    "activeShiftSessions"
-                ].includes(event.key)
-            ){
-                renderKasirShiftIndicator();
-            }
-        }
-    );
-
-    window.addEventListener(
-        "focus",
-        renderKasirShiftIndicator
-    );
-
-    document.addEventListener(
-        "visibilitychange",
-        ()=>{
-            if(!document.hidden){
-                renderKasirShiftIndicator();
-            }
-        }
-    );
-
-    setInterval(
-        ()=>{
-            if(!document.hidden){
-                renderKasirShiftIndicator();
-            }
-        },
-        2000
-    );
-})();
-</script>
 
 </body>
 </html>
