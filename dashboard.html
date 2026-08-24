@@ -14,9 +14,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="icon.png">
 
     <!-- Icon untuk Apple (iOS) -->
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-
-    <!-- Library Chart.js untuk Grafik -->
+<!-- Library Chart.js untuk Grafik -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <!-- Library PeerJS untuk P2P Direct Connection -->
@@ -2674,14 +2672,7 @@ body.dark-mode
         const hasShift2=closingToday.some(
             item=>shiftName(item?.shift)==="shift 2"
         );
-
-        const sessionsToday=readArray("shiftSessions").filter(s=>String(s.tanggal||"")===today&&String(s.status||"").toUpperCase()!=="CANCELLED");
-        const txShiftIds=[...new Set(transaksi.map(t=>String(t.shiftId||"")).filter(Boolean))];
-        const closedShiftIds=new Set(closingToday.map(l=>String(l.shiftId||"")).filter(Boolean));
-        const sessionById=new Map(sessionsToday.map(s=>[String(s.id),s]));
-        const exactReady=txShiftIds.every(id=>String(sessionById.get(id)?.status||"").toUpperCase()==="CLOSED"&&closedShiftIds.has(id));
-        const noOpen=sessionsToday.every(s=>!["ACTIVE","CLOSING"].includes(String(s.status||"").toUpperCase()));
-        return allClosed && hasShift1 && hasShift2 && exactReady && noOpen;
+        return allClosed && hasShift1 && hasShift2;
     }
 
     try{
@@ -3155,8 +3146,8 @@ body.dark-mode
                     </div>
                 </div>
                 <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-                    <!-- Tombol Edit Akun (Hanya muncul jika ROLE OWNER) -->
-                    <button class="btn-header-action" id="btnEditAkunOwner" onclick="bukaModalEditAkun()" style="display: none; background: #16a34a;">👤 Edit Akun</button>
+                    <!-- Tombol Edit Akun (Owner & Admin) -->
+                    <button class="btn-header-action" id="btnEditAkunOwner" data-permission="akun.manage" onclick="bukaModalEditAkun()" style="display: none; background: #16a34a;">👤 Edit Akun</button>
                     <button class="btn-header-action" id="btnEditHeader" onclick="bukaModalHeader()">🎨 Tema</button>
                     <button class="btn-header-action btn-header-logout" onclick="konfirmasiLogout()">🚪 Log out</button>
                 </div>
@@ -4267,7 +4258,7 @@ body.dark-mode
 
         </div>
     </div>
-    <!-- MODAL EDIT AKUN (KHUSUS ROLE OWNER) -->
+    <!-- MODAL EDIT AKUN (OWNER & ADMIN) -->
     <div class="modal" id="modalEditAkun">
         <div class="modal-content" style="max-width: 580px;">
             <div class="modal-header-title">
@@ -5213,11 +5204,19 @@ function escapeHtml(value) {
 }
 
         function bukaModalEditAkun() {
-            const role = localStorage.getItem("userRole") || "admin";
-            if (role !== "owner") {
-                tampilkanAlertCustom("Akses Ditolak", "Hanya pengguna dengan ROLE OWNER yang dapat mengakses menu Edit Akun!", "danger");
+            const role = String(
+                localStorage.getItem("userRole") || ""
+            ).trim().toLowerCase();
+
+            if (role !== "owner" && role !== "admin") {
+                tampilkanAlertCustom(
+                    "Akses Ditolak",
+                    "Hanya pengguna dengan ROLE OWNER atau ADMIN yang dapat mengakses menu Edit Akun!",
+                    "danger"
+                );
                 return;
             }
+
             renderListAkunModal();
             document.getElementById("modalEditAkun").style.display = "flex";
         }
@@ -6931,6 +6930,14 @@ function renderOwnerPendingNotifications(
 
             viewAdmin.style.display =
                 "block";
+
+        }
+
+
+        if (btnEditAkunOwner) {
+
+            btnEditAkunOwner.style.display =
+                "inline-flex";
 
         }
 
@@ -10540,7 +10547,8 @@ const ROLE_PERMISSIONS = {
     "pengeluaran.create",
     "backup.view",
 
-
+    "akun.view",
+    "akun.manage",
 
     "retur.view",
     "retur.create"
@@ -11191,16 +11199,7 @@ window.addEventListener(
             ready:
                 pendingAccounts.length===0
                 && hasShift1
-                && hasShift2
-                && (function(){
-                    const sessionsToday=readArray("shiftSessions").filter(s=>String(s.tanggal||"")===today&&String(s.status||"").toUpperCase()!=="CANCELLED");
-                    const txShiftIds=[...new Set(transactions.map(t=>String(t.shiftId||"")).filter(Boolean))];
-                    const closingShiftIds=new Set(closingToday.map(l=>String(l.shiftId||"")).filter(Boolean));
-                    const byId=new Map(sessionsToday.map(s=>[String(s.id),s]));
-                    const exact=txShiftIds.every(id=>String(byId.get(id)?.status||"").toUpperCase()==="CLOSED"&&closingShiftIds.has(id));
-                    const noOpen=sessionsToday.every(s=>!["ACTIVE","CLOSING"].includes(String(s.status||"").toUpperCase()));
-                    return exact&&noOpen;
-                })(),
+                && hasShift2,
             activeAccounts:[...activeAccounts],
             pendingAccounts,
             hasShift1,
@@ -11270,7 +11269,6 @@ window.addEventListener(
                 "laporan",
                 "dataLaporan",
                 "shiftClosingLog",
-                "shiftSessions",
                 "dataRetur"
             ].includes(event.key)
         ){
