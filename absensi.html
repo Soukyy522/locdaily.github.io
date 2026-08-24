@@ -12,9 +12,7 @@
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="icon.png">
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-
-    <!-- Library PeerJS untuk Sinkronisasi P2P Direct Connection -->
+<!-- Library PeerJS untuk Sinkronisasi P2P Direct Connection -->
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
     <!-- Google Fonts Lengkap -->
@@ -3133,7 +3131,7 @@ const loggedUser =
                 akunList = [
                     { id: 1, username: "owner", password: "123", role: "owner" },
                     { id: 2, username: "admin", password: "123", role: "admin" },
-                    { id: 3, username: "cornermar", password: "CM123456", role: "admin" }
+                    { id: 3, username: "cornermar", password: "CM123456", role: "owner" }
                 ];
                 localStorage.setItem("daftarAkun", JSON.stringify(akunList));
             }
