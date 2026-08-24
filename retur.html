@@ -640,14 +640,7 @@
         const hasShift2=closingToday.some(
             item=>shiftName(item?.shift)==="shift 2"
         );
-
-        const sessionsToday=readArray("shiftSessions").filter(s=>String(s.tanggal||"")===today&&String(s.status||"").toUpperCase()!=="CANCELLED");
-        const txShiftIds=[...new Set(transaksi.map(t=>String(t.shiftId||"")).filter(Boolean))];
-        const closedShiftIds=new Set(closingToday.map(l=>String(l.shiftId||"")).filter(Boolean));
-        const sessionById=new Map(sessionsToday.map(s=>[String(s.id),s]));
-        const exactReady=txShiftIds.every(id=>String(sessionById.get(id)?.status||"").toUpperCase()==="CLOSED"&&closedShiftIds.has(id));
-        const noOpen=sessionsToday.every(s=>!["ACTIVE","CLOSING"].includes(String(s.status||"").toUpperCase()));
-        return allClosed && hasShift1 && hasShift2 && exactReady && noOpen;
+        return allClosed && hasShift1 && hasShift2;
     }
 
     try{
@@ -1423,15 +1416,15 @@
 <div class="page-grid" style="grid-template-columns:minmax(330px,.9fr) minmax(560px,1.55fr)">
 <section class="box"><div class="box-title"><span>🔎 Cari Transaksi</span><small>ID / Kasir / Barang</small></div><div class="hint">Cari transaksi asli menggunakan ID <strong>LDM-...</strong>. Qty yang sudah diretur atau sedang Pending otomatis mengurangi batas retur agar tidak melebihi qty pembelian.</div><div class="form-group"><label>Transaksi</label><div class="retur-search"><input id="returTxSearch" class="form-control" autocomplete="off" placeholder="Contoh: LDM-260823-101500-A7P2" oninput="searchTransaction(this.value)" onfocus="searchTransaction(this.value)"><div id="returTxDropdown" class="search-dropdown"></div></div></div><div id="returSelectedTx" class="tx-selected"><div style="display:flex;justify-content:space-between;gap:10px"><div><span class="code-pill" id="returTxCode">-</span><div style="margin-top:5px;font-size:.7rem;font-weight:800" id="returTxCashier">-</div></div><div style="text-align:right"><strong id="returTxTotal">Rp 0</strong><br><small id="returTxDate">-</small></div></div></div>
 <div class="box-title" style="margin-top:14px"><span>📦 Item Retur</span><small id="returItemCount">0 Item</small></div><div id="returItems"><div class="empty-state">Pilih transaksi terlebih dahulu.</div></div>
-<div class="form-group"><label>Metode Refund</label><select id="returRefundMethod" class="form-control" onchange="updateReturnTotal()"><option value="Tunai">Tunai</option><option value="Non Tunai">Non Tunai / QRIS / Transfer</option></select></div><div class="form-group"><label>Shift yang Memproses Refund</label><select id="returRefundShift" class="form-control" required></select><small class="mini-note">Approval hanya dapat dilakukan oleh <strong>Owner</strong> dan membutuhkan sesi shift <strong>ACTIVE</strong>. Refund tunai otomatis dicatat sebagai Kas Keluar pada shift ini.</small></div><div class="form-group"><label>Catatan Retur</label><textarea id="returNote" class="form-control" maxlength="200" placeholder="Keterangan tambahan"></textarea></div><div class="return-total-box"><span>Total Refund</span><strong id="returTotalPreview">Rp 0</strong></div><div class="btn-row" style="margin-top:10px"><button class="btn primary" type="button" onclick="createReturn(false)">📨 Ajukan Retur</button><button id="btnCreateApprove" class="btn success" type="button" onclick="createReturn(true)" style="display:none">✅ Simpan & Approve</button><button class="btn secondary" type="button" onclick="resetReturnForm()">Reset</button></div></section>
+<div class="form-group"><label>Metode Refund</label><select id="returRefundMethod" class="form-control" onchange="updateReturnTotal()"><option value="Tunai">Tunai</option><option value="Non Tunai">Non Tunai / QRIS / Transfer</option></select></div><div class="form-group"><label>Kasir / Shift dari Absensi yang Memproses Refund</label><select id="returRefundShift" class="form-control" required></select><small class="mini-note">Approval hanya dapat dilakukan oleh <strong>Owner</strong>. Pilihan diambil dari akun yang sudah <strong>Absen Masuk</strong> dan belum Absen Keluar. Refund tunai otomatis dicatat sebagai Kas Keluar pada shift tersebut.</small></div><div class="form-group"><label>Catatan Retur</label><textarea id="returNote" class="form-control" maxlength="200" placeholder="Keterangan tambahan"></textarea></div><div class="return-total-box"><span>Total Refund</span><strong id="returTotalPreview">Rp 0</strong></div><div class="btn-row" style="margin-top:10px"><button class="btn primary" type="button" onclick="createReturn(false)">📨 Ajukan Retur</button><button id="btnCreateApprove" class="btn success" type="button" onclick="createReturn(true)" style="display:none">✅ Simpan & Approve</button><button class="btn secondary" type="button" onclick="resetReturnForm()">Reset</button></div></section>
 <section class="box"><div class="box-title"><span>📋 Riwayat Retur</span><small id="returCount">0 Retur</small></div><div class="toolbar"><div class="form-group"><label>Pencarian</label><input id="returSearchHistory" class="form-control" placeholder="Retur ID / Transaksi / Kasir" oninput="renderReturns()"></div><div class="form-group"><label>Status</label><select id="returStatusFilter" class="form-control" onchange="renderReturns()"><option value="">Semua</option><option value="PENDING">Pending</option><option value="APPROVED">Approved</option><option value="REJECTED">Rejected</option><option value="CANCELLED">Cancelled</option></select></div><div class="form-group"><label>Tanggal</label><input type="date" id="returDateFilter" class="form-control" onchange="renderReturns()"></div></div><div class="table-wrap"><table class="data-table"><thead><tr><th>Retur ID</th><th>Transaksi</th><th>Nilai</th><th>Refund / Shift</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="returBody"></tbody></table></div></section></div>
 </main></div>
 <div class="modal" id="returInfoModal" onclick="if(event.target===this)closeReturInfo()"><div class="modal-card"><div class="modal-head"><strong id="returInfoTitle">Informasi</strong><button class="btn secondary" onclick="closeReturInfo()">✕</button></div><div id="returInfoBody" style="font-size:.7rem;line-height:1.65"></div><div class="btn-row" style="margin-top:12px"><button class="btn primary" onclick="closeReturInfo()">OK</button></div></div></div>
 <div class="modal" id="returDetailModal" onclick="if(event.target===this)closeReturDetail()"><div class="modal-card"><div class="modal-head"><strong id="returDetailTitle">Detail Retur</strong><button class="btn secondary" onclick="closeReturDetail()">✕</button></div><div id="returDetailBody"></div></div></div>
-<div class="modal" id="approveReturModal" onclick="if(event.target===this)closeApproveRetur()"><div class="modal-card"><div class="modal-head"><strong>✅ Approve Retur</strong><button class="btn secondary" onclick="closeApproveRetur()">✕</button></div><input type="hidden" id="approveReturId"><div class="form-group"><label>Shift yang Memproses Refund</label><select id="approveRefundShift" class="form-control"></select></div><div class="mini-note">Shift harus ACTIVE saat approval. Untuk refund Tunai, sistem membuat Kas Keluar otomatis agar Closing Shift tidak dianggap selisih.</div><div class="btn-row" style="margin-top:12px"><button class="btn success" onclick="confirmApproveReturn()">✅ Approve</button><button class="btn secondary" onclick="closeApproveRetur()">Batal</button></div></div></div>
+<div class="modal" id="approveReturModal" onclick="if(event.target===this)closeApproveRetur()"><div class="modal-card"><div class="modal-head"><strong>✅ Approve Retur</strong><button class="btn secondary" onclick="closeApproveRetur()">✕</button></div><input type="hidden" id="approveReturId"><div class="form-group"><label>Kasir / Shift dari Absensi yang Memproses Refund</label><select id="approveRefundShift" class="form-control"></select></div><div class="mini-note">Kasir yang dipilih harus sudah Absen Masuk dan belum Absen Keluar. Untuk refund Tunai, sistem membuat Kas Keluar otomatis agar Closing Shift tidak dianggap selisih.</div><div class="btn-row" style="margin-top:12px"><button class="btn success" onclick="confirmApproveReturn()">✅ Approve</button><button class="btn secondary" onclick="closeApproveRetur()">Batal</button></div></div></div>
 <div id="returPrintArea" style="display:none"></div>
 <script id="returPageScript">
-const DEFAULT_HEADER={judul:'LocDailyMar',subJudul:'POS & Management',warnaJudul:'#ffffff',warnaOutline:'#d99b00',warnaSubJudul:'#ffc107',warnaBgHeader:'#0d2240',fontFamily:"'Poppins', sans-serif",brandFontFamily:"'Poppins', sans-serif",bgPrimary:'#f4f6f9',bgSecondary:'#ffffff',darkMode:false,logoData:null};const RETUR_KEY='dataRetur',SHIFT_KEY='shiftSessions',MUTASI_KEY='mutasiKasShift';let currentUser='',currentRole='',selectedTransactionCode='';
+const DEFAULT_HEADER={judul:'LocDailyMar',subJudul:'POS & Management',warnaJudul:'#ffffff',warnaOutline:'#d99b00',warnaSubJudul:'#ffc107',warnaBgHeader:'#0d2240',fontFamily:"'Poppins', sans-serif",brandFontFamily:"'Poppins', sans-serif",bgPrimary:'#f4f6f9',bgSecondary:'#ffffff',darkMode:false,logoData:null};const RETUR_KEY='dataRetur',MUTASI_KEY='mutasiKasShift';let currentUser='',currentRole='',selectedTransactionCode='';
 function safeArray(k){try{const v=JSON.parse(localStorage.getItem(k)||'[]');return Array.isArray(v)?v:[]}catch{return[]}}function saveArray(k,v){localStorage.setItem(k,JSON.stringify(Array.isArray(v)?v:[]))}function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}function rp(n){return'Rp '+Number(n||0).toLocaleString('id-ID')}function getUser(){return localStorage.getItem('activeUsername')||localStorage.getItem('loggedInUser')||localStorage.getItem('currentUser')||localStorage.getItem('username')||'-'}function getRole(){return String(localStorage.getItem('userRole')||localStorage.getItem('role')||'').trim().toLowerCase()}function dateWITA(){const d=new Date(Date.now()+8*3600000);return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`}function timeWITA(){const d=new Date(Date.now()+8*3600000);return `${String(d.getUTCHours()).padStart(2,'0')}:${String(d.getUTCMinutes()).padStart(2,'0')}:${String(d.getUTCSeconds()).padStart(2,'0')}`}
 function requireAccess(){if(localStorage.getItem('isLoggedIn')!=='true'){location.replace('index.html');return false}currentUser=getUser();currentRole=getRole();if(!['owner','admin','kasir'].includes(currentRole)){location.replace('dashboard.html');return false}document.documentElement.classList.remove('secure-page-pending');return true}function bukaMenu(){document.getElementById('navSidebar')?.classList.add('active');document.getElementById('navOverlay')?.classList.add('active')}function tutupMenu(){document.getElementById('navSidebar')?.classList.remove('active');document.getElementById('navOverlay')?.classList.remove('active')}async function logout(){
     const ok=await ldmDialog.confirm(
@@ -1543,8 +1536,77 @@ function txKey(t){return String(t.kodeTransaksi||t.id||t.timestamp||'')}function
             Number(a.timestamp||a.id||0)
     );
 }function findTx(code){return transactions().find(t=>String(t.kodeTransaksi||t.id||t.timestamp)===String(code))||null}
-function activeShifts(){const today=dateWITA();return safeArray(SHIFT_KEY).filter(s=>String(s.status||'').toUpperCase()==='ACTIVE'&&String(s.tanggal||'')===today)}function availableRefundShifts(){const all=activeShifts();return currentRole==='kasir'?all.filter(s=>String(s.kasir||'').toLowerCase()===String(currentUser).toLowerCase()):all}
-function fillRefundShift(selectId,selected=''){const el=document.getElementById(selectId);if(!el)return;const list=availableRefundShifts();el.innerHTML=list.length?list.map(s=>`<option value="${esc(s.id)}">${esc(s.id)} • ${esc(s.kasir)} • ${esc(s.shift)}</option>`).join(''):'<option value="">Tidak ada shift ACTIVE</option>';if(selected&&list.some(s=>String(s.id)===String(selected)))el.value=selected}
+function activeShifts(){
+    const today=dateWITA();
+    const logs=safeArray('dataAbsensi');
+
+    const users=[...new Set(
+        logs
+            .filter(a=>String(a.tanggal||'')===today)
+            .map(a=>String(a.username||'').trim())
+            .filter(Boolean)
+    )];
+
+    return users.map(username=>{
+        const rows=logs
+            .filter(a=>
+                String(a.tanggal||'')===today
+                &&
+                String(a.username||'').trim().toLowerCase()
+                === username.toLowerCase()
+            )
+            .sort((a,b)=>Number(a.id||0)-Number(b.id||0));
+
+        const masuk=[...rows].reverse()
+            .find(a=>a.jenis==='Masuk'||a.jenis==='Hadir');
+
+        if(!masuk)return null;
+
+        const sudahKeluar=rows.some(a=>
+            a.jenis==='Keluar'
+            &&
+            Number(a.id||0)>Number(masuk.id||0)
+        );
+
+        if(sudahKeluar)return null;
+
+        return {
+            id:`ABS|${username}|${masuk.shift||'Shift 1'}`,
+            kasir:username,
+            shift:masuk.shift||'Shift 1',
+            absensiId:masuk.id||null
+        };
+    }).filter(Boolean);
+}
+function availableRefundShifts(){
+    const all=activeShifts();
+    return currentRole==='kasir'
+        ? all.filter(s=>
+            String(s.kasir||'').toLowerCase()
+            === String(currentUser).toLowerCase()
+          )
+        : all;
+}
+function fillRefundShift(selectId,selected=''){
+    const el=document.getElementById(selectId);
+    if(!el)return;
+
+    const list=availableRefundShifts();
+
+    el.innerHTML=list.length
+        ? list.map(s=>
+            `<option value="${esc(s.id)}">${esc(s.kasir)} • ${esc(s.shift)}</option>`
+          ).join('')
+        : '<option value="">Tidak ada akun yang sedang Absen Masuk</option>';
+
+    if(
+        selected
+        &&
+        list.some(s=>String(s.id)===String(selected))
+    ){
+        el.value=selected;
+    }
+}
 function itemKey(x){return String(x.barcode||'').trim().toLowerCase()||String(x.nama||x.namaBarang||'').trim().toLowerCase()}function itemQty(x){return Number(x.qty||x.jumlah||0)}function itemPrice(x){const q=itemQty(x)||1;return Number(x.harga||x.hargaJual||x.price||0)||Number(x.subtotal||0)/q}
 function usedReturnQty(txCode,item,excludeId=''){const key=itemKey(item);return safeArray(RETUR_KEY).filter(r=>String(r.transaksiId)===String(txCode)&&!['REJECTED','CANCELLED'].includes(String(r.status||'').toUpperCase())&&String(r.returId)!==String(excludeId)).reduce((sum,r)=>sum+(Array.isArray(r.items)?r.items:[]).filter(i=>itemKey(i)===key).reduce((a,i)=>a+Number(i.qtyRetur||0),0),0)}
 function searchTransaction(q=''){const el=document.getElementById('returTxDropdown'),query=String(q||'').trim().toLowerCase();const rows=transactions().filter(t=>{if(!query)return true;return [t.kodeTransaksi,t.kasir,t.barang,...(Array.isArray(t.keranjang)?t.keranjang.map(i=>i.nama):[])].some(v=>String(v||'').toLowerCase().includes(query))}).slice(0,25);el.innerHTML=rows.length?rows.map(t=>`<div class="search-option" onclick="selectTransaction('${esc(txKey(t))}')"><strong>${esc(t.kodeTransaksi||txKey(t))}</strong><small>${esc(t.waktu_teks||t.tanggal||'-')} • ${esc(t.kasir||'-')} • ${rp(t.total||0)}</small></div>`).join(''):'<div class="search-option"><strong>Tidak ditemukan</strong><small>Coba ID transaksi, nama kasir, atau barang.</small></div>';el.classList.add('show')}
@@ -1603,7 +1665,7 @@ function createReturn(directApprove){
     if(!shiftId){
         showInfo(
             'Shift Refund Belum Ada',
-            'Buka Absensi dan pastikan akun sudah memiliki Shift ACTIVE untuk memproses refund.'
+            'Pastikan akun yang memproses refund sudah Absen Masuk dan belum Absen Keluar.'
         );
         return;
     }
@@ -1614,8 +1676,8 @@ function createReturn(directApprove){
         )
     ){
         showInfo(
-            'Shift Tidak Aktif',
-            'Shift refund sudah tidak ACTIVE. Pilih shift lain.'
+            'Kasir Tidak Aktif',
+            'Kasir/shift dari Absensi sudah tidak aktif. Pilih akun lain yang masih bekerja.'
         );
 
         fillRefundShift(
@@ -1656,7 +1718,8 @@ function createReturn(directApprove){
             document.getElementById(
                 'returRefundMethod'
             ).value,
-        refundShiftId:shiftId,
+        refundShiftId:'',
+        refundContextKey:shiftId,
         catatan:
             document.getElementById(
                 'returNote'
@@ -1745,8 +1808,8 @@ function applyApproval(id,shiftId){
 
     if(!session){
         showInfo(
-            'Shift Refund Tidak Aktif',
-            'Pilih sesi shift ACTIVE untuk memproses refund.'
+            'Kasir Refund Tidak Aktif',
+            'Pilih akun yang sudah Absen Masuk dan belum Absen Keluar untuk memproses refund.'
         );
         return false;
     }
@@ -1855,7 +1918,7 @@ function applyApproval(id,shiftId){
             waktu:timeWITA(),
             kasir:session.kasir,
             shift:session.shift,
-            shiftId:session.id,
+            shiftId:'',
             jenis:'keluar',
             nominal:
                 Number(
@@ -1876,7 +1939,8 @@ function applyApproval(id,shiftId){
     }
 
     r.status='APPROVED';
-    r.refundShiftId=session.id;
+    r.refundShiftId='';
+    r.refundContextKey=session.id;
     r.refundKasir=session.kasir;
     r.refundShift=session.shift;
     r.approvedBy=currentUser;
@@ -1954,7 +2018,7 @@ function openApproveReturn(id){
 
     fillRefundShift(
         'approveRefundShift',
-        r.refundShiftId
+        (r.refundContextKey||r.refundShiftId)
     );
 
     document.getElementById(
@@ -1983,7 +2047,7 @@ function openApproveReturn(id){
     if(!shift){
         showInfo(
             'Shift Belum Dipilih',
-            'Pilih shift ACTIVE untuk approval.'
+            'Pilih kasir/shift dari Absensi untuk approval.'
         );
         return;
     }
@@ -2107,12 +2171,27 @@ function reverseApprovedReturnForCancel(r){
 
     const closingExists=
         safeArray('shiftClosingLog')
-            .some(
-                log=>
+            .some(log=>{
+                if(
+                    r.refundShiftId
+                    &&
                     String(log.shiftId||'')
-                    ===
-                    String(r.refundShiftId||'')
-            );
+                    === String(r.refundShiftId||'')
+                ){
+                    return true;
+                }
+
+                return (
+                    String(log.tanggal||'')
+                    === String(r.approvedTanggal||r.tanggal||'')
+                    &&
+                    String(log.kasir||'').trim().toLowerCase()
+                    === String(r.refundKasir||'').trim().toLowerCase()
+                    &&
+                    String(log.shift||'').trim().toLowerCase()
+                    === String(r.refundShift||'').trim().toLowerCase()
+                );
+            });
 
     if(closingExists){
         return {
@@ -2721,7 +2800,7 @@ function renderReturns(){
                             ${esc(r.metodeRefund)}
                             <br>
                             <small>
-                                ${esc(r.refundShiftId||'-')}
+                                ${esc(r.refundKasir||'-')} • ${esc(r.refundShift||'-')}
                             </small>
                         </td>
 
@@ -2817,7 +2896,7 @@ function showReturnDetail(id){
             <br>
 
             <strong>Shift Refund:</strong>
-            ${esc(r.refundShiftId||'-')}
+            ${esc(r.refundKasir||'-')} • ${esc(r.refundShift||'-')}
             <br>
 
             <strong>Approved:</strong>
@@ -2890,7 +2969,7 @@ function init(){
     renderReturns();
     consumeSelectedTransaction();
 }
-document.addEventListener('click',e=>{const w=document.querySelector('.retur-search');if(w&&!w.contains(e.target))document.getElementById('returTxDropdown')?.classList.remove('show')});document.addEventListener('DOMContentLoaded',()=>{if(!requireAccess())return;init()});window.addEventListener('storage',e=>{if(['dataRetur','shiftSessions','laporan','dataLaporan','laporanHistory','dataBarang'].includes(e.key)){fillRefundShift('returRefundShift');renderReturns()}if(e.key==='headerConfig')theme()});
+document.addEventListener('click',e=>{const w=document.querySelector('.retur-search');if(w&&!w.contains(e.target))document.getElementById('returTxDropdown')?.classList.remove('show')});document.addEventListener('DOMContentLoaded',()=>{if(!requireAccess())return;init()});window.addEventListener('storage',e=>{if(['dataRetur','dataAbsensi','laporan','dataLaporan','laporanHistory','dataBarang'].includes(e.key)){fillRefundShift('returRefundShift');renderReturns()}if(e.key==='headerConfig')theme()});
 </script>
 <script id="ldmCompactNavigationScript">
 (function(){
@@ -3409,16 +3488,7 @@ document.addEventListener('click',e=>{const w=document.querySelector('.retur-sea
             ready:
                 pendingAccounts.length===0
                 && hasShift1
-                && hasShift2
-                && (function(){
-                    const sessionsToday=readArray("shiftSessions").filter(s=>String(s.tanggal||"")===today&&String(s.status||"").toUpperCase()!=="CANCELLED");
-                    const txShiftIds=[...new Set(transactions.map(t=>String(t.shiftId||"")).filter(Boolean))];
-                    const closingShiftIds=new Set(closingToday.map(l=>String(l.shiftId||"")).filter(Boolean));
-                    const byId=new Map(sessionsToday.map(s=>[String(s.id),s]));
-                    const exact=txShiftIds.every(id=>String(byId.get(id)?.status||"").toUpperCase()==="CLOSED"&&closingShiftIds.has(id));
-                    const noOpen=sessionsToday.every(s=>!["ACTIVE","CLOSING"].includes(String(s.status||"").toUpperCase()));
-                    return exact&&noOpen;
-                })(),
+                && hasShift2,
             activeAccounts:[...activeAccounts],
             pendingAccounts,
             hasShift1,
@@ -3488,7 +3558,6 @@ document.addEventListener('click',e=>{const w=document.querySelector('.retur-sea
                 "laporan",
                 "dataLaporan",
                 "shiftClosingLog",
-                "shiftSessions",
                 "dataRetur"
             ].includes(event.key)
         ){
