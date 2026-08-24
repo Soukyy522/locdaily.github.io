@@ -1129,14 +1129,7 @@
         const hasShift2=closingToday.some(
             item=>shiftName(item?.shift)==="shift 2"
         );
-
-        const sessionsToday=readArray("shiftSessions").filter(s=>String(s.tanggal||"")===today&&String(s.status||"").toUpperCase()!=="CANCELLED");
-        const txShiftIds=[...new Set(transaksi.map(t=>String(t.shiftId||"")).filter(Boolean))];
-        const closedShiftIds=new Set(closingToday.map(l=>String(l.shiftId||"")).filter(Boolean));
-        const sessionById=new Map(sessionsToday.map(s=>[String(s.id),s]));
-        const exactReady=txShiftIds.every(id=>String(sessionById.get(id)?.status||"").toUpperCase()==="CLOSED"&&closedShiftIds.has(id));
-        const noOpen=sessionsToday.every(s=>!["ACTIVE","CLOSING"].includes(String(s.status||"").toUpperCase()));
-        return allClosed && hasShift1 && hasShift2 && exactReady && noOpen;
+        return allClosed && hasShift1 && hasShift2;
     }
 
     try{
@@ -1695,22 +1688,13 @@
 
                         <div class="form-group">
                             <label for="selectShift">Shift Ke-</label>
-                            <select id="selectShift" class="form-control" onchange="renderShiftSessionOptionsClosing(); hitungOmzetKasirTerpilih(); kalkulasiSelisihRealtime(); renderMutasiKasShift()" required>
+                            <select id="selectShift" class="form-control" onchange="hitungOmzetKasirTerpilih(); kalkulasiSelisihRealtime(); renderMutasiKasShift()" required>
                                 <option value="Shift 1">Shift 1</option>
                                 <option value="Shift 2">Shift 2</option>
                                 <option value="Full Day">Full Day</option>
                             </select>
                         </div>
-
-                        <div class="form-group">
-                            <label for="selectShiftSession">Sesi Shift / Shift ID</label>
-                            <select id="selectShiftSession" class="form-control" onchange="applySelectedShiftSessionClosing(); hitungOmzetKasirTerpilih(); renderMutasiKasShift(); kalkulasiSelisihRealtime()">
-                                <option value="">Legacy / Tanpa Shift ID</option>
-                            </select>
-                            <small style="display:block;margin-top:5px;color:#64748b;font-size:.66rem;line-height:1.45;">Untuk transaksi baru, pilih Shift ID yang tepat. Data lama tetap dapat Closing dengan mode Legacy.</small>
-                        </div>
-
-                        <div class="form-group">
+<div class="form-group">
                             <label for="inputModalAwal">Modal Awal (Rp)</label>
                             <input type="number" id="inputModalAwal" class="form-control" placeholder="0" min="0" value="0" oninput="kalkulasiSelisihRealtime()" required>
                             <small style="display:block;margin-top:5px;color:#64748b;font-size:.66rem;line-height:1.45;">Modal awal dicatat terpisah dan tidak ikut dihitung sebagai Uang Tunai Fisik hasil penjualan.</small>
@@ -2483,7 +2467,7 @@
                 waktu: getWaktuWITA(),
                 kasir,
                 shift,
-                shiftId: document.getElementById("selectShiftSession")?.value || "",
+                shiftId: "",
                 jenis,
                 nominal,
                 keterangan,
@@ -2522,19 +2506,34 @@
 
         function hitungOmzetKasirTerpilih() {
             const selectedUser = document.getElementById("selectKasir").value;
+            const selectedShift = document.getElementById("selectShift").value;
             const laporanAll = JSON.parse(localStorage.getItem("laporan")) || JSON.parse(localStorage.getItem("dataLaporan")) || [];
             const targetDate = selectedFilterDate;
 
-            let totalOmzet = 0;
+            let gross = 0;
             let totalTunai = 0;
             let totalNonTunai = 0;
 
             laporanAll.forEach(transaksi => {
                 const tgl = parseTanggalData(transaksi);
-                const kasir = String(transaksi.kasir || transaksi.user || transaksi.username || transaksi.admin || "").toLowerCase();
+                const kasir = String(
+                    transaksi.kasir || transaksi.user || transaksi.username || transaksi.admin || ""
+                ).toLowerCase();
 
-                if (tgl === targetDate && kasir === selectedUser.toLowerCase()) {
-                    let nominal = Number(transaksi.total || transaksi.grandTotal || transaksi.totalHarga || 0);
+                const trxShift = String(transaksi.shift || "").trim().toLowerCase();
+                const wantedShift = String(selectedShift || "").trim().toLowerCase();
+
+                if (
+                    tgl === targetDate
+                    &&
+                    kasir === selectedUser.toLowerCase()
+                    &&
+                    (!trxShift || trxShift === wantedShift)
+                ) {
+                    let nominal = Number(
+                        transaksi.total || transaksi.grandTotal || transaksi.totalHarga || 0
+                    );
+
                     if (nominal === 0 && Array.isArray(transaksi.items)) {
                         transaksi.items.forEach(it => {
                             const p = Number(it.harga || it.price || 0);
@@ -2543,16 +2542,49 @@
                         });
                     }
 
-                    totalOmzet += nominal;
+                    gross += nominal;
+
                     const pecahan = ekstrakPecahanBayar(transaksi);
                     totalTunai += pecahan.tunai;
                     totalNonTunai += pecahan.nonTunai;
                 }
             });
 
-            omzetKasirAktif = { omzet: totalOmzet, tunai: totalTunai, nonTunai: totalNonTunai };
+            let returTotal = 0;
 
-            // Tampilkan atau sembunyikan nilai card berdasarkan status Tutup Shift
+            try {
+                const returns = JSON.parse(
+                    localStorage.getItem("dataRetur") || "[]"
+                );
+
+                if (Array.isArray(returns)) {
+                    returTotal = returns
+                        .filter(r =>
+                            String(r.status || "").toUpperCase() === "APPROVED"
+                            &&
+                            String(r.approvedTanggal || r.tanggal || "") === targetDate
+                            &&
+                            String(r.refundKasir || "").trim().toLowerCase()
+                            === selectedUser.toLowerCase()
+                            &&
+                            String(r.refundShift || "").trim().toLowerCase()
+                            === String(selectedShift || "").trim().toLowerCase()
+                        )
+                        .reduce(
+                            (sum,r) => sum + Number(r.totalRetur || 0),
+                            0
+                        );
+                }
+            } catch (e) {}
+
+            omzetKasirAktif = {
+                omzet: gross - returTotal,
+                gross,
+                retur: returTotal,
+                tunai: totalTunai,
+                nonTunai: totalNonTunai
+            };
+
             renderMutasiKasShift();
             kalkulasiSelisihRealtime();
         }
@@ -2662,6 +2694,8 @@
                 shift: shift,
                 modalAwal: modalAwal,
                 totalOmzet: totalOmzet,
+                penjualanKotor: Number(omzetKasirAktif.gross || totalOmzet),
+                returTotal: Number(omzetKasirAktif.retur || 0),
                 tunaiSistem: tunaiSistem,
                 nonTunaiSistem: nonTunaiSistem,
                 tunaiFisik: tunaiFisik,
@@ -2671,7 +2705,7 @@
                 mutasiKasIds: mutasiAktif.map(item => item.id),
                 ekspektasiTunaiFisik: ekspektasiTunaiFisik,
                 perhitunganModalTerpisah: true,
-                versiClosing: 4,
+                versiClosing: 5,
                 selisih: selisih,
                 catatan: catatan
             };
@@ -3757,95 +3791,7 @@ document.addEventListener(
     </script>
 
 
-<script id="ldmShiftSessionClosingIntegration">
-(function(){
-    function readArray(key){try{const v=JSON.parse(localStorage.getItem(key)||"[]");return Array.isArray(v)?v:[]}catch(e){return[]}}
-    function saveArray(key,v){localStorage.setItem(key,JSON.stringify(Array.isArray(v)?v:[]))}
-    function sessions(){return readArray("shiftSessions")}
-    function selectedSessionId(){return String(document.getElementById("selectShiftSession")?.value||"")}
-    function selectedSession(){const id=selectedSessionId();return id?sessions().find(s=>String(s.id)===id)||null:null}
-    function selectedCashier(){return String(document.getElementById("selectKasir")?.value||"")}
-    function selectedShiftType(){return String(document.getElementById("selectShift")?.value||"")}
 
-    window.renderShiftSessionOptionsClosing=function(preferredId=""){
-        const sel=document.getElementById("selectShiftSession");if(!sel)return;
-        const kasir=selectedCashier().toLowerCase(),shift=selectedShiftType().toLowerCase(),date=selectedFilterDate;
-        const previous=preferredId||sel.value;
-        const rows=sessions().filter(s=>String(s.tanggal||"")===String(date||"")&&String(s.kasir||"").toLowerCase()===kasir&&String(s.shift||"").toLowerCase()===shift&&String(s.status||"").toUpperCase()!=="CANCELLED");
-        sel.innerHTML='<option value="">Legacy / Tanpa Shift ID</option>'+rows.map(s=>`<option value="${String(s.id).replaceAll('"','&quot;')}">${s.id} • ${s.status} • ${s.mulai||'-'}</option>`).join('');
-        if(previous&&rows.some(s=>String(s.id)===String(previous)))sel.value=previous;else if(rows.length===1)sel.value=rows[0].id;
-        applySelectedShiftSessionClosing();
-    };
-
-    window.applySelectedShiftSessionClosing=function(){
-        const s=selectedSession();if(!s)return;
-        const modal=document.getElementById("inputModalAwal");if(modal)modal.value=String(Number(s.modalAwal||0));
-        const shift=document.getElementById("selectShift");if(shift&&shift.value!==s.shift)shift.value=s.shift;
-    };
-
-    const legacyGetMutasi=getMutasiKasAktif;
-    getMutasiKasAktif=function(){
-        const s=selectedSession();
-        if(!s)return legacyGetMutasi();
-        return getMutasiKasAll().filter(item=>String(item.shiftId||"")===String(s.id)&&String(item.jenis||"keluar").toLowerCase()==="keluar");
-    };
-
-    const legacyShiftClosed=shiftSudahClosing;
-    shiftSudahClosing=function(tanggal,kasir,shift){
-        const s=selectedSession();
-        if(s){return readArray("shiftClosingLog").some(log=>String(log.shiftId||"")===String(s.id));}
-        return legacyShiftClosed(tanggal,kasir,shift);
-    };
-
-    hitungOmzetKasirTerpilih=function(){
-        const user=selectedCashier(),all=readArray("laporan").length?readArray("laporan"):readArray("dataLaporan"),target=selectedFilterDate,s=selectedSession();
-        let gross=0,tunai=0,nonTunai=0,count=0;
-        all.forEach(tx=>{
-            const match=s?String(tx.shiftId||"")===String(s.id):(parseTanggalData(tx)===target&&String(tx.kasir||tx.user||tx.username||tx.admin||"").toLowerCase()===user.toLowerCase());
-            if(!match)return;let nominal=Number(tx.total||tx.grandTotal||tx.totalHarga||0);if(nominal===0&&Array.isArray(tx.items))tx.items.forEach(it=>{nominal+=Number(it.subtotal)||Number(it.harga||it.price||0)*Number(it.qty||it.jumlah||1)});gross+=nominal;const p=ekstrakPecahanBayar(tx);tunai+=p.tunai;nonTunai+=p.nonTunai;count++;
-        });
-        const returns=readArray("dataRetur").filter(r=>String(r.status||"").toUpperCase()==="APPROVED"&&(s?String(r.refundShiftId||"")===String(s.id):(String(r.approvedTanggal||r.tanggal||"")===target&&String(r.refundKasir||"").toLowerCase()===user.toLowerCase()&&String(r.refundShift||"").toLowerCase()===selectedShiftType().toLowerCase())));
-        const retur=returns.reduce((a,r)=>a+Number(r.totalRetur||0),0);
-        omzetKasirAktif={omzet:gross-retur,tunai,nonTunai,retur,gross,count};
-        renderMutasiKasShift();kalkulasiSelisihRealtime();
-    };
-
-    const legacyCalc=kalkulasiSelisihRealtime;
-    kalkulasiSelisihRealtime=function(){
-        const s=selectedSession();if(!s)return legacyCalc();
-        const log=readArray("shiftClosingLog").find(x=>String(x.shiftId||"")===String(s.id));
-        const ids=["cardModalAwalAkun","cardOmzetAkun","cardTunaiAkun","cardNonTunaiAkun","cardMutasiKeluar","cardEkspektasiFisik","cardTunaiFisikAkun","cardSelisihAkun"],els=ids.map(id=>document.getElementById(id)),card=document.getElementById("cardSelisihContainer");card?.classList.remove("plus","minus");
-        if(!log){els.forEach(el=>{if(el)el.innerText="???"});return;}
-        const fisik=normalisasiTunaiFisikTanpaModal(log),cash=Number(log.tunaiSistem||0),out=Number(log.mutasiKasKeluar||0),exp=Number.isFinite(Number(log.ekspektasiTunaiFisik))?Number(log.ekspektasiTunaiFisik):(cash-out),diff=fisik-exp;
-        const vals=[`Rp ${Number(log.modalAwal||0).toLocaleString('id-ID')}`,`Rp ${Number(log.totalOmzet||0).toLocaleString('id-ID')}`,`Rp ${cash.toLocaleString('id-ID')}`,`Rp ${Number(log.nonTunaiSistem||0).toLocaleString('id-ID')}`,`Rp ${out.toLocaleString('id-ID')}`,`Rp ${exp.toLocaleString('id-ID')}`,`Rp ${fisik.toLocaleString('id-ID')}`,diff>0?`+ Rp ${diff.toLocaleString('id-ID')}`:diff<0?`- Rp ${Math.abs(diff).toLocaleString('id-ID')}`:'Rp 0'];els.forEach((el,i)=>{if(el)el.innerText=vals[i]});if(diff>0)card?.classList.add('plus');if(diff<0)card?.classList.add('minus');
-    };
-
-    prosesSubmitClosing=function(e){
-        e.preventDefault();if(!requirePermission("closing.view"))return;if(selectedFilterDate!==getTanggalWITA()){tampilkanAlertCustom("Gagal","Anda tidak bisa melakukan penutupan shift untuk tanggal lampau!","warning");return;}
-        const kasir=selectedCashier(),shift=selectedShiftType(),s=selectedSession(),modalAwal=Number(document.getElementById("inputModalAwal").value||0),tunaiFisik=Number(document.getElementById("inputTunaiFisik").value||0),catatan=document.getElementById("inputCatatan").value.trim(),tgl=getTanggalWITA();
-        if(s&&!["ACTIVE","CLOSING"].includes(String(s.status||"").toUpperCase())){tampilkanAlertCustom("Sesi Tidak Aktif",`Shift ${s.id} berstatus ${s.status}.`,`warning`);return;}
-        const existing=readArray("shiftClosingLog"),dup=s?existing.some(l=>String(l.shiftId||"")===String(s.id)):existing.some(l=>l.tanggal===tgl&&String(l.kasir||"").toLowerCase()===kasir.toLowerCase()&&String(l.shift||"").toLowerCase()===shift.toLowerCase());if(dup){tampilkanAlertCustom("Shift Sudah Ditutup",s?`${s.id} sudah memiliki Closing Shift.`:`${shift} untuk ${kasir} sudah Closing.`,`warning`);return;}
-        const muts=getMutasiKasAktif(),out=ringkasMutasi(muts).keluar,cash=Number(omzetKasirAktif.tunai||0),noncash=Number(omzetKasirAktif.nonTunai||0),sales=Number(omzetKasirAktif.omzet||0),expected=cash-out,diff=tunaiFisik-expected;
-        const log={id:Date.now(),tanggal:tgl,waktu:getWaktuWITA(),kasir,shift,shiftId:s?.id||"",shiftStartedAt:s?.startedAt||"",modalAwal,totalOmzet:sales,penjualanKotor:Number(omzetKasirAktif.gross||sales),returTotal:Number(omzetKasirAktif.retur||0),tunaiSistem:cash,nonTunaiSistem:noncash,tunaiFisik,mutasiKasMasuk:0,mutasiKasKeluar:out,mutasiKasNet:-out,mutasiKasIds:muts.map(x=>x.id),ekspektasiTunaiFisik:expected,perhitunganModalTerpisah:true,versiClosing:5,selisih:diff,catatan};
-        existing.unshift(log);saveArray("shiftClosingLog",existing);
-        setMutasiKasAll(getMutasiKasAll().map(item=>muts.some(m=>Number(m.id)===Number(item.id))?{...item,closingId:log.id,closedAt:`${tgl} ${log.waktu}`} : item));
-        const daily=JSON.parse(localStorage.getItem("shiftClosingDailyLogs")||"{}");if(!daily[tgl])daily[tgl]=[];daily[tgl].unshift(log);localStorage.setItem("shiftClosingDailyLogs",JSON.stringify(daily));
-        if(s){const ss=sessions(),target=ss.find(x=>String(x.id)===String(s.id));if(target){target.status="CLOSED";target.selesai=log.waktu;target.closedAt=new Date().toISOString();target.closedBy=currentActiveUser;target.closingId=log.id;saveArray("shiftSessions",ss);const map=JSON.parse(localStorage.getItem("activeShiftSessions")||"{}");delete map[String(target.kasir||"").toLowerCase()];localStorage.setItem("activeShiftSessions",JSON.stringify(map));}}
-        ["inputTunaiFisik","inputCatatan","inputNominalMutasi","inputKetMutasi"].forEach(id=>{const el=document.getElementById(id);if(el)el.value=""});renderShiftSessionOptionsClosing(s?.id||"");renderMutasiKasShift();renderRiwayatShiftLog();hitungOmzetKasirTerpilih();tampilkanAlertCustom("Berhasil Closing",s?`Sesi ${s.id} berhasil ditutup.`:`Penutupan ${shift} untuk ${kasir} berhasil disimpan.`,"success");cetakLaporanLog(log.id);
-    };
-
-    const legacyDelete=hapusLogDanResetPerhitungan;
-    hapusLogDanResetPerhitungan=function(id){const log=readArray("shiftClosingLog").find(x=>Number(x.id)===Number(id));legacyDelete(id);if(log?.shiftId&&!readArray("shiftClosingLog").some(x=>String(x.shiftId||"")===String(log.shiftId))){const ss=sessions(),s=ss.find(x=>String(x.id)===String(log.shiftId));if(s){s.status="CLOSING";s.closingId=null;s.closedAt=null;s.selesai=null;saveArray("shiftSessions",ss);const map=JSON.parse(localStorage.getItem("activeShiftSessions")||"{}");map[String(s.kasir||"").toLowerCase()]=s.id;localStorage.setItem("activeShiftSessions",JSON.stringify(map));}}};
-
-    document.addEventListener("DOMContentLoaded",()=>{
-        const picked=(()=>{try{return JSON.parse(localStorage.getItem("selectedShiftForClosing")||"null")}catch(e){return null}})();
-        if(picked?.shiftId){localStorage.removeItem("selectedShiftForClosing");const kasirEl=document.getElementById("selectKasir"),shiftEl=document.getElementById("selectShift");if(kasirEl){kasirEl.value=picked.kasir;selectedKasirTerverifikasi=picked.kasir}if(shiftEl)shiftEl.value=picked.shift;renderShiftSessionOptionsClosing(picked.shiftId);hitungOmzetKasirTerpilih();renderMutasiKasShift();}
-        else renderShiftSessionOptionsClosing();
-        document.getElementById("selectShiftSession")?.addEventListener("change",()=>{applySelectedShiftSessionClosing();hitungOmzetKasirTerpilih()});
-    });
-    window.addEventListener("storage",e=>{if(["shiftSessions","dataRetur"].includes(e.key)){renderShiftSessionOptionsClosing();hitungOmzetKasirTerpilih();renderMutasiKasShift();renderRiwayatShiftLog();}});
-})();
-</script>
 
 <script id="ldmCompactNavigationScript">
 (function(){
@@ -4364,16 +4310,7 @@ document.addEventListener(
             ready:
                 pendingAccounts.length===0
                 && hasShift1
-                && hasShift2
-                && (function(){
-                    const sessionsToday=readArray("shiftSessions").filter(s=>String(s.tanggal||"")===today&&String(s.status||"").toUpperCase()!=="CANCELLED");
-                    const txShiftIds=[...new Set(transactions.map(t=>String(t.shiftId||"")).filter(Boolean))];
-                    const closingShiftIds=new Set(closingToday.map(l=>String(l.shiftId||"")).filter(Boolean));
-                    const byId=new Map(sessionsToday.map(s=>[String(s.id),s]));
-                    const exact=txShiftIds.every(id=>String(byId.get(id)?.status||"").toUpperCase()==="CLOSED"&&closingShiftIds.has(id));
-                    const noOpen=sessionsToday.every(s=>!["ACTIVE","CLOSING"].includes(String(s.status||"").toUpperCase()));
-                    return exact&&noOpen;
-                })(),
+                && hasShift2,
             activeAccounts:[...activeAccounts],
             pendingAccounts,
             hasShift1,
@@ -4443,7 +4380,6 @@ document.addEventListener(
                 "laporan",
                 "dataLaporan",
                 "shiftClosingLog",
-                "shiftSessions",
                 "dataRetur"
             ].includes(event.key)
         ){
