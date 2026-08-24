@@ -1491,14 +1491,7 @@
         const hasShift2=closingToday.some(
             item=>shiftName(item?.shift)==="shift 2"
         );
-
-        const sessionsToday=readArray("shiftSessions").filter(s=>String(s.tanggal||"")===today&&String(s.status||"").toUpperCase()!=="CANCELLED");
-        const txShiftIds=[...new Set(transaksi.map(t=>String(t.shiftId||"")).filter(Boolean))];
-        const closedShiftIds=new Set(closingToday.map(l=>String(l.shiftId||"")).filter(Boolean));
-        const sessionById=new Map(sessionsToday.map(s=>[String(s.id),s]));
-        const exactReady=txShiftIds.every(id=>String(sessionById.get(id)?.status||"").toUpperCase()==="CLOSED"&&closedShiftIds.has(id));
-        const noOpen=sessionsToday.every(s=>!["ACTIVE","CLOSING"].includes(String(s.status||"").toUpperCase()));
-        return allClosed && hasShift1 && hasShift2 && exactReady && noOpen;
+        return allClosed && hasShift1 && hasShift2;
     }
 
     try{
@@ -3583,34 +3576,7 @@ document.addEventListener('DOMContentLoaded',init);
     </script>
 
 
-<script id="ldmShiftSessionEodIntegration">
-(function(){
-    const legacyCalc=calc;
-    calc=function(){
-        const c=legacyCalc();
-        const sessionsToday=arr("shiftSessions").filter(s=>String(s.tanggal||"")===String(selectedDate)&&String(s.status||"").toUpperCase()!=="CANCELLED");
-        const approvedReturns=arr("dataRetur").filter(r=>String(r.status||"").toUpperCase()==="APPROVED"&&String(r.approvedTanggal||r.tanggal||"")===String(selectedDate));
-        const returnValue=approvedReturns.reduce((a,r)=>a+Number(r.totalRetur||0),0);
-        c.posSales=Number(c.posSales||0)-returnValue;
-        c.all.salesDiff=Number(c.all.sales||0)-c.posSales;
-        const txShiftIds=[...new Set(c.tx.map(t=>String(t.shiftId||"")).filter(Boolean))];
-        if(sessionsToday.length||txShiftIds.length){
-            const byId=new Map(sessionsToday.map(s=>[String(s.id),s]));
-            const closedLogIds=new Set(c.ls.map(l=>String(l.shiftId||"")).filter(Boolean));
-            const open=sessionsToday.filter(s=>["ACTIVE","CLOSING"].includes(String(s.status||"").toUpperCase()));
-            const exactReady=txShiftIds.every(id=>String(byId.get(id)?.status||"").toUpperCase()==="CLOSED"&&closedLogIds.has(id));
-            const legacyTx=c.tx.filter(t=>!t.shiftId),legacyNames=new Set(legacyTx.map(t=>cashier(t).toLowerCase()).filter(Boolean));
-            const legacyReady=[...legacyNames].every(name=>c.ls.some(l=>String(l.kasir||"").toLowerCase()===name));
-            c.allClosed=exactReady&&legacyReady&&open.length===0;
-            c.ready=c.allClosed&&c.has1&&c.has2;
-            c.openShiftSessions=open;
-        }
-        c.returHariIni=returnValue;
-        return c;
-    };
-    window.addEventListener("storage",e=>{if(["shiftSessions","dataRetur"].includes(e.key))loadEOD()});
-})();
-</script>
+
 
 <script id="ldmCompactNavigationScript">
 (function(){
@@ -4129,16 +4095,7 @@ document.addEventListener('DOMContentLoaded',init);
             ready:
                 pendingAccounts.length===0
                 && hasShift1
-                && hasShift2
-                && (function(){
-                    const sessionsToday=readArray("shiftSessions").filter(s=>String(s.tanggal||"")===today&&String(s.status||"").toUpperCase()!=="CANCELLED");
-                    const txShiftIds=[...new Set(transactions.map(t=>String(t.shiftId||"")).filter(Boolean))];
-                    const closingShiftIds=new Set(closingToday.map(l=>String(l.shiftId||"")).filter(Boolean));
-                    const byId=new Map(sessionsToday.map(s=>[String(s.id),s]));
-                    const exact=txShiftIds.every(id=>String(byId.get(id)?.status||"").toUpperCase()==="CLOSED"&&closingShiftIds.has(id));
-                    const noOpen=sessionsToday.every(s=>!["ACTIVE","CLOSING"].includes(String(s.status||"").toUpperCase()));
-                    return exact&&noOpen;
-                })(),
+                && hasShift2,
             activeAccounts:[...activeAccounts],
             pendingAccounts,
             hasShift1,
@@ -4208,7 +4165,6 @@ document.addEventListener('DOMContentLoaded',init);
                 "laporan",
                 "dataLaporan",
                 "shiftClosingLog",
-                "shiftSessions",
                 "dataRetur"
             ].includes(event.key)
         ){
@@ -4232,6 +4188,40 @@ document.addEventListener('DOMContentLoaded',init);
             sync();
         }
     },2000);
+})();
+</script>
+
+
+<script id="ldmReturEodIntegration">
+(function(){
+    const legacyCalc=calc;
+
+    calc=function(){
+        const c=legacyCalc();
+
+        const approvedReturns=arr("dataRetur").filter(r=>
+            String(r.status||"").toUpperCase()==="APPROVED"
+            &&
+            String(r.approvedTanggal||r.tanggal||"")===String(selectedDate)
+        );
+
+        const returnValue=approvedReturns.reduce(
+            (sum,r)=>sum+Number(r.totalRetur||0),
+            0
+        );
+
+        c.posSales=Number(c.posSales||0)-returnValue;
+        c.all.salesDiff=Number(c.all.sales||0)-c.posSales;
+        c.returHariIni=returnValue;
+
+        return c;
+    };
+
+    window.addEventListener("storage",e=>{
+        if(e.key==="dataRetur"){
+            loadEOD();
+        }
+    });
 })();
 </script>
 
