@@ -1,380 +1,187 @@
-
-(function () {
+(function(){
     "use strict";
 
-    const ACCOUNT_KEY = "daftarAkun";
-    const EMPLOYEE_KEY = "daftarKaryawan";
-    const SERIAL_KEY = "employeeNikSerial";
+    const KEY = "ldmEmployeesV19";
 
-    function parse(raw, fallback) {
-        try {
-            const value = JSON.parse(raw);
-            return value ?? fallback;
-        } catch (_) {
-            return fallback;
+    function read(){
+        try{
+            const rows = JSON.parse(localStorage.getItem(KEY) || "[]");
+            return Array.isArray(rows) ? rows : [];
+        }catch(error){
+            return [];
         }
     }
 
-    function normalizeUsername(value) {
-        return String(value || "").trim().toLowerCase();
+    function write(rows){
+        localStorage.setItem(KEY, JSON.stringify(rows));
+        return rows;
     }
 
-    function normalizeNik(value) {
-        return String(value || "").replace(/\D/g, "");
+    function clean(value){
+        return String(value || "").trim();
     }
 
-    function getAccounts() {
-        return parse(localStorage.getItem(ACCOUNT_KEY), []);
+    function usernameKey(value){
+        return clean(value).toLowerCase();
     }
 
-    function saveAccounts(accounts) {
-        localStorage.setItem(
-            ACCOUNT_KEY,
-            JSON.stringify(accounts)
-        );
+    function currentStoreId(input){
+        return clean(input && input.storeId)
+            || clean(localStorage.getItem("ldmCloudStoreId"))
+            || clean(localStorage.getItem("currentStoreId"))
+            || clean(localStorage.getItem("storeId"))
+            || "LOCAL-DEFAULT";
     }
 
-    function getEmployees() {
-        return parse(localStorage.getItem(EMPLOYEE_KEY), []);
+    function isEmployeeNik(value){
+        return /^\d{11}$/.test(clean(value));
     }
 
-    function saveEmployees(employees) {
-        localStorage.setItem(
-            EMPLOYEE_KEY,
-            JSON.stringify(employees)
-        );
+    function nextNumber(rows,storeId){
+        const targetStore=currentStoreId({storeId});
+        return rows.reduce((max,row) => {
+            const rowStore=currentStoreId({storeId:row.storeId||targetStore});
+            if(rowStore!==targetStore || !isEmployeeNik(row.employeeId)) return max;
+            return Math.max(max,Number(String(row.employeeId).slice(-3))||0);
+        },0)+1;
     }
 
-    function randomEmployeeId() {
-        if (
-            window.crypto &&
-            typeof crypto.randomUUID === "function"
-        ) {
-            return "emp_" + crypto.randomUUID();
-        }
-
-        return (
-            "emp_" +
-            Date.now().toString(36) +
-            "_" +
-            Math.random().toString(36).slice(2, 10)
-        );
+    function buildEmployeeNik(createdAt,number){
+        if(number>999) throw new Error("Batas 999 NIK Karyawan pada Store ID ini telah tercapai.");
+        const date=new Date(createdAt||Date.now());
+        const safeDate=Number.isFinite(date.getTime())?date:new Date();
+        const pad=value=>String(value).padStart(2,"0");
+        return String(safeDate.getFullYear()).slice(-2)
+            +pad(safeDate.getMonth()+1)
+            +pad(safeDate.getDate())
+            +pad(safeDate.getSeconds())
+            +String(number).padStart(3,"0");
     }
 
-    function nextNik() {
-        const now = new Date();
-        const yy = String(now.getFullYear()).slice(-2);
-        const mm = String(now.getMonth() + 1).padStart(2, "0");
-
-        let serial =
-            Number(
-                localStorage.getItem(SERIAL_KEY) || 0
-            );
-
-        serial += 1;
-
-        localStorage.setItem(
-            SERIAL_KEY,
-            String(serial)
-        );
-
-        return (
-            yy +
-            mm +
-            String(serial).padStart(3, "0")
-        );
-    }
-
-    function findByUsername(username) {
-        const key = normalizeUsername(username);
-
-        return getEmployees().find(
-            employee =>
-                employee &&
-                employee.active !== false &&
-                normalizeUsername(
-                    employee.username
-                ) === key
-        ) || null;
-    }
-
-    function findByNik(nik) {
-        const key = normalizeNik(nik);
-
-        return getEmployees().find(
-            employee =>
-                employee &&
-                employee.active !== false &&
-                normalizeNik(
-                    employee.nikKaryawan
-                ) === key
-        ) || null;
-    }
-
-    function ensureMigration() {
-        const accounts = getAccounts();
-        const employees = getEmployees();
-
-        let accountsChanged = false;
-        let employeesChanged = false;
-
-        for (const account of accounts) {
-            if (!account || !account.username) {
-                continue;
-            }
-
-            let employee =
-                employees.find(
-                    item =>
-                        item &&
-                        normalizeUsername(item.username) ===
-                        normalizeUsername(account.username)
+    function createForAccount(input){
+        const username = clean(input && input.username);
+        if(!username) return null;
+        const rows = read();
+        const storeId=currentStoreId(input);
+        const existing = rows.find(row => usernameKey(row.username) === usernameKey(username));
+        if(existing){
+            if(!isEmployeeNik(existing.employeeId)){
+                existing.employeeId=buildEmployeeNik(
+                    existing.createdAt||input.createdAt,
+                    nextNumber(rows,storeId)
                 );
-
-            if (!employee) {
-                employee = {
-                    employeeId:
-                        account.employeeId ||
-                        randomEmployeeId(),
-
-                    nikKaryawan:
-                        account.nikKaryawan ||
-                        nextNik(),
-
-                    /*
-                     * Nama Karyawan tidak memiliki input terpisah.
-                     * Nilainya selalu mengikuti username.
-                     */
-                    namaKaryawan:
-                        String(account.username).trim(),
-
-                    username:
-                        String(account.username).trim(),
-
-                    role:
-                        String(account.role || "kasir"),
-
-                    active:
-                        account.active !== false,
-
-                    createdAt:
-                        Date.now()
-                };
-
-                employees.push(employee);
-                employeesChanged = true;
+                existing.nikKaryawan=existing.employeeId;
             }
-
-            if (
-                employee.username !==
-                String(account.username).trim()
-                ||
-                employee.namaKaryawan !==
-                String(account.username).trim()
-            ) {
-                employee.username =
-                    String(account.username).trim();
-
-                employee.namaKaryawan =
-                    String(account.username).trim();
-
-                employee.role =
-                    String(
-                        account.role ||
-                        employee.role ||
-                        "kasir"
-                    );
-
-                employeesChanged = true;
-            }
-
-            if (
-                account.employeeId !==
-                employee.employeeId
-            ) {
-                account.employeeId =
-                    employee.employeeId;
-
-                accountsChanged = true;
-            }
-
-            if (
-                account.nikKaryawan !==
-                employee.nikKaryawan
-            ) {
-                account.nikKaryawan =
-                    employee.nikKaryawan;
-
-                accountsChanged = true;
-            }
-
-            if (
-                account.namaKaryawan !==
-                employee.namaKaryawan
-            ) {
-                account.namaKaryawan =
-                    employee.namaKaryawan;
-
-                accountsChanged = true;
-            }
+            existing.active = true;
+            existing.role = clean(input && input.role).toLowerCase() || existing.role || "kasir";
+            existing.storeId=storeId;
+            existing.updatedAt = new Date().toISOString();
+            write(rows);
+            return {...existing};
         }
-
-        if (accountsChanged) {
-            saveAccounts(accounts);
-        }
-
-        if (employeesChanged) {
-            saveEmployees(employees);
-        }
-
-        return {
-            accounts: getAccounts(),
-            employees: getEmployees()
-        };
-    }
-
-    function createForAccount(account) {
-        ensureMigration();
-
-        const username =
-            String(account?.username || "").trim();
-
-        if (!username) {
-            throw new Error("Username wajib diisi.");
-        }
-
-        const employees = getEmployees();
-
-        const existing =
-            employees.find(
-                item =>
-                    item &&
-                    normalizeUsername(item.username) ===
-                    normalizeUsername(username)
-            );
-
-        if (existing) {
-            return existing;
-        }
-
+        const requestedDate=new Date(input&&input.createdAt||Date.now());
+        const createdAt=(Number.isFinite(requestedDate.getTime())?requestedDate:new Date()).toISOString();
+        const number = nextNumber(rows,storeId);
+        const employeeId = buildEmployeeNik(createdAt,number);
         const employee = {
-            employeeId: randomEmployeeId(),
-            nikKaryawan: nextNik(),
-            namaKaryawan: username,
+            employeeId,
+            nikKaryawan:employeeId,
             username,
-            role: String(account?.role || "kasir"),
-            active: true,
-            createdAt: Date.now()
+            role:clean(input && input.role).toLowerCase() || "kasir",
+            storeId,
+            active:true,
+            createdAt,
+            updatedAt:new Date().toISOString()
         };
-
-        employees.push(employee);
-        saveEmployees(employees);
-
-        return employee;
+        rows.push(employee);
+        write(rows);
+        return {...employee};
     }
 
-    function updateUsername(
-        oldUsername,
-        newUsername,
-        role
-    ) {
-        ensureMigration();
+    function findByUsername(username){
+        const found = read().find(row => usernameKey(row.username) === usernameKey(username));
+        return found ? {...found} : null;
+    }
 
-        const employees = getEmployees();
+    function updateUsername(oldUsername,newUsername,role){
+        const rows = read();
+        const found = rows.find(row => usernameKey(row.username) === usernameKey(oldUsername));
+        if(!found) return createForAccount({username:newUsername,role});
+        found.username = clean(newUsername);
+        found.role = clean(role).toLowerCase() || found.role;
+        found.active = true;
+        found.updatedAt = new Date().toISOString();
+        write(rows);
+        return {...found};
+    }
 
-        const employee =
-            employees.find(
-                item =>
-                    item &&
-                    normalizeUsername(item.username) ===
-                    normalizeUsername(oldUsername)
-            );
+    function deactivateByUsername(username){
+        const rows = read();
+        const found = rows.find(row => usernameKey(row.username) === usernameKey(username));
+        if(!found) return false;
+        found.active = false;
+        found.updatedAt = new Date().toISOString();
+        write(rows);
+        return true;
+    }
 
-        if (!employee) {
-            return null;
+    function ensureMigration(){
+        const rows = read();
+        const defaultStoreId=currentStoreId();
+        let accounts = [];
+        try{
+            const parsed = JSON.parse(localStorage.getItem("daftarAkun") || "[]");
+            accounts = Array.isArray(parsed) ? parsed : [];
+        }catch(error){
+            accounts = [];
         }
 
-        /*
-         * NIK dan employeeId TIDAK berubah.
-         * Nama Karyawan otomatis mengikuti username baru.
-         */
-        employee.username =
-            String(newUsername).trim();
+        rows
+            .sort((a,b)=>new Date(a.createdAt||0)-new Date(b.createdAt||0))
+            .forEach(row=>{
+                const storeId=currentStoreId({storeId:row.storeId||defaultStoreId});
+                row.storeId=storeId;
+                if(!isEmployeeNik(row.employeeId)){
+                    row.employeeId=buildEmployeeNik(
+                        row.createdAt,
+                        nextNumber(rows,storeId)
+                    );
+                }
+                row.nikKaryawan=row.employeeId;
+            });
 
-        employee.namaKaryawan =
-            String(newUsername).trim();
-
-        employee.role =
-            String(role || employee.role || "kasir");
-
-        saveEmployees(employees);
-
-        return employee;
+        accounts.forEach(account => {
+            const username = clean(account && account.username);
+            if(!username) return;
+            const storeId=currentStoreId({storeId:account.storeId||defaultStoreId});
+            const existing = rows.find(row => usernameKey(row.username) === usernameKey(username));
+            if(existing){
+                existing.role = clean(account.role).toLowerCase() || existing.role;
+                existing.storeId=storeId;
+                return;
+            }
+            const createdAt=account.createdAt||account.created_at||new Date().toISOString();
+            const number = nextNumber(rows,storeId);
+            const employeeId = isEmployeeNik(account.employeeId||account.nikKaryawan)
+                ? clean(account.employeeId||account.nikKaryawan)
+                : buildEmployeeNik(createdAt,number);
+            rows.push({
+                employeeId,
+                nikKaryawan:employeeId,
+                username,
+                role:clean(account.role).toLowerCase() || "kasir",
+                storeId,
+                active:account.active !== false,
+                createdAt,
+                updatedAt:new Date().toISOString()
+            });
+        });
+        write(rows);
+        return rows.map(row => ({...row}));
     }
 
-    function deactivateByUsername(username) {
-        ensureMigration();
-
-        const employees = getEmployees();
-
-        const employee =
-            employees.find(
-                item =>
-                    item &&
-                    normalizeUsername(item.username) ===
-                    normalizeUsername(username)
-            );
-
-        if (employee) {
-            employee.active = false;
-            employee.deactivatedAt = Date.now();
-            saveEmployees(employees);
-        }
-
-        return employee || null;
-    }
-
-    function resolveLogin(identifier) {
-        ensureMigration();
-
-        const raw =
-            String(identifier || "").trim();
-
-        const byNik =
-            findByNik(raw);
-
-        if (byNik) {
-            return {
-                username: byNik.username,
-                employee: byNik,
-                via: "nik"
-            };
-        }
-
-        const byUsername =
-            findByUsername(raw);
-
-        return {
-            username:
-                byUsername
-                    ? byUsername.username
-                    : raw,
-            employee: byUsername,
-            via: "username"
-        };
-    }
-
-    window.LDMEmployee = {
-        ensureMigration,
-        getEmployees,
-        findByUsername,
-        findByNik,
-        createForAccount,
-        updateUsername,
-        deactivateByUsername,
-        resolveLogin,
-        nextNik
-    };
-
-    ensureMigration();
+    window.LDMEmployee = Object.freeze({
+        version:"27.0.0",read,ensureMigration,createForAccount,
+        findByUsername,updateUsername,deactivateByUsername
+    });
 })();

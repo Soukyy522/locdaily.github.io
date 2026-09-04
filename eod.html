@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+    <script src="js/storage-engine.js?v=27.7.1"></script>
+    <script src="js/storage-quota-guard.js?v=27.7.1"></script>
+    <script defer src="js/storage-health-monitor.js?v=27.7.1"></script>
+<script src="js/local-time.js?v=26.4.0"></script><meta name="referrer" content="strict-origin-when-cross-origin"><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><script src="js/security-hardening.js?v=19.0"></script>    <script src="js/error-monitor.js?v=27.9.0-monitor1"></script>
+<script defer src="js/qa-runtime.js?v=19.0"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>End of Day - LocDailyMar POS</title>
@@ -11,9 +16,7 @@
 
     <link rel="icon" type="image/x-icon" href="icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="icon.png">
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-
-    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Fira+Code:wght@500;700&family=Fredoka:wght@600;700&family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@500;700&family=Lato:wght@400;700&family=Lobster&family=Merriweather:wght@400;700&family=Montserrat:wght@400;600;700&family=Nunito:wght@400;700&family=Open+Sans:wght@400;600;700&family=Oswald:wght@500;700&family=Pacifico&family=Playfair+Display:wght@600;800&family=Poppins:wght@400;600;700&family=Raleway:wght@500;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Fira+Code:wght@500;700&family=Fredoka:wght@600;700&family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@500;700&family=Lato:wght@400;700&family=Lobster&family=Merriweather:wght@400;700&family=Montserrat:wght@400;600;700&family=Nunito:wght@400;700&family=Open+Sans:wght@400;600;700&family=Oswald:wght@500;700&family=Pacifico&family=Playfair+Display:wght@600;800&family=Poppins:wght@400;600;700&family=Raleway:wght@500;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
 
     <style>
 
@@ -965,7 +968,6 @@
     }
 
     /* Kasir: sembunyikan route yang memang tidak dapat dibuka. */
-    html[data-ldm-role="kasir"] .nav-bar a[href="barang.html"],
     html[data-ldm-role="kasir"] .nav-bar a[href="supplier.html"],
     html[data-ldm-role="kasir"] .nav-bar a[href="Purchase-Order.html"],
     html[data-ldm-role="kasir"] .nav-bar a[href="goods.receipt.html"],
@@ -1411,14 +1413,7 @@
     }
 
     function witaDate(value){
-        const source=value instanceof Date?value:new Date(value??Date.now());
-        const time=isNaN(source)?Date.now():source.getTime();
-        const d=new Date(time+(8*60*60*1000));
-        return (
-            d.getUTCFullYear()+"-"+
-            String(d.getUTCMonth()+1).padStart(2,"0")+"-"+
-            String(d.getUTCDate()).padStart(2,"0")
-        );
+        return window.LDMLocalTime.dateKey(value);
     }
 
     function recordDate(item){
@@ -1922,6 +1917,24 @@
 })();
 </script>
 
+    <!-- Live Sync Tahap 6: Supabase Auth authoritative guard -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/supabase-client.js"></script>
+    <script src="js/cloud-auth.js?v=15.0"></script>
+    <script src="js/cloud-session.js?v=6.0"></script>
+    <script src="js/cloud-session-guard.js?v=15.0"></script>
+
+    <!-- Live Sync Tahap 10: Cloud Retur compatibility -->
+    <script src="js/returns-service.js?v=10.0"></script>
+    <script src="js/returns-bootstrap.js?v=10.0"></script>
+
+    <!-- Live Sync Tahap 12: Final Cloud Reporting Authority -->
+    <script src="js/reporting-service.js?v=27.7.1"></script>
+    <script src="js/reporting-bootstrap.js?v=25.2.1"></script>
+<script src="js/license-v2-config.js?v=25.2.0"></script>
+<script src="js/license-v2-client.js?v=25.2.0"></script>
+<script defer src="js/license-v2-guard.js?v=25.2.0"></script>
 </head>
 
 <body>
@@ -2531,8 +2544,8 @@ function updateRunningClock(){
     }
 }
 
-function witaDate(v=new Date()){const x=new Date(v);const d=new Date((isNaN(x)?Date.now():x.getTime())+8*3600000);return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0')}
-function witaTime(){const d=new Date(Date.now()+8*3600000);return String(d.getUTCHours()).padStart(2,'0')+':'+String(d.getUTCMinutes()).padStart(2,'0')+':'+String(d.getUTCSeconds()).padStart(2,'0')}
+function witaDate(v=new Date()){return window.LDMLocalTime.dateKey(v)}
+function witaTime(){return window.LDMLocalTime.timeKey()}
 function dateOf(x){if(!x)return'';const r=x.waktu_teks||x.tanggal||x.tgl||x.date||x.waktu||x.created_at||x.timestamp||'';if(typeof r==='string'&&/^\d{4}-\d{2}-\d{2}/.test(r))return r.slice(0,10);const d=new Date(r);return isNaN(d)?'':witaDate(d)}
 function rp(n){return'Rp '+Number(n||0).toLocaleString('id-ID')}function signed(n){n=Number(n||0);return n>0?'+Rp '+n.toLocaleString('id-ID'):n<0?'-Rp '+Math.abs(n).toLocaleString('id-ID'):'Rp 0'}
 function esc(s){return String(s??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}
@@ -3585,7 +3598,7 @@ document.addEventListener('DOMContentLoaded',init);
         "absensi.html":["owner","admin","kasir"],
         "kasir.html":["owner","admin","kasir"],
         "retur.html":["owner","admin","kasir"],
-        "barang.html":["owner","admin"],
+        "barang.html":["owner","admin","kasir"],
         "supplier.html":["owner","admin"],
         "Purchase-Order.html":["owner","admin"],
         "goods.receipt.html":["owner","admin"],
@@ -3657,7 +3670,7 @@ document.addEventListener('DOMContentLoaded',init);
         {page:"kasir.html", icon:"💵", label:"Kasir", group:"Utama", roles:["owner","admin","kasir"], quick:true},
         {page:"retur.html", icon:"↩️", label:"Retur", group:"Keuangan & Laporan", roles:["owner","admin","kasir"]},
 
-        {page:"barang.html", icon:"📦", label:"Barang", group:"Inventori", roles:["owner","admin"], badge:"navBadge"},
+        {page:"barang.html", icon:"📦", label:"Barang", group:"Inventori", roles:["owner","admin","kasir"], badge:"navBadge"},
         {page:"kartu-stok.html", icon:"📒", label:"Kartu Stok", group:"Inventori", roles:["owner","admin","kasir"]},
         {page:"stock-opname.html", icon:"📋", label:"Stock Opname", group:"Inventori", roles:["owner","admin","kasir"]},
 
@@ -3983,15 +3996,7 @@ document.addEventListener('DOMContentLoaded',init);
     }
 
     function witaDate(value){
-        const source=value instanceof Date?value:new Date(value??Date.now());
-        const time=isNaN(source)?Date.now():source.getTime();
-        const d=new Date(time+(8*60*60*1000));
-
-        return (
-            d.getUTCFullYear()+"-"+
-            String(d.getUTCMonth()+1).padStart(2,"0")+"-"+
-            String(d.getUTCDate()).padStart(2,"0")
-        );
+        return window.LDMLocalTime.dateKey(value);
     }
 
     function recordDate(item){
@@ -4225,5 +4230,77 @@ document.addEventListener('DOMContentLoaded',init);
 })();
 </script>
 
+
+<script id="ldmStage12EodCloudOverride">
+(function(){
+    "use strict";
+
+    window.saveEOD = async function(){
+        if(!window.LDMReporting){
+            closeModal();
+            alertBox("Cloud Reporting Belum Siap","reporting-service.js belum termuat.","danger");
+            return;
+        }
+
+        const c = calc();
+        if(!c.ready){
+            closeModal();
+            alertBox("Data Berubah","Closing Shift cloud belum lengkap.","warning");
+            return;
+        }
+
+        try{
+            const result = await window.LDMReporting.finalizeEOD(note.value.trim());
+            closeModal();
+            loadEOD();
+            alertBox(
+                "End of Day Berhasil",
+                `EOD ${result.business_date || selectedDate} sudah FINAL di cloud.`,
+                "success"
+            );
+        }catch(error){
+            closeModal();
+            alertBox("End of Day Gagal",error?.message || String(error),"danger");
+        }
+    };
+
+    window.deleteEOD = async function(id){
+        if(currentRole !== "owner") return;
+
+        const target = eodLogs().find(row => Number(row.id) === Number(id));
+        if(!target) return;
+
+        if(!target.cloudId){
+            alertBox("EOD Legacy","EOD lama belum dimigrasikan ke Tahap 12.","warning");
+            return;
+        }
+
+        const ok = await ldmDialog.confirm(
+            "Batalkan End of Day",
+            "EOD akan berstatus VOIDED. Closing Shift tidak ikut dihapus.",
+            "danger",
+            {okText:"Void EOD"}
+        );
+        if(!ok) return;
+
+        try{
+            await window.LDMReporting.voidEOD(
+                target.cloudId,
+                "Dibatalkan Owner dari End of Day"
+            );
+            loadEOD();
+            alertBox("EOD Dibatalkan","Snapshot EOD cloud berstatus VOIDED.","success");
+        }catch(error){
+            alertBox("Void EOD Gagal",error?.message || String(error),"danger");
+        }
+    };
+
+    window.addEventListener("ldm-reporting-cache-updated",function(){
+        if(typeof loadEOD === "function") loadEOD();
+    });
+})();
+</script>
+
+<script src="js/global-system-navigation.js?v=25.2"></script>
 </body>
 </html>

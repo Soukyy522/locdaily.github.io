@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+    <script src="js/storage-engine.js?v=27.7.1"></script>
+    <script src="js/storage-quota-guard.js?v=27.7.1"></script>
+    <script defer src="js/storage-health-monitor.js?v=27.7.1"></script>
+<script src="js/local-time.js?v=26.4.0"></script><meta name="referrer" content="strict-origin-when-cross-origin"><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><script src="js/security-hardening.js?v=19.0"></script>    <script src="js/error-monitor.js?v=27.9.0-monitor1"></script>
+<script defer src="js/qa-runtime.js?v=19.0"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Purchase Order - LocDailyMar POS</title>
@@ -908,17 +913,21 @@ input[type="color"] {
             display: none !important;
         }
 
-        body.role-owner .owner-purchase-value {
+        body.role-owner .owner-procurement-total,
+        html[data-ldm-primary-owner="true"] body.role-owner .owner-unit-cost {
             display: revert !important;
         }
 
         /* Untuk elemen form/card yang membutuhkan display normal */
-        body.role-owner div.owner-purchase-value {
+        body.role-owner div.owner-procurement-total,
+        html[data-ldm-primary-owner="true"] body.role-owner div.owner-unit-cost {
             display: block !important;
         }
 
-        body.role-owner th.owner-purchase-value,
-        body.role-owner td.owner-purchase-value {
+        body.role-owner th.owner-procurement-total,
+        body.role-owner td.owner-procurement-total,
+        html[data-ldm-primary-owner="true"] body.role-owner th.owner-unit-cost,
+        html[data-ldm-primary-owner="true"] body.role-owner td.owner-unit-cost {
             display: table-cell !important;
         }
 
@@ -981,7 +990,6 @@ input[type="color"] {
     }
 
     /* Kasir: sembunyikan route yang memang tidak dapat dibuka. */
-    html[data-ldm-role="kasir"] .nav-bar a[href="barang.html"],
     html[data-ldm-role="kasir"] .nav-bar a[href="supplier.html"],
     html[data-ldm-role="kasir"] .nav-bar a[href="Purchase-Order.html"],
     html[data-ldm-role="kasir"] .nav-bar a[href="goods.receipt.html"],
@@ -1427,14 +1435,7 @@ input[type="color"] {
     }
 
     function witaDate(value){
-        const source=value instanceof Date?value:new Date(value??Date.now());
-        const time=isNaN(source)?Date.now():source.getTime();
-        const d=new Date(time+(8*60*60*1000));
-        return (
-            d.getUTCFullYear()+"-"+
-            String(d.getUTCMonth()+1).padStart(2,"0")+"-"+
-            String(d.getUTCDate()).padStart(2,"0")
-        );
+        return window.LDMLocalTime.dateKey(value);
     }
 
     function recordDate(item){
@@ -1507,14 +1508,7 @@ input[type="color"] {
         const hasShift2=closingToday.some(
             item=>shiftName(item?.shift)==="shift 2"
         );
-
-        const sessionsToday=readArray("shiftSessions").filter(s=>String(s.tanggal||"")===today&&String(s.status||"").toUpperCase()!=="CANCELLED");
-        const txShiftIds=[...new Set(transaksi.map(t=>String(t.shiftId||"")).filter(Boolean))];
-        const closedShiftIds=new Set(closingToday.map(l=>String(l.shiftId||"")).filter(Boolean));
-        const sessionById=new Map(sessionsToday.map(s=>[String(s.id),s]));
-        const exactReady=txShiftIds.every(id=>String(sessionById.get(id)?.status||"").toUpperCase()==="CLOSED"&&closedShiftIds.has(id));
-        const noOpen=sessionsToday.every(s=>!["ACTIVE","CLOSING"].includes(String(s.status||"").toUpperCase()));
-        return allClosed && hasShift1 && hasShift2 && exactReady && noOpen;
+        return allClosed && hasShift1 && hasShift2;
     }
 
     try{
@@ -1945,6 +1939,23 @@ input[type="color"] {
 })();
 </script>
 
+    <!-- Live Sync Tahap 6: Supabase Auth authoritative guard -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/supabase-client.js"></script>
+    <script src="js/cloud-auth.js?v=15.0"></script>
+    <script src="js/cloud-session.js?v=6.0"></script>
+    <script src="js/cloud-session-guard.js?v=15.0"></script>
+    <script src="js/unit-conversion.js?v=20.0"></script>
+    <script src="js/procurement-service.js?v=25.3.1"></script>
+    <script src="js/procurement-bootstrap.js?v=11.0"></script>
+    <!-- Live Sync Tahap 7: Cloud Master Barang -->
+    <script src="js/products-service.js?v=25.3.1"></script>
+    <script src="js/products-bootstrap.js?v=7.0"></script>
+
+<script src="js/license-v2-config.js?v=25.2.0"></script>
+<script src="js/license-v2-client.js?v=25.2.0"></script>
+<script defer src="js/license-v2-guard.js?v=25.2.0"></script>
 </head>
 
 <body>
@@ -2023,6 +2034,11 @@ input[type="color"] {
                 </div>
 
                 <div class="form-group">
+                    <label>Nama Perusahaan di Pesan WhatsApp</label>
+                    <input type="text" id="inputNamaPerusahaanWhatsAppPO" maxlength="80" placeholder="Contoh: Toko Maju Jaya">
+                </div>
+
+                <div class="form-group">
                     <label>Referensi / Sales</label>
                     <input type="text" id="inputReferensiPO" maxlength="60" placeholder="Nama sales / referensi (opsional)">
                 </div>
@@ -2071,16 +2087,26 @@ input[type="color"] {
                 </div>
 
                 <div class="form-group">
-                    <label>Qty Pesan</label>
+                    <label id="labelQtyPO">Qty Pesan</label>
                     <input type="number" id="inputQtyPO" min="0.01" step="0.01" placeholder="0" oninput="hitungPreviewPO()">
                 </div>
 
-                <div class="form-group owner-purchase-value">
-                    <label>Harga Beli Estimasi / Satuan</label>
+                <div class="form-group">
+                    <label>Satuan Beli</label>
+                    <input type="text" id="inputSatuanBeliPO" value="Pcs" readonly>
+                </div>
+
+                <div class="form-group">
+                    <label>Konversi ke Stok Dasar</label>
+                    <input type="text" id="inputKonversiPO" value="1 Pcs = 1 Pcs" readonly>
+                </div>
+
+                <div class="form-group owner-purchase-value owner-unit-cost">
+                    <label>Harga Beli Estimasi / Kemasan</label>
                     <input type="number" id="inputHargaBeliPO" min="0" step="1" placeholder="0" oninput="hitungPreviewPO()">
                 </div>
 
-                <div class="form-group owner-purchase-value">
+                <div class="form-group owner-purchase-value owner-procurement-total">
                     <label>Subtotal Estimasi</label>
                     <input type="text" id="inputSubtotalPO" value="Rp 0" readonly>
                 </div>
@@ -2108,8 +2134,8 @@ input[type="color"] {
                             <th>Stok Saat Ini</th>
                             <th>Qty Pesan</th>
                             <th>Sudah Diterima</th>
-                            <th class="owner-purchase-value">Harga Estimasi</th>
-                            <th class="owner-purchase-value">Subtotal</th>
+                            <th class="owner-purchase-value owner-unit-cost">Harga Estimasi</th>
+                            <th class="owner-purchase-value owner-procurement-total">Subtotal</th>
                             <th>Aksi</th>
                         </tr>
                     </thead>
@@ -2121,7 +2147,7 @@ input[type="color"] {
                 <div class="summary-box"><span>Jenis Barang</span><strong id="sumJenisPO">0</strong></div>
                 <div class="summary-box"><span>Total Qty Pesan</span><strong id="sumQtyPO">0</strong></div>
                 <div class="summary-box"><span>Total Diterima</span><strong id="sumDiterimaPO">0</strong></div>
-                <div class="summary-box owner-purchase-value"><span>Total Estimasi</span><strong id="sumNilaiPO">Rp 0</strong></div>
+                <div class="summary-box owner-purchase-value owner-procurement-total"><span>Total Estimasi</span><strong id="sumNilaiPO">Rp 0</strong></div>
             </div>
 
             <div class="action-bar">
@@ -2177,7 +2203,7 @@ input[type="color"] {
                             <th>Estimasi Tiba</th>
                             <th>Status</th>
                             <th>Item / Qty</th>
-                            <th class="owner-purchase-value">Total Estimasi</th>
+                            <th class="owner-purchase-value owner-procurement-total">Total Estimasi</th>
                             <th>Petugas</th>
                             <th>Aksi</th>
                         </tr>
@@ -3702,6 +3728,7 @@ function safeReadObject(key) {
 
 function getSecuritySession() {
     const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+    const isCloudSession = localStorage.getItem("ldmAuthSource") === "supabase";
     const username =
         localStorage.getItem("username") ||
         localStorage.getItem("activeUsername") ||
@@ -3712,9 +3739,10 @@ function getSecuritySession() {
 
     if (!isLoggedIn || !username || !role) return null;
     if (!["owner","admin","kasir"].includes(role)) return null;
-    if (loginTimestamp && Date.now() - loginTimestamp > SECURITY_CONFIG.SESSION_TIME) return null;
+    // Masa berlaku sesi cloud dikelola Supabase, bukan timer legacy 30 menit.
+    if (!isCloudSession && loginTimestamp && Date.now() - loginTimestamp > SECURITY_CONFIG.SESSION_TIME) return null;
 
-    return { username: String(username).trim(), role, loginTimestamp };
+    return { username: String(username).trim(), role, loginTimestamp, isCloudSession };
 }
 
 function clearSecuritySession() {
@@ -3740,6 +3768,10 @@ function requireLogin() {
 function validateSessionAgainstAccounts() {
     const session = getSecuritySession();
     if (!session) return false;
+
+    // Untuk login Supabase, profile cloud adalah sumber role authoritative.
+    // daftarAkun hanya cache kompatibilitas dan boleh masih berisi role lama.
+    if (session.isCloudSession) return true;
 
     const akunList = safeReadArray("daftarAkun");
     if (akunList.length === 0) return true;
@@ -3789,17 +3821,23 @@ function proteksiHalamanPO() {
 function terapkanVisibilitasNilaiPembelian() {
     const session = getSecuritySession();
     const isOwner = Boolean(session && normalizeRole(session.role) === "owner");
+    const isPrimaryOwner =
+        document.documentElement.dataset.ldmPrimaryOwner === "true"
+        || Boolean(window.LDMPrimaryOwner && window.LDMPrimaryOwner.isPrimaryOwner());
 
     document.body.classList.toggle("role-owner", isOwner);
 
     document.querySelectorAll(".owner-purchase-value").forEach(el => {
-        if (isOwner) {
+        const isTotal = el.classList.contains("owner-procurement-total");
+        if (isOwner && (isTotal || isPrimaryOwner)) {
             el.removeAttribute("aria-hidden");
         } else {
             el.setAttribute("aria-hidden", "true");
         }
     });
 }
+
+window.addEventListener("ldm-primary-owner-ready",terapkanVisibilitasNilaiPembelian);
 
 function terapkanMenuRole() {
     const session = getSecuritySession();
@@ -4143,6 +4181,30 @@ function getDataBarang() {
     return safeReadArray("dataBarang");
 }
 
+function terapkanHargaMasterPadaDraftPO(items) {
+    const products = getDataBarang();
+    return (Array.isArray(items) ? items : []).map(source => {
+        const item = { ...source };
+        const product = products.find(row =>
+            (item.productId && String(row.id || "") === String(item.productId))
+            || (item.barcode && String(row.barcode || "") === String(item.barcode))
+            || String(row.nama || "").trim().toLowerCase() === String(item.namaBarang || "").trim().toLowerCase()
+        );
+        if (!product) return item;
+
+        const factor = Math.max(
+            Number(item.faktorKonversi || product.konversiBeli || 1),
+            0.001
+        );
+        const basePrice = Math.max(Number(product.hargaBeli || 0),0);
+        const existingPackagePrice = Math.max(Number(item.hargaBeli || 0),0);
+        item.hargaBeli = existingPackagePrice || (basePrice * factor);
+        item.hargaBeliDasar = item.hargaBeli / factor;
+        item.subtotal = Number(item.qtyOrdered || 0) * item.hargaBeli;
+        return item;
+    });
+}
+
 function buatNomorPO() {
     const key = tanggalHariIni().replaceAll("-","");
     const prefix = `PO-${key}-`;
@@ -4231,10 +4293,19 @@ function pilihBarangPO(index) {
     document.getElementById("selectedBarangPO").value = String(index);
     document.getElementById("inputCariBarangPO").value = item.nama || "";
     document.getElementById("inputNamaBarangPO").value = item.nama || "";
+    const normalized = window.LDMUnits
+        ? window.LDMUnits.normalizeProduct(item)
+        : {...item,satuanDasar:item.satuan || "Pcs",satuanBeli:item.satuanBeli || item.satuan || "Pcs",konversiBeli:Number(item.konversiBeli || 1)};
     document.getElementById("inputStokPO").value =
-        `${formatQty(item.stok || 0)} ${item.satuan || "Pcs"}`;
+        `${formatQty(item.stok || 0)} ${normalized.satuanDasar}`;
+    document.getElementById("inputSatuanBeliPO").value = normalized.satuanBeli;
+    document.getElementById("inputKonversiPO").value =
+        `1 ${normalized.satuanBeli} = ${normalized.konversiBeli} ${normalized.satuanDasar}`;
+    document.getElementById("labelQtyPO").textContent = `Qty Pesan (${normalized.satuanBeli})`;
     document.getElementById("inputQtyPO").value = "1";
-    document.getElementById("inputHargaBeliPO").value = Number(item.hargaBeli || 0);
+    document.getElementById("inputHargaBeliPO").value = window.LDMUnits
+        ? window.LDMUnits.packagePrice(item.hargaBeli || 0,normalized)
+        : Number(item.hargaBeli || 0) * Number(normalized.konversiBeli || 1);
     document.getElementById("dropdownBarangPO").style.display = "none";
 
     hitungPreviewPO();
@@ -4253,6 +4324,9 @@ function resetFormBarangPO() {
     document.getElementById("inputCariBarangPO").value = "";
     document.getElementById("inputNamaBarangPO").value = "";
     document.getElementById("inputStokPO").value = "0";
+    document.getElementById("inputSatuanBeliPO").value = "Pcs";
+    document.getElementById("inputKonversiPO").value = "1 Pcs = 1 Pcs";
+    document.getElementById("labelQtyPO").textContent = "Qty Pesan";
     document.getElementById("inputQtyPO").value = "";
     document.getElementById("inputHargaBeliPO").value = "";
     document.getElementById("inputSubtotalPO").value = "Rp 0";
@@ -4278,6 +4352,15 @@ function tambahBarangKePO() {
 
     const qty = Number(document.getElementById("inputQtyPO").value);
     const harga = Number(document.getElementById("inputHargaBeliPO").value);
+    const normalized = window.LDMUnits
+        ? window.LDMUnits.normalizeProduct(barang)
+        : {...barang,satuanDasar:barang.satuan || "Pcs",satuanBeli:barang.satuanBeli || barang.satuan || "Pcs",konversiBeli:Number(barang.konversiBeli || 1)};
+    const qtyBase = window.LDMUnits
+        ? window.LDMUnits.toBase(qty,normalized)
+        : qty * Number(normalized.konversiBeli || 1);
+    const hargaDasar = window.LDMUnits
+        ? window.LDMUnits.basePrice(harga,normalized)
+        : harga / Number(normalized.konversiBeli || 1);
 
     if (!Number.isFinite(qty) || qty <= 0) {
         notify("Qty Tidak Valid","Qty pesanan harus lebih dari 0.");
@@ -4295,7 +4378,9 @@ function tambahBarangKePO() {
 
     if (existing) {
         existing.qtyOrdered += qty;
+        existing.qtyOrderedBase = Number(existing.qtyOrdered || 0) * Number(existing.faktorKonversi || 1);
         existing.hargaBeli = harga;
+        existing.hargaBeliDasar = hargaDasar;
         existing.subtotal = existing.qtyOrdered * harga;
     } else {
         draftPO.push({
@@ -4305,11 +4390,16 @@ function tambahBarangKePO() {
             barcode,
             namaBarang: String(barang.nama || "Tanpa Nama"),
             kategori: String(barang.kategori || ""),
-            satuan: String(barang.satuan || "Pcs"),
+            satuan: String(normalized.satuanBeli),
+            satuanDasar: String(normalized.satuanDasar),
+            faktorKonversi: Number(normalized.konversiBeli || 1),
             stokSnapshot: Number(barang.stok || 0),
             qtyOrdered: qty,
+            qtyOrderedBase: qtyBase,
             qtyReceived: 0,
+            qtyReceivedBase: 0,
             hargaBeli: harga,
+            hargaBeliDasar: hargaDasar,
             subtotal: qty * harga
         });
     }
@@ -4329,17 +4419,17 @@ function renderDraftPO() {
         tbody.innerHTML = draftPO.map((item,index) => `
             <tr>
                 <td>${index + 1}</td>
-                <td><strong>${escapeHTML(item.namaBarang)}</strong><br><small style="color:#94a3b8;">${escapeHTML(item.kategori || "-")} • ${escapeHTML(item.satuan)}</small></td>
+                <td><strong>${escapeHTML(item.namaBarang)}</strong><br><small style="color:#94a3b8;">${escapeHTML(item.kategori || "-")} • 1 ${escapeHTML(item.satuan)} = ${formatQty(item.faktorKonversi || 1)} ${escapeHTML(item.satuanDasar || item.satuan || "Pcs")}</small></td>
                 <td>${escapeHTML(item.barcode || "-")}</td>
-                <td>${formatQty(item.stokSnapshot)} ${escapeHTML(item.satuan)}</td>
+                <td>${formatQty(item.stokSnapshot)} ${escapeHTML(item.satuanDasar || item.satuan || "Pcs")}</td>
                 <td>
                     <button type="button" class="btn btn-soft" style="padding:4px 7px;" onclick="ubahQtyDraft('${item.id}',-1)">−</button>
-                    <strong style="margin:0 7px;">${formatQty(item.qtyOrdered)}</strong>
+                    <strong style="margin:0 7px;">${formatQty(item.qtyOrdered)} ${escapeHTML(item.satuan || "")}</strong>
                     <button type="button" class="btn btn-soft" style="padding:4px 7px;" onclick="ubahQtyDraft('${item.id}',1)">+</button>
                 </td>
-                <td>${formatQty(item.qtyReceived || 0)}</td>
-                <td class="owner-purchase-value">${formatRupiah(item.hargaBeli)}</td>
-                <td class="owner-purchase-value"><strong>${formatRupiah(item.subtotal)}</strong></td>
+                <td>${formatQty(item.qtyReceived || 0)} ${escapeHTML(item.satuan || "")}</td>
+                <td class="owner-purchase-value owner-unit-cost">${formatRupiah(item.hargaBeli)}</td>
+                <td class="owner-purchase-value owner-procurement-total"><strong>${formatRupiah(item.subtotal)}</strong></td>
                 <td><button type="button" class="btn btn-danger" style="padding:5px 8px;" onclick="hapusDraftItem('${item.id}')">Hapus</button></td>
             </tr>
         `).join("");
@@ -4369,6 +4459,7 @@ function ubahQtyDraft(id,delta) {
     }
 
     item.qtyOrdered = Math.max(next,minQty || 0.01);
+    item.qtyOrderedBase = item.qtyOrdered * Number(item.faktorKonversi || 1);
     item.subtotal = item.qtyOrdered * item.hargaBeli;
     renderDraftPO();
     jadwalkanAutoDraftPO();
@@ -4555,6 +4646,152 @@ function statusClass(status) {
     return map[status] || "badge-draft";
 }
 
+function normalisasiNomorWhatsAppPO(nomor) {
+    let hasil = String(nomor || "").replace(/\D/g, "");
+
+    if (hasil.startsWith("0")) {
+        hasil = `62${hasil.slice(1)}`;
+    } else if (hasil.startsWith("8")) {
+        hasil = `62${hasil}`;
+    }
+
+    return hasil;
+}
+
+function satuanPesanWhatsAppPO(item) {
+    const namaBarang = String(item?.namaBarang || item?.nama || "").trim();
+    return String(
+        item?.satuan || (namaBarang.toLowerCase().includes("telur") ? "Kg" : "Pcs")
+    ).trim() || "Pcs";
+}
+
+const PO_WHATSAPP_COMPANY_NAME_KEY = "ldmPOWhatsAppCompanyName";
+
+function namaPerusahaanDefaultWhatsAppPO() {
+    const config = { ...DEFAULT_HEADER_CONFIG, ...safeReadObject("headerConfig") };
+    return String(config.judul || "LocDailyMar").trim() || "LocDailyMar";
+}
+
+function bacaNamaPerusahaanWhatsAppPO() {
+    const input = document.getElementById("inputNamaPerusahaanWhatsAppPO");
+    const dariInput = cleanText(input?.value || "",80);
+
+    if (dariInput) {
+        return dariInput;
+    }
+
+    const tersimpan = cleanText(
+        localStorage.getItem(PO_WHATSAPP_COMPANY_NAME_KEY) || "",
+        80
+    );
+
+    return tersimpan || namaPerusahaanDefaultWhatsAppPO();
+}
+
+function simpanNamaPerusahaanWhatsAppPO() {
+    const input = document.getElementById("inputNamaPerusahaanWhatsAppPO");
+    if (!input) return;
+
+    const namaPerusahaan = cleanText(input.value,80);
+
+    if (namaPerusahaan) {
+        localStorage.setItem(PO_WHATSAPP_COMPANY_NAME_KEY,namaPerusahaan);
+        input.value = namaPerusahaan;
+    } else {
+        localStorage.removeItem(PO_WHATSAPP_COMPANY_NAME_KEY);
+        input.value = namaPerusahaanDefaultWhatsAppPO();
+    }
+}
+
+function muatNamaPerusahaanWhatsAppPO() {
+    const input = document.getElementById("inputNamaPerusahaanWhatsAppPO");
+    if (!input) return;
+
+    const tersimpan = cleanText(
+        localStorage.getItem(PO_WHATSAPP_COMPANY_NAME_KEY) || "",
+        80
+    );
+
+    input.value = tersimpan || namaPerusahaanDefaultWhatsAppPO();
+}
+
+function buatPesanWhatsAppPO(po) {
+    const namaPerusahaan = bacaNamaPerusahaanWhatsAppPO();
+    const supplier = String(po?.supplier || "Supplier").trim() || "Supplier";
+    const items = Array.isArray(po?.items) ? po.items : [];
+
+    const daftarPesanan = items.map((item,index) => {
+        const namaBarang = String(item?.namaBarang || item?.nama || "Barang").trim() || "Barang";
+        const jumlah = formatQty(Number(item?.qtyOrdered || item?.qty || 0));
+        const satuan = satuanPesanWhatsAppPO(item);
+        return `${index + 1}. ${namaBarang} - ${jumlah} ${satuan}`;
+    }).join("\n");
+
+    const bagianPesan = [
+        `Halo Tim ${supplier}, kami dari ${namaPerusahaan} ingin melakukan pemesanan.`,
+        "",
+        "*PURCHASE ORDER*",
+        `No. PO: ${po?.nomorPO || "-"}`,
+        `Tanggal: ${formatTanggalIndo(po?.tanggal)}`,
+        `Estimasi tiba: ${formatTanggalIndo(po?.estimasiTiba)}`,
+        "",
+        "*Daftar pesanan:*",
+        daftarPesanan || "-"
+    ];
+
+    if (String(po?.catatan || "").trim()) {
+        bagianPesan.push("", "*Catatan:*", String(po.catatan).trim());
+    }
+
+    bagianPesan.push(
+        "",
+        "Mohon dikonfirmasi ketersediaan barang dan estimasi pengirimannya.",
+        "Terima kasih."
+    );
+
+    return bagianPesan.join("\n");
+}
+
+function kirimPOKeWhatsApp(id) {
+    const po = safeReadArray("dataPurchaseOrder")
+        .find(item => String(item.id) === String(id));
+
+    if (!po) {
+        notify("PO Tidak Ditemukan", "Purchase Order tidak ditemukan.");
+        return;
+    }
+
+    if (!["Ordered","Partial"].includes(po.status)) {
+        notify(
+            "PO Belum Bisa Dikirim",
+            "Pesan WhatsApp hanya dapat dibuat setelah PO disetujui dan berstatus Ordered atau Partial."
+        );
+        return;
+    }
+
+    const nomor = normalisasiNomorWhatsAppPO(po.kontakSupplier);
+
+    if (!/^[1-9]\d{7,14}$/.test(nomor)) {
+        notify(
+            "Nomor WhatsApp Tidak Valid",
+            "Isi kontak supplier dengan nomor WhatsApp yang benar, misalnya 081234567890."
+        );
+        return;
+    }
+
+    simpanNamaPerusahaanWhatsAppPO();
+    const pesan = buatPesanWhatsAppPO(po);
+    const tautan = `https://wa.me/${nomor}?text=${encodeURIComponent(pesan)}`;
+    const link = document.createElement("a");
+
+    link.href = tautan;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+}
+
 function renderRiwayatPO() {
     let data = safeReadArray("dataPurchaseOrder");
     const status = document.getElementById("filterStatusPO").value;
@@ -4585,6 +4822,7 @@ function renderRiwayatPO() {
         const canApprove =
             po.status === "PendingApproval" &&
             hasPermission("purchaseorder.approve");
+        const canWhatsApp = ["Ordered","Partial"].includes(po.status);
         const canCancel =
             ownerDelete &&
             ["Draft","PendingApproval","Ordered","Partial"].includes(po.status);
@@ -4597,7 +4835,7 @@ function renderRiwayatPO() {
                 <td>${formatTanggalIndo(po.estimasiTiba)}</td>
                 <td><span class="badge ${statusClass(po.status)}">${escapeHTML(po.status || "-")}</span></td>
                 <td>${Number(po.totalJenis || 0)} jenis / ${formatQty(po.totalQty || 0)}<br><small style="color:#94a3b8;">Diterima: ${formatQty(po.totalReceived || 0)}</small></td>
-                <td class="owner-purchase-value"><strong>${formatRupiah(po.totalNilai || 0)}</strong></td>
+                <td class="owner-purchase-value owner-procurement-total"><strong>${formatRupiah(po.totalNilai || 0)}</strong></td>
                 <td>${escapeHTML(po.petugas || "-")}</td>
                 <td>
                     <div style="display:flex;gap:5px;flex-wrap:wrap;">
@@ -4605,6 +4843,7 @@ function renderRiwayatPO() {
                         <button type="button" class="btn btn-secondary" style="padding:5px 7px;" onclick="cetakPO('${po.id}')">🖨</button>
                         ${canEdit ? `<button type="button" class="btn btn-warning" style="padding:5px 7px;" onclick="editDraftPO('${po.id}')">Edit</button>` : ""}
                         ${canApprove ? `<button type="button" class="btn btn-success" style="padding:5px 7px;" onclick="acceptPendingPO('${po.id}')">✅ Accept</button>` : ""}
+                        ${canWhatsApp ? `<button type="button" class="btn btn-success" style="padding:5px 7px;" onclick="kirimPOKeWhatsApp('${po.id}')">💬 WhatsApp</button>` : ""}
                         ${canReceive ? `<button type="button" class="btn btn-success" style="padding:5px 7px;" onclick="buatGoodsReceiptDariPO('${po.id}')">📥 Terima</button>` : ""}
                         ${canCancel ? `<button type="button" class="btn btn-danger" style="padding:5px 7px;" onclick="konfirmasiBatalkanPO('${po.id}')">Batalkan</button>` : ""}
                         ${ownerDelete ? `<button type="button" class="btn btn-danger" style="padding:5px 7px;" onclick="konfirmasiHapusPO('${po.id}')">Hapus</button>` : ""}
@@ -4630,7 +4869,7 @@ function editDraftPO(id) {
     document.getElementById("inputKontakSupplier").value = po.kontakSupplier || "";
     document.getElementById("inputReferensiPO").value = po.referensi || "";
     document.getElementById("inputCatatanPO").value = po.catatan || "";
-    draftPO = Array.isArray(po.items) ? po.items.map(i => ({ ...i })) : [];
+    draftPO = terapkanHargaMasterPadaDraftPO(po.items);
     renderDraftPO();
 
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -4655,8 +4894,8 @@ function lihatDetailPO(id) {
                 <td>${formatQty(item.qtyOrdered || 0)}</td>
                 <td>${formatQty(item.qtyReceived || 0)}</td>
                 <td>${formatQty(sisa)}</td>
-                <td class="owner-purchase-value">${formatRupiah(item.hargaBeli || 0)}</td>
-                <td class="owner-purchase-value">${formatRupiah(item.subtotal || 0)}</td>
+                <td class="owner-purchase-value owner-unit-cost">${formatRupiah(item.hargaBeli || 0)}</td>
+                <td class="owner-purchase-value owner-procurement-total">${formatRupiah(item.subtotal || 0)}</td>
             </tr>
         `;
     }).join("");
@@ -4671,7 +4910,7 @@ function lihatDetailPO(id) {
         <div class="table-wrap">
             <table>
                 <thead>
-                    <tr><th>No</th><th>Barang</th><th>Barcode</th><th>Pesan</th><th>Diterima</th><th>Sisa</th><th>Harga</th><th class="owner-purchase-value">Subtotal</th></tr>
+                    <tr><th>No</th><th>Barang</th><th>Barcode</th><th>Pesan</th><th>Diterima</th><th>Sisa</th><th class="owner-purchase-value owner-unit-cost">Harga</th><th class="owner-purchase-value owner-procurement-total">Subtotal</th></tr>
                 </thead>
                 <tbody>${rows}</tbody>
             </table>
@@ -4681,6 +4920,7 @@ function lihatDetailPO(id) {
             ${po.status === "PendingApproval" && hasPermission("purchaseorder.approve")
                 ? `<button class="btn btn-success" onclick="acceptPendingPO('${po.id}')">✅ Accept Pending</button>`
                 : ""}
+            ${["Ordered","Partial"].includes(po.status) ? `<button class="btn btn-success" onclick="kirimPOKeWhatsApp('${po.id}')">💬 Kirim ke WhatsApp</button>` : ""}
             ${["Ordered","Partial"].includes(po.status) ? `<button class="btn btn-success" onclick="buatGoodsReceiptDariPO('${po.id}')">📥 Buat Goods Receipt</button>` : ""}
             <button class="btn btn-secondary" onclick="cetakPO('${po.id}')">🖨 Cetak</button>
             <button class="btn btn-soft" onclick="tutupModal('modalDetailPO')">Tutup</button>
@@ -4882,8 +5122,8 @@ function cetakPO(id) {
             <td>${escapeHTML(item.namaBarang || "-")}</td>
             <td>${escapeHTML(item.barcode || "-")}</td>
             <td style="text-align:right;">${formatQty(item.qtyOrdered || 0)} ${escapeHTML(item.satuan || "")}</td>
-            <td class="owner-purchase-value">${formatRupiah(item.hargaBeli || 0)}</td>
-            <td class="owner-purchase-value">${formatRupiah(item.subtotal || 0)}</td>
+            <td class="owner-purchase-value owner-unit-cost">${formatRupiah(item.hargaBeli || 0)}</td>
+            <td class="owner-purchase-value owner-procurement-total">${formatRupiah(item.subtotal || 0)}</td>
         </tr>
     `).join("");
 
@@ -4907,7 +5147,7 @@ function cetakPO(id) {
 
             <table class="print-table">
                 <thead>
-                    <tr><th>No</th><th>Barang</th><th>Barcode</th><th>Qty</th><th class="owner-purchase-value">Harga Estimasi</th><th class="owner-purchase-value">Subtotal</th></tr>
+                    <tr><th>No</th><th>Barang</th><th>Barcode</th><th>Qty</th><th class="owner-purchase-value owner-unit-cost">Harga Estimasi</th><th class="owner-purchase-value owner-procurement-total">Subtotal</th></tr>
                 </thead>
                 <tbody>${rows}</tbody>
             </table>
@@ -5089,8 +5329,7 @@ function pulihkanAutoDraftPO() {
     document.getElementById("inputCatatanPO").value =
         draft.catatan || "";
 
-    draftPO =
-        draft.items.map(item => ({ ...item }));
+    draftPO = terapkanHargaMasterPadaDraftPO(draft.items);
 
     renderDraftPO();
 
@@ -5133,7 +5372,18 @@ window.addEventListener("storage",event => {
         }
     }
 
-    if (event.key === "headerConfig") muatHeaderToko();
+    if (event.key === "headerConfig") {
+        muatHeaderToko();
+
+        if (!localStorage.getItem(PO_WHATSAPP_COMPANY_NAME_KEY)) {
+            muatNamaPerusahaanWhatsAppPO();
+        }
+    }
+
+    if (event.key === PO_WHATSAPP_COMPANY_NAME_KEY) {
+        muatNamaPerusahaanWhatsAppPO();
+    }
+
     if (event.key === "dataPurchaseOrder") renderRiwayatPO();
 });
 
@@ -5144,12 +5394,24 @@ document.addEventListener("click",event => {
     }
 });
 
-document.addEventListener("DOMContentLoaded",() => {
+document.addEventListener("DOMContentLoaded",async () => {
+    try {
+        if (window.LDMCloudSession) {
+            await window.LDMCloudSession.ensureAuthenticated({
+                registerDevice: false
+            });
+        }
+    } catch (error) {
+        console.error("Akses cloud Purchase Order gagal:", error);
+        return;
+    }
+
     if (!proteksiHalamanPO()) return;
 
     terapkanMenuRole();
     terapkanVisibilitasNilaiPembelian();
     muatHeaderToko();
+    muatNamaPerusahaanWhatsAppPO();
     populateFontSelectors();
 
     const session = getSecuritySession();
@@ -5169,6 +5431,20 @@ document.addEventListener("DOMContentLoaded",() => {
 
     if (submitBtn && sessionRole === "admin") {
         submitBtn.textContent = "📤 Ajukan ke Owner";
+    }
+
+    const inputNamaPerusahaanWhatsApp =
+        document.getElementById("inputNamaPerusahaanWhatsAppPO");
+
+    if (inputNamaPerusahaanWhatsApp) {
+        inputNamaPerusahaanWhatsApp.addEventListener(
+            "change",
+            simpanNamaPerusahaanWhatsAppPO
+        );
+        inputNamaPerusahaanWhatsApp.addEventListener(
+            "blur",
+            simpanNamaPerusahaanWhatsAppPO
+        );
     }
 
     document.addEventListener("input", jadwalkanAutoDraftPO);
@@ -5224,7 +5500,7 @@ window.addEventListener(
         "absensi.html":["owner","admin","kasir"],
         "kasir.html":["owner","admin","kasir"],
         "retur.html":["owner","admin","kasir"],
-        "barang.html":["owner","admin"],
+        "barang.html":["owner","admin","kasir"],
         "supplier.html":["owner","admin"],
         "Purchase-Order.html":["owner","admin"],
         "goods.receipt.html":["owner","admin"],
@@ -5296,7 +5572,7 @@ window.addEventListener(
         {page:"kasir.html", icon:"💵", label:"Kasir", group:"Utama", roles:["owner","admin","kasir"], quick:true},
         {page:"retur.html", icon:"↩️", label:"Retur", group:"Keuangan & Laporan", roles:["owner","admin","kasir"]},
 
-        {page:"barang.html", icon:"📦", label:"Barang", group:"Inventori", roles:["owner","admin"], badge:"navBadge"},
+        {page:"barang.html", icon:"📦", label:"Barang", group:"Inventori", roles:["owner","admin","kasir"], badge:"navBadge"},
         {page:"kartu-stok.html", icon:"📒", label:"Kartu Stok", group:"Inventori", roles:["owner","admin","kasir"]},
         {page:"stock-opname.html", icon:"📋", label:"Stock Opname", group:"Inventori", roles:["owner","admin","kasir"]},
 
@@ -5622,15 +5898,7 @@ window.addEventListener(
     }
 
     function witaDate(value){
-        const source=value instanceof Date?value:new Date(value??Date.now());
-        const time=isNaN(source)?Date.now():source.getTime();
-        const d=new Date(time+(8*60*60*1000));
-
-        return (
-            d.getUTCFullYear()+"-"+
-            String(d.getUTCMonth()+1).padStart(2,"0")+"-"+
-            String(d.getUTCDate()).padStart(2,"0")
-        );
+        return window.LDMLocalTime.dateKey(value);
     }
 
     function recordDate(item){
@@ -5734,16 +6002,7 @@ window.addEventListener(
             ready:
                 pendingAccounts.length===0
                 && hasShift1
-                && hasShift2
-                && (function(){
-                    const sessionsToday=readArray("shiftSessions").filter(s=>String(s.tanggal||"")===today&&String(s.status||"").toUpperCase()!=="CANCELLED");
-                    const txShiftIds=[...new Set(transactions.map(t=>String(t.shiftId||"")).filter(Boolean))];
-                    const closingShiftIds=new Set(closingToday.map(l=>String(l.shiftId||"")).filter(Boolean));
-                    const byId=new Map(sessionsToday.map(s=>[String(s.id),s]));
-                    const exact=txShiftIds.every(id=>String(byId.get(id)?.status||"").toUpperCase()==="CLOSED"&&closingShiftIds.has(id));
-                    const noOpen=sessionsToday.every(s=>!["ACTIVE","CLOSING"].includes(String(s.status||"").toUpperCase()));
-                    return exact&&noOpen;
-                })(),
+                && hasShift2,
             activeAccounts:[...activeAccounts],
             pendingAccounts,
             hasShift1,
@@ -5813,7 +6072,6 @@ window.addEventListener(
                 "laporan",
                 "dataLaporan",
                 "shiftClosingLog",
-                "shiftSessions",
                 "dataRetur"
             ].includes(event.key)
         ){
@@ -5840,5 +6098,8 @@ window.addEventListener(
 })();
 </script>
 
+
+<script src="js/purchase-order-cloud-adapter.js?v=11.0"></script>
+<script src="js/global-system-navigation.js?v=25.3.1"></script>
 </body>
 </html>

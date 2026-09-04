@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+    <script src="js/storage-engine.js?v=27.7.1"></script>
+    <script src="js/storage-quota-guard.js?v=27.7.1"></script>
+    <script defer src="js/storage-health-monitor.js?v=27.7.1"></script>
+<script src="js/local-time.js?v=26.4.0"></script><meta name="referrer" content="strict-origin-when-cross-origin"><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><script src="js/security-hardening.js?v=19.0"></script>    <script src="js/error-monitor.js?v=27.9.0-monitor1"></script>
+<script defer src="js/qa-runtime.js?v=19.0"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Absensi Karyawan - LocDailyMar POS</title>
@@ -12,9 +17,6 @@
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="icon.png">
-<!-- Library PeerJS untuk Sinkronisasi P2P Direct Connection -->
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-
     <!-- Google Fonts Lengkap -->
     <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Fira+Code:wght@500;700&family=Fredoka:wght@600;700&family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@500;700&family=Lato:wght@400;700&family=Lobster&family=Merriweather:wght@400;700&family=Montserrat:wght@400;600;700&family=Nunito:wght@400;700&family=Open+Sans:wght@400;600;700&family=Oswald:wght@500;700&family=Pacifico&family=Playfair+Display:wght@600;800&family=Poppins:wght@400;600;700&family=Raleway:wght@500;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     
@@ -1252,7 +1254,6 @@
     }
 
     /* Kasir: sembunyikan route yang memang tidak dapat dibuka. */
-    html[data-ldm-role="kasir"] .nav-bar a[href="barang.html"],
     html[data-ldm-role="kasir"] .nav-bar a[href="supplier.html"],
     html[data-ldm-role="kasir"] .nav-bar a[href="Purchase-Order.html"],
     html[data-ldm-role="kasir"] .nav-bar a[href="goods.receipt.html"],
@@ -1698,14 +1699,7 @@
     }
 
     function witaDate(value){
-        const source=value instanceof Date?value:new Date(value??Date.now());
-        const time=isNaN(source)?Date.now():source.getTime();
-        const d=new Date(time+(8*60*60*1000));
-        return (
-            d.getUTCFullYear()+"-"+
-            String(d.getUTCMonth()+1).padStart(2,"0")+"-"+
-            String(d.getUTCDate()).padStart(2,"0")
-        );
+        return window.LDMLocalTime.dateKey(value);
     }
 
     function recordDate(item){
@@ -2209,6 +2203,23 @@
 })();
 </script>
 
+    <!-- Live Sync Tahap 6: Supabase Auth authoritative guard -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/supabase-client.js"></script>
+    <script src="js/cloud-auth.js?v=15.0"></script>
+    <script src="js/cloud-session.js?v=6.0"></script>
+    <script src="js/cloud-session-guard.js?v=15.0"></script>
+    <!-- Live Sync Tahap 9: Cloud Absensi -->
+    <script src="js/attendance-service.js?v=9.1"></script>
+    <script src="js/attendance-bootstrap.js?v=9.0"></script>
+    <!-- Live Sync Tahap 7: Cloud Master Barang -->
+    <script src="js/products-service.js?v=21.0"></script>
+    <script src="js/products-bootstrap.js?v=7.0"></script>
+
+<script src="js/license-v2-config.js?v=25.2.0"></script>
+<script src="js/license-v2-client.js?v=25.2.0"></script>
+<script defer src="js/license-v2-guard.js?v=25.2.0"></script>
 </head>
 <body>
 
@@ -2568,7 +2579,7 @@
                             </div>
 
                             <div id="previewSelfieBox" style="display:none; margin-top:10px; text-align: center;">
-                                <img id="imgPreviewSelfie" style="max-width:100%; max-height:200px; border-radius:8px; border:1px solid #ccc;">
+                                <img id="imgPreviewSelfie" alt="Pratinjau foto absensi" style="max-width:100%; max-height:200px; border-radius:8px; border:1px solid #ccc;">
                             </div>
                         </div>
 
@@ -2588,7 +2599,7 @@
                             </div>
 
                             <div id="previewSuratBox" style="display: none; margin-top: 10px; text-align: center;">
-                                <img id="imgPreviewSurat" src="" style="max-height: 180px; border-radius: 8px; border: 1px solid var(--border-color);">
+                                <img id="imgPreviewSurat" src="" alt="Pratinjau surat pendukung" style="max-height: 180px; border-radius: 8px; border: 1px solid var(--border-color);">
                             </div>
                         </div>
 
@@ -2640,7 +2651,7 @@
                 <button type="button" class="btn-header-action" onclick="tutupModalSurat()" style="background: #ef4444;">✕</button>
             </div>
             <div style="text-align: center; padding: 10px;">
-                <img id="imgSuratFull" src="" style="max-width: 100%; max-height: 70vh; border-radius: 10px; border: 1px solid var(--border-color);">
+                <img id="imgSuratFull" src="" alt="Surat pendukung absensi" style="max-width: 100%; max-height: 70vh; border-radius: 10px; border: 1px solid var(--border-color);">
             </div>
             <div style="margin-top: 15px; text-align: right;">
                 <button class="btn-modal-ok" onclick="tutupModalSurat()">Tutup</button>
@@ -3126,40 +3137,52 @@ const loggedUser =
         }
 
         function getDatabaseAkun() {
-            let akunList = JSON.parse(localStorage.getItem("daftarAkun")) || null;
-            if (!akunList) {
-                akunList = [
-                    { id: 1, username: "owner", password: "123", role: "owner" },
-                    { id: 2, username: "admin", password: "123", role: "admin" },
-                    { id: 3, username: "cornermar", password: "CM123456", role: "owner" }
-                ];
-                localStorage.setItem("daftarAkun", JSON.stringify(akunList));
+            try {
+                const cloudProfiles =
+                    JSON.parse(
+                        localStorage.getItem(
+                            "ldmAttendanceProfiles"
+                        ) || "[]"
+                    );
+
+                if (
+                    Array.isArray(cloudProfiles) &&
+                    cloudProfiles.length > 0
+                ) {
+                    return cloudProfiles;
+                }
+            } catch (error) {
+                console.warn(
+                    "Cache profile Absensi tidak dapat dibaca:",
+                    error
+                );
             }
-            return akunList;
+
+            // Compatibility fallback selama bootstrap cloud belum selesai.
+            let akunList =
+                JSON.parse(
+                    localStorage.getItem(
+                        "daftarAkun"
+                    )
+                ) || [];
+
+            return Array.isArray(akunList)
+                ? akunList
+                : [];
         }
 
         function getTanggalWITA(dateObj = new Date()) {
-            const utcTime = dateObj.getTime() + (dateObj.getTimezoneOffset() * 60000);
-            const witaTime = new Date(utcTime + (3600000 * 8));
-            const year = witaTime.getFullYear();
-            const month = String(witaTime.getMonth() + 1).padStart(2, '0');
-            const day = String(witaTime.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
+            return window.LDMLocalTime.dateKey(dateObj);
         }
 
         function startRunningClock() {
             function updateClock() {
                 const now = new Date();
-                const utcNow = now.getTime() + (now.getTimezoneOffset() * 60000);
-                const witaNow = new Date(utcNow + (3600000 * 8));
-
-                const hrs = String(witaNow.getHours()).padStart(2, '0');
-                const mins = String(witaNow.getMinutes()).padStart(2, '0');
-                const secs = String(witaNow.getSeconds()).padStart(2, '0');
+                const localTime = window.LDMLocalTime.timeKey(now);
 
                 const optionsDate = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-                document.getElementById("txtTanggalHariIni").innerText = witaNow.toLocaleDateString('id-ID', optionsDate);
-                document.getElementById("runningClock").innerText = `${hrs}:${mins}:${secs} WITA`;
+                document.getElementById("txtTanggalHariIni").innerText = now.toLocaleDateString('id-ID', optionsDate);
+                document.getElementById("runningClock").innerText = `${localTime} ${window.LDMLocalTime.zoneLabel(now)}`;
             }
             updateClock();
             setInterval(updateClock, 1000);
@@ -3270,28 +3293,79 @@ const loggedUser =
         }
 
         function populateSelectAkun() {
-            const select = document.getElementById("selectAkunAbsen");
-            const akunList = getDatabaseAkun();
+            const select =
+                document.getElementById(
+                    "selectAkunAbsen"
+                );
 
-            select.innerHTML = "";
-            akunList.forEach(acc => {
-                const opt = document.createElement("option");
-                opt.value = acc.username;
-                opt.innerText = acc.username;
-                select.appendChild(opt);
-            });
+            const akunList =
+                getDatabaseAkun();
 
             const session =
-    requireLogin();
+                requireLogin();
 
-if (!session) {
-    return;
-}
+            if (!session) {
+                return;
+            }
 
-const loggedUser =
-    session.username;
-            if (loggedUser) select.value = loggedUser;
-            
+            const loggedUser =
+                session.username;
+
+            const role =
+                String(
+                    localStorage.getItem(
+                        "userRole"
+                    ) || ""
+                )
+                    .trim()
+                    .toLowerCase();
+
+            const visibleAccounts =
+                role === "owner"
+                    ? akunList
+                    : akunList.filter(
+                        account =>
+                            String(
+                                account.username || ""
+                            )
+                                .trim()
+                                .toLowerCase() ===
+                            String(
+                                loggedUser || ""
+                            )
+                                .trim()
+                                .toLowerCase()
+                    );
+
+            select.innerHTML = "";
+
+            visibleAccounts.forEach(
+                account => {
+                    const opt =
+                        document.createElement(
+                            "option"
+                        );
+
+                    opt.value =
+                        account.username;
+
+                    opt.innerText =
+                        account.username;
+
+                    select.appendChild(
+                        opt
+                    );
+                }
+            );
+
+            if (loggedUser) {
+                select.value =
+                    loggedUser;
+            }
+
+            select.disabled =
+                role !== "owner";
+
             cekStatusAutoIsi();
         }
 
@@ -3332,75 +3406,218 @@ const loggedUser =
             renderTableLog();
         }
 
-        function submitAbsensi(e) {
+        async function submitAbsensi(e) {
             e.preventDefault();
 
-            const username = document.getElementById("selectAkunAbsen").value;
-            const jenis = document.getElementById("selectJenisAbsen").value;
-            const shift = (jenis === "Masuk" || jenis === "Keluar") ? document.getElementById("selectShift").value : "-";
-            const catatan = document.getElementById("txtCatatanAbsen").value.trim();
-            const tglToday = getTanggalWITA();
+            const username =
+                document.getElementById(
+                    "selectAkunAbsen"
+                ).value;
 
-            let logAbsensi = JSON.parse(localStorage.getItem("dataAbsensi")) || [];
-            const userTodayLogs = logAbsensi.filter(a => a.username.toString().trim().toLowerCase() === username.toString().trim().toLowerCase() && a.tanggal === tglToday);
+            const jenis =
+                document.getElementById(
+                    "selectJenisAbsen"
+                ).value;
 
-            if (userTodayLogs.some(a => a.jenis === "Sakit" || a.jenis === "Izin")) {
-                tampilkanAlertCustom("Presensi Dibatasi", `Akun "${username}" telah menyelesaikan presensi hari ini. Presensi hanya diperbolehkan 1x sehari.`, "warning");
+            const shift =
+                (jenis === "Masuk" || jenis === "Keluar")
+                    ? document.getElementById(
+                        "selectShift"
+                    ).value
+                    : null;
+
+            const catatan =
+                document.getElementById(
+                    "txtCatatanAbsen"
+                ).value.trim();
+
+            const tglToday =
+                getTanggalWITA();
+
+            const logAbsensi =
+                JSON.parse(
+                    localStorage.getItem(
+                        "dataAbsensi"
+                    ) || "[]"
+                );
+
+            const userTodayLogs =
+                logAbsensi.filter(
+                    item =>
+                        String(item.username || "")
+                            .trim()
+                            .toLowerCase() ===
+                        String(username || "")
+                            .trim()
+                            .toLowerCase()
+                        && item.tanggal === tglToday
+                );
+
+            if (
+                userTodayLogs.some(
+                    item =>
+                        item.jenis === "Sakit" ||
+                        item.jenis === "Izin"
+                )
+            ) {
+                tampilkanAlertCustom(
+                    "Presensi Dibatasi",
+                    `Akun "${username}" telah menyelesaikan presensi hari ini.`,
+                    "warning"
+                );
                 return;
             }
 
-            if (jenis === "Masuk" && userTodayLogs.some(a => a.jenis === "Masuk" || a.jenis === "Hadir")) {
-                tampilkanAlertCustom("Presensi Dibatasi", `Akun "${username}" sudah melakukan Absen Masuk hari ini!`, "warning");
+            if (
+                jenis === "Masuk" &&
+                userTodayLogs.some(
+                    item =>
+                        item.jenis === "Masuk" ||
+                        item.jenis === "Hadir"
+                )
+            ) {
+                tampilkanAlertCustom(
+                    "Presensi Dibatasi",
+                    `Akun "${username}" sudah melakukan Absen Masuk hari ini!`,
+                    "warning"
+                );
                 return;
             }
 
-            if (jenis === "Keluar" && userTodayLogs.some(a => a.jenis === "Keluar")) {
-                tampilkanAlertCustom("Presensi Dibatasi", `Akun "${username}" sudah melakukan Absen Keluar hari ini!`, "warning");
+            if (
+                jenis === "Keluar" &&
+                userTodayLogs.some(
+                    item => item.jenis === "Keluar"
+                )
+            ) {
+                tampilkanAlertCustom(
+                    "Presensi Dibatasi",
+                    `Akun "${username}" sudah melakukan Absen Keluar hari ini!`,
+                    "warning"
+                );
                 return;
             }
 
-            if ((jenis === "Masuk" || jenis === "Keluar") && !tempBase64Selfie) {
-                tampilkanAlertCustom("Selfie Wajib", "Anda WAJIB mengambil foto selfie langsung dari kamera saat absen Masuk atau Keluar!", "warning");
+            if (
+                (jenis === "Masuk" || jenis === "Keluar") &&
+                !tempBase64Selfie
+            ) {
+                tampilkanAlertCustom(
+                    "Selfie Wajib",
+                    "Anda WAJIB mengambil foto selfie langsung dari kamera saat absen Masuk atau Keluar!",
+                    "warning"
+                );
                 return;
             }
 
-            if ((jenis === "Sakit" || jenis === "Izin") && !tempBase64Surat) {
-                tampilkanAlertCustom("Surat Wajib Diambil", "Absen Sakit atau Izin WAJIB mengambil foto surat keterangan secara langsung dari kamera!", "warning");
+            if (
+                (jenis === "Sakit" || jenis === "Izin") &&
+                !tempBase64Surat
+            ) {
+                tampilkanAlertCustom(
+                    "Surat Wajib Diambil",
+                    "Absen Sakit atau Izin WAJIB mengambil foto surat keterangan secara langsung dari kamera!",
+                    "warning"
+                );
                 return;
             }
 
-            const now = new Date();
-            const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000);
-            const witaNow = new Date(utcTime + (3600000 * 8));
+            if (
+                !window.LDMAttendance ||
+                typeof window.LDMAttendance.recordAttendance !==
+                    "function"
+            ) {
+                tampilkanAlertCustom(
+                    "Cloud Absensi Belum Siap",
+                    "attendance-service.js belum termuat.",
+                    "danger"
+                );
+                return;
+            }
 
-            const dataAbsen = {
-                id: Date.now(),
-                tanggal: tglToday,
-                waktu: String(witaNow.getHours()).padStart(2, '0') + ":" + String(witaNow.getMinutes()).padStart(2, '0'),
-                username: username,
-                jenis: jenis,
-                shift: shift,
-                surat: (jenis === "Sakit" || jenis === "Izin") ? tempBase64Surat : tempBase64Selfie,
-                catatan: catatan
-            };
+            const button =
+                document.getElementById(
+                    "btnSubmitAbsen"
+                );
 
-            logAbsensi.push(dataAbsen);
-            localStorage.setItem("dataAbsensi", JSON.stringify(logAbsensi));
+            const oldHTML =
+                button.innerHTML;
 
-            // Simpan status akun aktif
-            localStorage.setItem("activeUsername", username);
-            localStorage.setItem("loggedInUser", username);
+            button.disabled = true;
+            button.innerHTML =
+                "☁️ Menyimpan Presensi...";
 
-            tempBase64Surat = "";
-            tempBase64Selfie = "";
-            document.getElementById("previewSuratBox").style.display = "none";
-            document.getElementById("previewSelfieBox").style.display = "none";
-            document.getElementById("txtCatatanAbsen").value = "";
+            try {
+                const proofDataURL =
+                    (jenis === "Sakit" || jenis === "Izin")
+                        ? tempBase64Surat
+                        : tempBase64Selfie;
 
-            tampilkanAlertCustom("Berhasil", `Presensi (${jenis}) untuk akun "${username}" berhasil disimpan!`, "success");
-            
-            renderStatusAkun();
-            cekStatusAutoIsi();
+                await window.LDMAttendance
+                    .recordAttendance({
+                        username,
+                        type: jenis,
+                        shift,
+                        note: catatan,
+                        proofDataURL
+                    });
+
+                localStorage.setItem(
+                    "activeUsername",
+                    username
+                );
+
+                localStorage.setItem(
+                    "loggedInUser",
+                    username
+                );
+
+                tempBase64Surat = "";
+                tempBase64Selfie = "";
+
+                document
+                    .getElementById(
+                        "previewSuratBox"
+                    )
+                    .style.display = "none";
+
+                document
+                    .getElementById(
+                        "previewSelfieBox"
+                    )
+                    .style.display = "none";
+
+                document
+                    .getElementById(
+                        "txtCatatanAbsen"
+                    ).value = "";
+
+                tampilkanAlertCustom(
+                    "Berhasil",
+                    `Presensi (${jenis}) untuk akun "${username}" berhasil disimpan ke cloud!`,
+                    "success"
+                );
+
+                renderStatusAkun();
+                cekStatusAutoIsi();
+
+            } catch (error) {
+                console.error(
+                    "Cloud Attendance gagal:",
+                    error
+                );
+
+                tampilkanAlertCustom(
+                    "Presensi Gagal",
+                    error.message || String(error),
+                    "danger"
+                );
+
+            } finally {
+                button.disabled = false;
+                button.innerHTML = oldHTML;
+                cekStatusAutoIsi();
+            }
         }
 
         function renderStatusAkun() {
@@ -3508,16 +3725,13 @@ const loggedUser =
             "absensi.history"
         )
     ) {
-
         return;
-
     }
-
 
     if (
         !await ldmDialog.confirm(
             "Hapus Data Presensi",
-            "Apakah Anda yakin ingin menghapus data presensi ini?",
+            "Apakah Anda yakin ingin menghapus data presensi ini? Data cloud akan di-soft-delete.",
             "danger",
             {
                 okText: "Hapus"
@@ -3527,40 +3741,49 @@ const loggedUser =
         return;
     }
 
+    if (
+        !window.LDMAttendance ||
+        typeof window.LDMAttendance.softDelete !==
+            "function"
+    ) {
+        tampilkanAlertCustom(
+            "Cloud Absensi Belum Siap",
+            "attendance-service.js belum termuat.",
+            "danger"
+        );
+        return;
+    }
 
-    let logAbsensi =
-        JSON.parse(
-            localStorage.getItem(
-                "dataAbsensi"
-            )
-        ) || [];
+    try {
+        await window.LDMAttendance
+            .softDelete(id);
 
-
-    logAbsensi =
-        logAbsensi.filter(
-            a => a.id != id
+        tampilkanAlertCustom(
+            "Terhapus",
+            "Data presensi berhasil di-soft-delete dari cloud.",
+            "success"
         );
 
+        renderStatusAkun();
+        cekStatusAutoIsi();
 
-    localStorage.setItem(
-        "dataAbsensi",
-        JSON.stringify(
-            logAbsensi
-        )
-    );
+        if (
+            typeof cekRiwayatAbsensiOwner ===
+                "function" &&
+            hasPermission(
+                "absensi.history"
+            )
+        ) {
+            cekRiwayatAbsensiOwner();
+        }
 
-
-    tampilkanAlertCustom(
-        "Terhapus",
-        "Data presensi berhasil dihapus.",
-        "success"
-    );
-
-
-    renderStatusAkun();
-
-    cekStatusAutoIsi();
-
+    } catch (error) {
+        tampilkanAlertCustom(
+            "Gagal Menghapus",
+            error.message || String(error),
+            "danger"
+        );
+    }
 }
 
         function bukaModalSurat(idAbsen) {
@@ -5113,7 +5336,7 @@ document.addEventListener(
         "absensi.html":["owner","admin","kasir"],
         "kasir.html":["owner","admin","kasir"],
         "retur.html":["owner","admin","kasir"],
-        "barang.html":["owner","admin"],
+        "barang.html":["owner","admin","kasir"],
         "supplier.html":["owner","admin"],
         "Purchase-Order.html":["owner","admin"],
         "goods.receipt.html":["owner","admin"],
@@ -5185,7 +5408,7 @@ document.addEventListener(
         {page:"kasir.html", icon:"💵", label:"Kasir", group:"Utama", roles:["owner","admin","kasir"], quick:true},
         {page:"retur.html", icon:"↩️", label:"Retur", group:"Keuangan & Laporan", roles:["owner","admin","kasir"]},
 
-        {page:"barang.html", icon:"📦", label:"Barang", group:"Inventori", roles:["owner","admin"], badge:"navBadge"},
+        {page:"barang.html", icon:"📦", label:"Barang", group:"Inventori", roles:["owner","admin","kasir"], badge:"navBadge"},
         {page:"kartu-stok.html", icon:"📒", label:"Kartu Stok", group:"Inventori", roles:["owner","admin","kasir"]},
         {page:"stock-opname.html", icon:"📋", label:"Stock Opname", group:"Inventori", roles:["owner","admin","kasir"]},
 
@@ -5511,15 +5734,7 @@ document.addEventListener(
     }
 
     function witaDate(value){
-        const source=value instanceof Date?value:new Date(value??Date.now());
-        const time=isNaN(source)?Date.now():source.getTime();
-        const d=new Date(time+(8*60*60*1000));
-
-        return (
-            d.getUTCFullYear()+"-"+
-            String(d.getUTCMonth()+1).padStart(2,"0")+"-"+
-            String(d.getUTCDate()).padStart(2,"0")
-        );
+        return window.LDMLocalTime.dateKey(value);
     }
 
     function recordDate(item){
@@ -5719,5 +5934,51 @@ document.addEventListener(
 })();
 </script>
 
+
+<script>
+window.addEventListener(
+    "ldm-attendance-profiles-updated",
+    function(){
+        if(typeof populateSelectAkun === "function"){
+            populateSelectAkun();
+        }
+
+        if(typeof renderStatusAkun === "function"){
+            renderStatusAkun();
+        }
+    }
+);
+
+window.addEventListener(
+    "ldm-attendance-cache-updated",
+    function(){
+        if(typeof renderStatusAkun === "function"){
+            renderStatusAkun();
+        }
+
+        if(typeof cekStatusAutoIsi === "function"){
+            cekStatusAutoIsi();
+        }
+
+        if(
+            typeof updateOwnerNotificationBadge === "function" &&
+            typeof hasPermission === "function" &&
+            hasPermission("absensi.history")
+        ){
+            updateOwnerNotificationBadge();
+        }
+
+        if(
+            typeof updateOwnerHistoryNotification === "function" &&
+            typeof hasPermission === "function" &&
+            hasPermission("absensi.history")
+        ){
+            updateOwnerHistoryNotification();
+        }
+    }
+);
+</script>
+
+<script src="js/global-system-navigation.js?v=25.2"></script>
 </body>
 </html>

@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html lang="id" class="closing-access-pending">
 <head>
+    <script src="js/storage-engine.js?v=27.7.1"></script>
+    <script src="js/storage-quota-guard.js?v=27.7.1"></script>
+    <script defer src="js/storage-health-monitor.js?v=27.7.1"></script>
+<script src="js/local-time.js?v=26.4.0"></script><meta name="referrer" content="strict-origin-when-cross-origin"><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><script src="js/security-hardening.js?v=19.0"></script>    <script src="js/error-monitor.js?v=27.9.0-monitor1"></script>
+<script defer src="js/qa-runtime.js?v=19.0"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Closing Shift - LocDailyMar POS</title>
@@ -14,9 +19,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="icon.png">
 
     <!-- Icon untuk Apple (iOS) -->
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-
-    <!-- Google Fonts Lengkap -->
+<!-- Google Fonts Lengkap -->
     <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Fira+Code:wght@500;700&family=Fredoka:wght@600;700&family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@500;700&family=Lato:wght@400;700&family=Lobster&family=Merriweather:wght@400;700&family=Montserrat:wght@400;600;700&family=Nunito:wght@400;700&family=Open+Sans:wght@400;600;700&family=Oswald:wght@500;700&family=Pacifico&family=Playfair+Display:wght@600;800&family=Poppins:wght@400;600;700&family=Raleway:wght@500;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
 
     <style>
@@ -603,7 +606,6 @@
     }
 
     /* Kasir: sembunyikan route yang memang tidak dapat dibuka. */
-    html[data-ldm-role="kasir"] .nav-bar a[href="barang.html"],
     html[data-ldm-role="kasir"] .nav-bar a[href="supplier.html"],
     html[data-ldm-role="kasir"] .nav-bar a[href="Purchase-Order.html"],
     html[data-ldm-role="kasir"] .nav-bar a[href="goods.receipt.html"],
@@ -1049,14 +1051,7 @@
     }
 
     function witaDate(value){
-        const source=value instanceof Date?value:new Date(value??Date.now());
-        const time=isNaN(source)?Date.now():source.getTime();
-        const d=new Date(time+(8*60*60*1000));
-        return (
-            d.getUTCFullYear()+"-"+
-            String(d.getUTCMonth()+1).padStart(2,"0")+"-"+
-            String(d.getUTCDate()).padStart(2,"0")
-        );
+        return window.LDMLocalTime.dateKey(value);
     }
 
     function recordDate(item){
@@ -1560,6 +1555,27 @@
 })();
 </script>
 
+    <!-- Live Sync Tahap 6: Supabase Auth authoritative guard -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/supabase-client.js"></script>
+    <script src="js/cloud-auth.js?v=15.0"></script>
+    <script src="js/cloud-session.js?v=6.0"></script>
+    <script src="js/cloud-session-guard.js?v=15.0"></script>
+    <!-- Live Sync Tahap 7: Cloud Master Barang -->
+    <script src="js/products-service.js?v=21.0"></script>
+    <script src="js/products-bootstrap.js?v=7.0"></script>
+    <!-- Live Sync Tahap 10: Cloud Retur compatibility -->
+    <script src="js/returns-service.js?v=10.0"></script>
+    <script src="js/returns-bootstrap.js?v=10.0"></script>
+
+
+    <!-- Live Sync Tahap 12: Final Cloud Reporting Authority -->
+    <script src="js/reporting-service.js?v=27.7.1"></script>
+    <script src="js/reporting-bootstrap.js?v=25.2.1"></script>
+<script src="js/license-v2-config.js?v=25.2.0"></script>
+<script src="js/license-v2-client.js?v=25.2.0"></script>
+<script defer src="js/license-v2-guard.js?v=25.2.0"></script>
 </head>
 <body>
 
@@ -1856,25 +1872,12 @@
 
         // PERBAIKAN REVISI TANGGAL WITA (Sesuai tanggal asli lokal WITA UTC+8, Akurat & Tidak Telat 1 Hari)
         function getTanggalWITA(d = new Date()) {
-            const dateObj = new Date(d);
-            const targetDate = isNaN(dateObj.getTime()) ? new Date() : dateObj;
-            const witaMs = targetDate.getTime() + (8 * 3600000);
-            const witaDate = new Date(witaMs);
-            const year = witaDate.getUTCFullYear();
-            const month = String(witaDate.getUTCMonth() + 1).padStart(2, '0');
-            const day = String(witaDate.getUTCDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
+            return window.LDMLocalTime.dateKey(d);
         }
 
         // PERBAIKAN REVISI WAKTU WITA
         function getWaktuWITA() {
-            const d = new Date();
-            const witaMs = d.getTime() + (8 * 3600000);
-            const witaDate = new Date(witaMs);
-            const hours = String(witaDate.getUTCHours()).padStart(2, '0');
-            const minutes = String(witaDate.getUTCMinutes()).padStart(2, '0');
-            const seconds = String(witaDate.getUTCSeconds()).padStart(2, '0');
-            return `${hours}:${minutes}:${seconds}`;
+            return window.LDMLocalTime.timeKey();
         }
 
         // Running Clock Realtime WITA
@@ -1882,7 +1885,7 @@
             function updateClock() {
                 const clockEl = document.getElementById("clockDisplay");
                 if (clockEl) {
-                    clockEl.innerText = getWaktuWITA() + " WITA";
+                    clockEl.innerText = getWaktuWITA() + " " + window.LDMLocalTime.zoneLabel();
                 }
             }
             updateClock();
@@ -2177,71 +2180,134 @@
 }
 
         /* BUTTON KHUSUS OWNER UNTUK MEMBUAT ATAU MENGGANTI PASSWORD TUTUP SHIFT */
-        function bukaModalPassClosing() {
-
-    if (
-        !requirePermission(
-            "closing.approve"
-        )
-    ) {
-
-        return;
-
-    }
-
-
-    const selectAkunPass =
-        document.getElementById(
-            "selectAkunPass"
-        );
-
-
-    const daftarAkun =
-        JSON.parse(
-            localStorage.getItem(
-                "daftarAkun"
-            )
-        ) || [];
-
-
-    selectAkunPass.innerHTML = "";
-
-
-    daftarAkun.forEach(
-        akun => {
-
-            const opt =
-                document.createElement(
-                    "option"
-                );
-
-
-            opt.value =
-                akun.username;
-
-            opt.textContent =
-                akun.username;
-
-
-            selectAkunPass.appendChild(
-                opt
-            );
-
+        function bacaArrayAmanClosing(key) {
+            try {
+                const value = JSON.parse(localStorage.getItem(key) || "[]");
+                return Array.isArray(value) ? value : [];
+            } catch (error) {
+                return [];
+            }
         }
-    );
 
+        function normalisasiAkunClosing(rows) {
+            const unique = new Map();
 
-    document.getElementById(
-        "inputNewPassClosing"
-    ).value = "";
+            (Array.isArray(rows) ? rows : []).forEach(account => {
+                if (!account || account.active === false || account.deleted_at) return;
 
+                const username = String(account.username || "").trim();
+                if (!username) return;
 
-    document.getElementById(
-        "modalKelolaPassClosing"
-    ).style.display =
-        "flex";
+                const key = username.toLowerCase();
+                if (unique.has(key)) return;
 
-}
+                unique.set(key, {
+                    id: String(account.id || account.user_id || "").trim(),
+                    username,
+                    displayName: String(account.display_name || "").trim(),
+                    role: String(account.role || "kasir").trim().toLowerCase()
+                });
+            });
+
+            return [...unique.values()].sort((a, b) =>
+                a.username.localeCompare(b.username, "id", {sensitivity:"base"})
+            );
+        }
+
+        async function muatAkunTerdaftarClosing() {
+            let accounts = [];
+
+            /*
+             * Sumber utama adalah RPC Cloud melalui reporting-service.
+             * RPC tersebut mengikuti Store ID/session aktif sehingga akun
+             * cabang lain tidak tercampur ke dropdown Closing Shift.
+             */
+            if (
+                navigator.onLine &&
+                window.LDMReporting &&
+                typeof window.LDMReporting.refreshProfiles === "function"
+            ) {
+                try {
+                    const cloudAccounts = await window.LDMReporting.refreshProfiles();
+                    accounts = Array.isArray(cloudAccounts) ? cloudAccounts : [];
+                } catch (error) {
+                    console.warn("Muat akun Closing dari Cloud:", error);
+                }
+            }
+
+            /* Cache Cloud dipakai ketika koneksi terputus atau RPC gagal. */
+            if (!accounts.length) {
+                accounts = bacaArrayAmanClosing("ldmAttendanceProfiles");
+            }
+
+            /* Fallback terakhir untuk instalasi lama sebelum Akun Cloud. */
+            if (!accounts.length) {
+                accounts = bacaArrayAmanClosing("daftarAkun");
+            }
+
+            return normalisasiAkunClosing(accounts);
+        }
+
+        async function bukaModalPassClosing() {
+            if (!requirePermission("closing.approve")) return;
+
+            const selectAkunPass = document.getElementById("selectAkunPass");
+            const inputPassword = document.getElementById("inputNewPassClosing");
+            const modal = document.getElementById("modalKelolaPassClosing");
+            if (!selectAkunPass || !inputPassword || !modal) return;
+
+            selectAkunPass.innerHTML = "";
+            const loadingOption = document.createElement("option");
+            loadingOption.value = "";
+            loadingOption.textContent = "Memuat akun Cloud...";
+            selectAkunPass.appendChild(loadingOption);
+            selectAkunPass.disabled = true;
+            inputPassword.value = "";
+            inputPassword.disabled = true;
+            modal.style.display = "flex";
+
+            const accounts = await muatAkunTerdaftarClosing();
+            selectAkunPass.innerHTML = "";
+
+            if (!accounts.length) {
+                const emptyOption = document.createElement("option");
+                emptyOption.value = "";
+                emptyOption.textContent = navigator.onLine
+                    ? "Tidak ada akun aktif pada toko ini"
+                    : "Cache akun belum tersedia — sambungkan internet";
+                selectAkunPass.appendChild(emptyOption);
+                selectAkunPass.disabled = true;
+                inputPassword.disabled = true;
+                tampilkanAlertCustom(
+                    "Akun Tidak Ditemukan",
+                    navigator.onLine
+                        ? "Cloud tidak mengembalikan akun aktif untuk Store ID yang sedang digunakan."
+                        : "Perangkat sedang offline dan belum mempunyai cache akun Cloud.",
+                    "warning"
+                );
+                return;
+            }
+
+            accounts.forEach(account => {
+                const option = document.createElement("option");
+                option.value = account.username;
+                const name = account.displayName && account.displayName !== account.username
+                    ? `${account.displayName} (${account.username})`
+                    : account.username;
+                option.textContent = `${name} · ${account.role.toUpperCase()}`;
+                option.dataset.userId = account.id;
+                selectAkunPass.appendChild(option);
+            });
+
+            const currentOption = [...selectAkunPass.options].find(option =>
+                option.value.toLowerCase() === String(currentActiveUser || "").toLowerCase()
+            );
+            if (currentOption) selectAkunPass.value = currentOption.value;
+
+            selectAkunPass.disabled = false;
+            inputPassword.disabled = false;
+            inputPassword.focus();
+        }
 
         function tutupModalPassClosing() {
             document.getElementById("modalKelolaPassClosing").style.display = "none";
@@ -2264,6 +2330,19 @@
         document.getElementById(
             "selectAkunPass"
         ).value;
+
+
+    if (!targetUser) {
+
+        tampilkanAlertCustom(
+            "Akun Belum Dipilih",
+            "Pilih akun aktif sebelum menyimpan Password Closing Shift.",
+            "warning"
+        );
+
+        return;
+
+    }
 
 
     const newPass =
@@ -3800,7 +3879,7 @@ document.addEventListener(
         "absensi.html":["owner","admin","kasir"],
         "kasir.html":["owner","admin","kasir"],
         "retur.html":["owner","admin","kasir"],
-        "barang.html":["owner","admin"],
+        "barang.html":["owner","admin","kasir"],
         "supplier.html":["owner","admin"],
         "Purchase-Order.html":["owner","admin"],
         "goods.receipt.html":["owner","admin"],
@@ -3872,7 +3951,7 @@ document.addEventListener(
         {page:"kasir.html", icon:"💵", label:"Kasir", group:"Utama", roles:["owner","admin","kasir"], quick:true},
         {page:"retur.html", icon:"↩️", label:"Retur", group:"Keuangan & Laporan", roles:["owner","admin","kasir"]},
 
-        {page:"barang.html", icon:"📦", label:"Barang", group:"Inventori", roles:["owner","admin"], badge:"navBadge"},
+        {page:"barang.html", icon:"📦", label:"Barang", group:"Inventori", roles:["owner","admin","kasir"], badge:"navBadge"},
         {page:"kartu-stok.html", icon:"📒", label:"Kartu Stok", group:"Inventori", roles:["owner","admin","kasir"]},
         {page:"stock-opname.html", icon:"📋", label:"Stock Opname", group:"Inventori", roles:["owner","admin","kasir"]},
 
@@ -4198,15 +4277,7 @@ document.addEventListener(
     }
 
     function witaDate(value){
-        const source=value instanceof Date?value:new Date(value??Date.now());
-        const time=isNaN(source)?Date.now():source.getTime();
-        const d=new Date(time+(8*60*60*1000));
-
-        return (
-            d.getUTCFullYear()+"-"+
-            String(d.getUTCMonth()+1).padStart(2,"0")+"-"+
-            String(d.getUTCDate()).padStart(2,"0")
-        );
+        return window.LDMLocalTime.dateKey(value);
     }
 
     function recordDate(item){
@@ -4406,5 +4477,308 @@ document.addEventListener(
 })();
 </script>
 
+
+<script id="ldmStage12ClosingCloudOverride">
+(function(){
+    "use strict";
+
+    function reportingReady(){
+        return Boolean(
+            window.LDMReporting &&
+            typeof window.LDMReporting.finalizeShiftClosing === "function"
+        );
+    }
+
+    window.isiDropdownKasir = function(){
+        const select = document.getElementById("selectKasir");
+        if(!select) return;
+
+        const previous = select.value;
+        let accounts = [];
+
+        try{
+            const cloud = JSON.parse(
+                localStorage.getItem("ldmAttendanceProfiles") || "[]"
+            );
+            if(Array.isArray(cloud) && cloud.length){
+                accounts = cloud;
+            }
+        }catch(error){
+            accounts = [];
+        }
+
+        if(!accounts.length){
+            try{
+                const legacy = JSON.parse(
+                    localStorage.getItem("daftarAkun") || "[]"
+                );
+                accounts = Array.isArray(legacy) ? legacy : [];
+            }catch(error){
+                accounts = [];
+            }
+        }
+
+        select.innerHTML = "";
+        accounts.forEach(account => {
+            const username = String(account.username || "").trim();
+            if(!username) return;
+            const option = document.createElement("option");
+            option.value = username;
+            option.textContent = username;
+            select.appendChild(option);
+        });
+
+        const wanted = previous || currentActiveUser || "";
+        if(
+            wanted &&
+            [...select.options].some(option =>
+                option.value.toLowerCase() === String(wanted).toLowerCase()
+            )
+        ){
+            const match = [...select.options].find(option =>
+                option.value.toLowerCase() === String(wanted).toLowerCase()
+            );
+            select.value = match.value;
+        }
+
+        if(select.options.length && !select.value){
+            select.selectedIndex = 0;
+        }
+    };
+
+    window.tambahMutasiKasShift = async function(){
+        if(selectedFilterDate !== getTanggalWITA()){
+            tampilkanAlertCustom(
+                "Mutasi Ditolak",
+                "Mutasi Kas cloud hanya dapat ditambahkan untuk tanggal hari ini.",
+                "warning"
+            );
+            return;
+        }
+
+        if(!reportingReady()){
+            tampilkanAlertCustom(
+                "Cloud Reporting Belum Siap",
+                "reporting-service.js belum termuat.",
+                "danger"
+            );
+            return;
+        }
+
+        const kasir = document.getElementById("selectKasir")?.value || "";
+        const shift = document.getElementById("selectShift")?.value || "";
+        const nominal = Number(document.getElementById("inputNominalMutasi")?.value || 0);
+        const keterangan = String(document.getElementById("inputKetMutasi")?.value || "").trim();
+
+        if(!(nominal > 0)){
+            tampilkanAlertCustom("Nominal Tidak Valid","Masukkan nominal lebih dari Rp 0.","warning");
+            return;
+        }
+        if(!keterangan){
+            tampilkanAlertCustom("Keterangan Wajib","Tuliskan alasan Mutasi Kas.","warning");
+            return;
+        }
+
+        const button = document.querySelector(".btn-mutasi-add");
+        if(button) button.disabled = true;
+
+        try{
+            await window.LDMReporting.addManualCashMovement({
+                username:kasir,
+                shift,
+                direction:"out",
+                amount:nominal,
+                note:keterangan
+            });
+
+            document.getElementById("inputNominalMutasi").value = "";
+            document.getElementById("inputKetMutasi").value = "";
+            renderMutasiKasShift();
+            hitungOmzetKasirTerpilih();
+            kalkulasiSelisihRealtime();
+
+            tampilkanAlertCustom(
+                "Mutasi Kas Tersimpan",
+                "Kas Keluar berhasil disimpan ke cloud.",
+                "success"
+            );
+        }catch(error){
+            tampilkanAlertCustom(
+                "Mutasi Kas Gagal",
+                error?.message || String(error),
+                "danger"
+            );
+        }finally{
+            if(button) button.disabled = false;
+        }
+    };
+
+    window.hapusMutasiKasShift = async function(id){
+        const target = getMutasiKasAll().find(row => Number(row.id) === Number(id));
+        if(!target) return;
+
+        if(!target.cloudId){
+            tampilkanAlertCustom(
+                "Data Legacy",
+                "Mutasi Kas lama belum dimigrasikan ke Tahap 12. Jalankan halaman migrasi Tahap 12 terlebih dahulu.",
+                "warning"
+            );
+            return;
+        }
+
+        if(target.closingId || target.cloudClosingId){
+            tampilkanAlertCustom("Mutasi Terkunci","Mutasi sudah menjadi bagian Closing FINAL.","warning");
+            return;
+        }
+
+        if(target.sumber !== "manual-closing"){
+            tampilkanAlertCustom(
+                "Mutasi Otomatis",
+                "Mutasi ini berasal dari modul lain dan tidak boleh dibatalkan dari Closing Shift.",
+                "warning"
+            );
+            return;
+        }
+
+        try{
+            await window.LDMReporting.reverseManualCashMovement(
+                target.cloudId,
+                "Dibatalkan dari Closing Shift"
+            );
+            renderMutasiKasShift();
+            hitungOmzetKasirTerpilih();
+            kalkulasiSelisihRealtime();
+        }catch(error){
+            tampilkanAlertCustom("Gagal Membatalkan",error?.message || String(error),"danger");
+        }
+    };
+
+    window.prosesSubmitClosing = async function(e){
+        e.preventDefault();
+
+        if(!requirePermission("closing.view")) return;
+
+        if(selectedFilterDate !== getTanggalWITA()){
+            tampilkanAlertCustom(
+                "Tanggal Tidak Aktif",
+                "Closing Shift cloud hanya dapat dibuat untuk hari ini.",
+                "warning"
+            );
+            return;
+        }
+
+        if(!reportingReady()){
+            tampilkanAlertCustom("Cloud Reporting Belum Siap","reporting-service.js belum termuat.","danger");
+            return;
+        }
+
+        const kasir = document.getElementById("selectKasir").value;
+        const shift = document.getElementById("selectShift").value;
+        const modalAwal = Number(document.getElementById("inputModalAwal").value || 0);
+        const tunaiFisik = Number(document.getElementById("inputTunaiFisik").value || 0);
+        const catatan = document.getElementById("inputCatatan").value.trim();
+        const button = document.getElementById("btnSubmitClosingForm");
+        const oldText = button ? button.innerHTML : "";
+
+        if(button){
+            button.disabled = true;
+            button.innerHTML = "☁️ Finalisasi Cloud...";
+        }
+
+        try{
+            const result = await window.LDMReporting.finalizeShiftClosing({
+                username:kasir,
+                shift,
+                openingCash:modalAwal,
+                physicalCash:tunaiFisik,
+                note:catatan
+            });
+
+            document.getElementById("inputModalAwal").value = "0";
+            document.getElementById("inputTunaiFisik").value = "";
+            document.getElementById("inputCatatan").value = "";
+            document.getElementById("inputNominalMutasi").value = "";
+            document.getElementById("inputKetMutasi").value = "";
+
+            renderMutasiKasShift();
+            renderRiwayatShiftLog();
+            hitungOmzetKasirTerpilih();
+
+            tampilkanAlertCustom(
+                "Berhasil Closing",
+                `${shift} untuk ${kasir} sudah FINAL di cloud.`,
+                "success"
+            );
+
+            const log = (JSON.parse(localStorage.getItem("shiftClosingLog") || "[]"))
+                .find(row => row.cloudId === result.id);
+            if(log){
+                cetakLaporanLog(Number(log.id));
+            }
+        }catch(error){
+            tampilkanAlertCustom(
+                "Closing Gagal",
+                error?.message || String(error),
+                "danger"
+            );
+        }finally{
+            if(button){
+                button.disabled = false;
+                button.innerHTML = oldText;
+            }
+        }
+    };
+
+    window.hapusLogDanResetPerhitungan = async function(logId){
+        if(!requirePermission("closing.approve")) return;
+
+        const rows = JSON.parse(localStorage.getItem("shiftClosingLog") || "[]");
+        const target = rows.find(row => Number(row.id) === Number(logId));
+        if(!target) return;
+
+        if(!target.cloudId){
+            tampilkanAlertCustom(
+                "Closing Legacy",
+                "Closing lama belum dimigrasikan ke cloud Tahap 12.",
+                "warning"
+            );
+            return;
+        }
+
+        try{
+            await window.LDMReporting.voidShiftClosing(
+                target.cloudId,
+                "Dibatalkan Owner dari halaman Closing"
+            );
+
+            document.getElementById("inputModalAwal").value = "0";
+            document.getElementById("inputTunaiFisik").value = "";
+            document.getElementById("inputCatatan").value = "";
+            renderMutasiKasShift();
+            renderRiwayatShiftLog();
+            hitungOmzetKasirTerpilih();
+
+            tampilkanAlertCustom(
+                "Closing Dibatalkan",
+                "Closing diubah menjadi VOIDED dan Mutasi Kas aktif dibuka kembali.",
+                "success"
+            );
+        }catch(error){
+            tampilkanAlertCustom("Void Closing Gagal",error?.message || String(error),"danger");
+        }
+    };
+
+    function rerender(){
+        if(typeof isiDropdownKasir === "function") isiDropdownKasir();
+        if(typeof renderMutasiKasShift === "function") renderMutasiKasShift();
+        if(typeof renderRiwayatShiftLog === "function") renderRiwayatShiftLog();
+        if(typeof hitungOmzetKasirTerpilih === "function") hitungOmzetKasirTerpilih();
+    }
+
+    window.addEventListener("ldm-reporting-cache-updated",rerender);
+})();
+</script>
+
+<script src="js/global-system-navigation.js?v=25.2"></script>
 </body>
 </html>

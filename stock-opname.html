@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+    <script src="js/storage-engine.js?v=27.7.1"></script>
+    <script src="js/storage-quota-guard.js?v=27.7.1"></script>
+    <script defer src="js/storage-health-monitor.js?v=27.7.1"></script>
+<script src="js/local-time.js?v=26.4.0"></script><meta name="referrer" content="strict-origin-when-cross-origin"><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><script src="js/security-hardening.js?v=19.0"></script>    <script src="js/error-monitor.js?v=27.9.0-monitor1"></script>
+<script defer src="js/qa-runtime.js?v=19.0"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stock Opname Harian - LocDailyMar POS</title>
@@ -320,6 +325,47 @@
         }
         #scanner-reader { width: 100%; border-radius: 12px; overflow: hidden; background: #000; margin-bottom: 12px; }
 
+        .stock-opname-draft-tools {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-left: auto;
+        }
+        .stock-opname-draft-status {
+            display: inline-flex;
+            align-items: center;
+            min-height: 34px;
+            padding: 6px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 9px;
+            background: rgba(2, 132, 199, 0.07);
+            color: #0369a1;
+            font-size: 0.68rem;
+            font-weight: 700;
+        }
+        body.dark-mode .stock-opname-draft-status { color: #7dd3fc; }
+        .btn-draft-discard {
+            min-height: 34px;
+            padding: 6px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 9px;
+            background: var(--bg-secondary);
+            color: #dc2626;
+            font-size: 0.68rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        @media (max-width: 600px) {
+            .stock-opname-draft-tools {
+                width: 100%;
+                margin-left: 0;
+            }
+            .stock-opname-draft-status {
+                flex: 1 1 180px;
+            }
+        }
+
         /* TAMPILAN CETAK / PRINT PROFESIONAL SESUAI PERMINTAAN */
         @media print {
             @page {
@@ -526,7 +572,9 @@
 
         border-collapse: collapse;
 
-        font-size: 10px;
+        table-layout: fixed;
+
+        font-size: 9px;
     }
 
 
@@ -564,6 +612,25 @@
     .so-print-right {
         text-align: right;
     }
+
+
+    .so-print-money {
+        text-align: right;
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+        font-weight: 700;
+    }
+
+
+    .so-print-table th:nth-child(1) { width: 4%; }
+    .so-print-table th:nth-child(2) { width: 17%; }
+    .so-print-table th:nth-child(3) { width: 12%; }
+    .so-print-table th:nth-child(4) { width: 8%; }
+    .so-print-table th:nth-child(5) { width: 8%; }
+    .so-print-table th:nth-child(6) { width: 7%; }
+    .so-print-table th:nth-child(7) { width: 14%; }
+    .so-print-table th:nth-child(8) { width: 20%; }
+    .so-print-table th:nth-child(9) { width: 10%; }
 
 
     .so-print-summary {
@@ -688,7 +755,6 @@
     }
 
     /* Kasir: sembunyikan route yang memang tidak dapat dibuka. */
-    html[data-ldm-role="kasir"] .nav-bar a[href="barang.html"],
     html[data-ldm-role="kasir"] .nav-bar a[href="supplier.html"],
     html[data-ldm-role="kasir"] .nav-bar a[href="Purchase-Order.html"],
     html[data-ldm-role="kasir"] .nav-bar a[href="goods.receipt.html"],
@@ -1134,14 +1200,7 @@
     }
 
     function witaDate(value){
-        const source=value instanceof Date?value:new Date(value??Date.now());
-        const time=isNaN(source)?Date.now():source.getTime();
-        const d=new Date(time+(8*60*60*1000));
-        return (
-            d.getUTCFullYear()+"-"+
-            String(d.getUTCMonth()+1).padStart(2,"0")+"-"+
-            String(d.getUTCDate()).padStart(2,"0")
-        );
+        return window.LDMLocalTime.dateKey(value);
     }
 
     function recordDate(item){
@@ -1214,14 +1273,7 @@
         const hasShift2=closingToday.some(
             item=>shiftName(item?.shift)==="shift 2"
         );
-
-        const sessionsToday=readArray("shiftSessions").filter(s=>String(s.tanggal||"")===today&&String(s.status||"").toUpperCase()!=="CANCELLED");
-        const txShiftIds=[...new Set(transaksi.map(t=>String(t.shiftId||"")).filter(Boolean))];
-        const closedShiftIds=new Set(closingToday.map(l=>String(l.shiftId||"")).filter(Boolean));
-        const sessionById=new Map(sessionsToday.map(s=>[String(s.id),s]));
-        const exactReady=txShiftIds.every(id=>String(sessionById.get(id)?.status||"").toUpperCase()==="CLOSED"&&closedShiftIds.has(id));
-        const noOpen=sessionsToday.every(s=>!["ACTIVE","CLOSING"].includes(String(s.status||"").toUpperCase()));
-        return allClosed && hasShift1 && hasShift2 && exactReady && noOpen;
+        return allClosed && hasShift1 && hasShift2;
     }
 
     try{
@@ -1652,6 +1704,23 @@
 })();
 </script>
 
+    <!-- Live Sync Tahap 6: Supabase Auth authoritative guard -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/supabase-client.js"></script>
+    <script src="js/cloud-auth.js?v=15.0"></script>
+    <script src="js/cloud-session.js?v=6.0"></script>
+    <script src="js/cloud-session-guard.js?v=15.0"></script>
+    <!-- Live Sync Tahap 7: Cloud Master Barang -->
+    <script src="js/products-service.js?v=21.0"></script>
+    <script src="js/products-bootstrap.js?v=7.0"></script>
+    <!-- Live Sync Tahap 10: Cloud Stock Opname -->
+    <script src="js/stock-opname-service.js?v=10.0"></script>
+    <script src="js/stock-opname-bootstrap.js?v=10.0"></script>
+
+<script src="js/license-v2-config.js?v=25.2.0"></script>
+<script src="js/license-v2-client.js?v=25.2.0"></script>
+<script defer src="js/license-v2-guard.js?v=25.2.0"></script>
 </head>
 <body>
 
@@ -1731,8 +1800,12 @@
                     <label for="inputKeterangan">Keterangan / Alasan Selisih</label>
                     <input type="text" id="inputKeterangan" placeholder="Contoh: Barang rusak kemasan, hilang, dll">
                 </div>
-                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
                     <button type="button" class="btn-action-primary" onclick="tambahItemKeLembarOpname()"><span>➕</span> Tambah ke Lembar Opname</button>
+                    <div class="stock-opname-draft-tools">
+                        <span class="stock-opname-draft-status" id="stockOpnameDraftStatus" role="status" aria-live="polite">💾 Draft otomatis siap</span>
+                        <button type="button" class="btn-draft-discard" id="btnHapusDraftOpname" onclick="hapusDraftStockOpnameSaatIni()">Hapus Draft</button>
+                    </div>
                 </div>
             </div>
 
@@ -1862,6 +1935,276 @@ function proteksiHalamanStockOpname() {
         let html5QrCodeScanner = null;
         let daftarItemSementara = [];
 
+        const STOCK_OPNAME_DRAFT_KEY = "ldmStockOpnameDraftV1";
+        const STOCK_OPNAME_DRAFT_MAX = 30;
+        let tanggalDraftAktif = "";
+        let penggunaDraftAktif = "";
+        let timerSimpanDraft = null;
+        let sedangMemulihkanDraft = false;
+
+        function bacaPenyimpananDraftStockOpname() {
+            try {
+                const data = JSON.parse(localStorage.getItem(STOCK_OPNAME_DRAFT_KEY) || "null");
+                if (data && data.version === 1 && data.entries && typeof data.entries === "object") {
+                    return data;
+                }
+            } catch (error) {
+                console.warn("Draft Stock Opname tidak dapat dibaca:", error);
+            }
+            return { version: 1, entries: {} };
+        }
+
+        function konteksDraftStockOpname(tanggal = tanggalDraftAktif) {
+            const storeId = String(
+                localStorage.getItem("ldmCloudStoreId") ||
+                localStorage.getItem("storeId") ||
+                "local-store"
+            ).trim();
+            const username = String(
+                penggunaDraftAktif ||
+                localStorage.getItem("activeUsername") ||
+                localStorage.getItem("username") ||
+                "pengguna"
+            ).trim().toLowerCase();
+            const businessDate = String(tanggal || "").trim();
+            const key = [storeId, username, businessDate]
+                .map(value => encodeURIComponent(value))
+                .join("::");
+            return { storeId, username, businessDate, key };
+        }
+
+        function setStatusDraftStockOpname(teks, jenis = "normal") {
+            const status = document.getElementById("stockOpnameDraftStatus");
+            if (!status) return;
+            status.textContent = teks;
+            status.style.color = jenis === "error" ? "#dc2626" : "";
+            status.style.borderColor = jenis === "error" ? "rgba(220,38,38,.45)" : "";
+        }
+
+        function formatWaktuDraft(timestamp) {
+            try {
+                return new Date(timestamp).toLocaleTimeString("id-ID", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit"
+                }) + " WITA";
+            } catch (error) {
+                return "baru saja";
+            }
+        }
+
+        function ambilFormDraftStockOpname() {
+            const dataBarang = JSON.parse(localStorage.getItem("dataBarang") || "[]");
+            const indexValue = document.getElementById("selectedBarangIndex")?.value ?? "";
+            const index = Number(indexValue);
+            const barang = indexValue !== "" && Number.isInteger(index) ? dataBarang[index] : null;
+
+            return {
+                searchText: document.getElementById("inputCariBarang")?.value || "",
+                selectedIndex: indexValue,
+                selectedProductId: barang?.id || null,
+                selectedBarcode: barang?.barcode || barang?.kode || "",
+                selectedName: barang?.nama || barang?.namaBarang || "",
+                physicalStock: document.getElementById("inputStokFisik")?.value || "",
+                note: document.getElementById("inputKeterangan")?.value || ""
+            };
+        }
+
+        function formDraftBerisi(form) {
+            return Boolean(
+                String(form.searchText || "").trim() ||
+                String(form.selectedIndex || "").trim() ||
+                String(form.physicalStock || "").trim() ||
+                String(form.note || "").trim()
+            );
+        }
+
+        function simpanDraftStockOpnameSekarang(tanggal = tanggalDraftAktif) {
+            if (sedangMemulihkanDraft || !tanggal) return false;
+
+            const context = konteksDraftStockOpname(tanggal);
+            const storage = bacaPenyimpananDraftStockOpname();
+            const form = ambilFormDraftStockOpname();
+            const items = daftarItemSementara.filter(item => String(item.tanggal) === context.businessDate);
+
+            if (items.length === 0 && !formDraftBerisi(form)) {
+                delete storage.entries[context.key];
+                try {
+                    localStorage.setItem(STOCK_OPNAME_DRAFT_KEY, JSON.stringify(storage));
+                    setStatusDraftStockOpname("💾 Belum ada draft");
+                    return true;
+                } catch (error) {
+                    setStatusDraftStockOpname("⚠️ Draft gagal disimpan", "error");
+                    return false;
+                }
+            }
+
+            const now = Date.now();
+            storage.entries[context.key] = {
+                version: 1,
+                storeId: context.storeId,
+                username: context.username,
+                businessDate: context.businessDate,
+                savedAt: now,
+                items: items,
+                form: form
+            };
+
+            const keysNewestFirst = Object.keys(storage.entries).sort((a, b) =>
+                Number(storage.entries[b]?.savedAt || 0) - Number(storage.entries[a]?.savedAt || 0)
+            );
+            keysNewestFirst.slice(STOCK_OPNAME_DRAFT_MAX).forEach(key => delete storage.entries[key]);
+
+            try {
+                localStorage.setItem(STOCK_OPNAME_DRAFT_KEY, JSON.stringify(storage));
+                setStatusDraftStockOpname(
+                    `✅ Draft tersimpan ${formatWaktuDraft(now)} • ${items.length} barang`
+                );
+                return true;
+            } catch (error) {
+                console.warn("Draft Stock Opname gagal disimpan:", error);
+                setStatusDraftStockOpname("⚠️ Draft gagal disimpan", "error");
+                return false;
+            }
+        }
+
+        function jadwalkanSimpanDraftStockOpname() {
+            if (sedangMemulihkanDraft) return;
+            window.clearTimeout(timerSimpanDraft);
+            timerSimpanDraft = window.setTimeout(() => {
+                timerSimpanDraft = null;
+                simpanDraftStockOpnameSekarang();
+            }, 250);
+        }
+
+        function hapusPenyimpananDraftStockOpname(tanggal = tanggalDraftAktif) {
+            if (!tanggal) return;
+            window.clearTimeout(timerSimpanDraft);
+            timerSimpanDraft = null;
+            const storage = bacaPenyimpananDraftStockOpname();
+            delete storage.entries[konteksDraftStockOpname(tanggal).key];
+            try {
+                localStorage.setItem(STOCK_OPNAME_DRAFT_KEY, JSON.stringify(storage));
+            } catch (error) {
+                console.warn("Draft Stock Opname gagal dihapus:", error);
+            }
+        }
+
+        function resetFormDraftStockOpname() {
+            const nilai = {
+                inputCariBarang: "",
+                selectedBarangIndex: "",
+                txtStokSistem: "0",
+                inputStokFisik: "",
+                txtPreviewSelisih: "0 (Rp 0)",
+                inputKeterangan: ""
+            };
+            Object.entries(nilai).forEach(([id, value]) => {
+                const element = document.getElementById(id);
+                if (element) element.value = value;
+            });
+            const preview = document.getElementById("txtPreviewSelisih");
+            if (preview) preview.style.color = "inherit";
+            const dropdown = document.getElementById("dropdownHasilCari");
+            if (dropdown) dropdown.style.display = "none";
+        }
+
+        function cariIndexBarangUntukDraft(form) {
+            const dataBarang = JSON.parse(localStorage.getItem("dataBarang") || "[]");
+            const productId = String(form?.selectedProductId || "");
+            const barcode = String(form?.selectedBarcode || "").trim().toLowerCase();
+            const name = String(form?.selectedName || "").trim().toLowerCase();
+
+            let index = dataBarang.findIndex(item => productId && String(item.id || "") === productId);
+            if (index === -1 && barcode) {
+                index = dataBarang.findIndex(item =>
+                    String(item.barcode || item.kode || "").trim().toLowerCase() === barcode
+                );
+            }
+            if (index === -1 && name) {
+                index = dataBarang.findIndex(item =>
+                    String(item.nama || item.namaBarang || "").trim().toLowerCase() === name
+                );
+            }
+            if (index === -1 && form?.selectedIndex !== "") {
+                const fallback = Number(form.selectedIndex);
+                if (Number.isInteger(fallback) && dataBarang[fallback]) index = fallback;
+            }
+            return index;
+        }
+
+        function pulihkanDraftStockOpname(tanggal = tanggalDraftAktif) {
+            sedangMemulihkanDraft = true;
+            window.clearTimeout(timerSimpanDraft);
+            timerSimpanDraft = null;
+
+            const storage = bacaPenyimpananDraftStockOpname();
+            const draft = storage.entries[konteksDraftStockOpname(tanggal).key];
+            daftarItemSementara = [];
+            resetFormDraftStockOpname();
+
+            if (draft && Array.isArray(draft.items)) {
+                daftarItemSementara = draft.items.map(item => ({ ...item, tanggal }));
+                const form = draft.form || {};
+                const index = cariIndexBarangUntukDraft(form);
+                const dataBarang = JSON.parse(localStorage.getItem("dataBarang") || "[]");
+
+                document.getElementById("inputCariBarang").value = form.searchText || form.selectedName || "";
+                document.getElementById("inputStokFisik").value = form.physicalStock ?? "";
+                document.getElementById("inputKeterangan").value = form.note || "";
+
+                if (index !== -1) {
+                    document.getElementById("selectedBarangIndex").value = String(index);
+                    document.getElementById("txtStokSistem").value = Number(dataBarang[index]?.stok || 0);
+                }
+                hitungPreviewBaris();
+                setStatusDraftStockOpname(
+                    `♻️ Draft dipulihkan ${formatWaktuDraft(draft.savedAt)} • ${daftarItemSementara.length} barang`
+                );
+            } else {
+                setStatusDraftStockOpname("💾 Belum ada draft");
+            }
+
+            sedangMemulihkanDraft = false;
+        }
+
+        async function hapusDraftStockOpnameSaatIni() {
+            const adaIsi = daftarItemSementara.length > 0 || formDraftBerisi(ambilFormDraftStockOpname());
+            if (!adaIsi) {
+                setStatusDraftStockOpname("💾 Belum ada draft");
+                return;
+            }
+
+            const ok = window.ldmDialog && typeof window.ldmDialog.confirm === "function"
+                ? await window.ldmDialog.confirm(
+                    "Hapus Draft Stock Opname",
+                    "Semua progres sementara pada tanggal ini akan dihapus. Data yang sudah disimpan permanen tidak ikut terhapus.",
+                    "warning",
+                    { okText: "Hapus Draft" }
+                )
+                : window.confirm("Hapus seluruh draft Stock Opname untuk tanggal ini?");
+
+            if (!ok) return;
+            daftarItemSementara = [];
+            resetFormDraftStockOpname();
+            hapusPenyimpananDraftStockOpname();
+            renderTabelOpname();
+            setStatusDraftStockOpname("🗑️ Draft sudah dihapus");
+        }
+
+        function pasangAutosaveDraftStockOpname() {
+            ["inputCariBarang", "inputStokFisik", "inputKeterangan"].forEach(id => {
+                const element = document.getElementById(id);
+                if (element) element.addEventListener("input", jadwalkanSimpanDraftStockOpname);
+            });
+
+            window.addEventListener("pagehide", () => simpanDraftStockOpnameSekarang());
+            window.addEventListener("beforeunload", () => simpanDraftStockOpnameSekarang());
+            document.addEventListener("visibilitychange", () => {
+                if (document.visibilityState === "hidden") simpanDraftStockOpnameSekarang();
+            });
+        }
+
         function bukaMenuNavigasi() {
             document.getElementById("navSidebar").classList.add("active");
             document.getElementById("navOverlay").classList.add("active");
@@ -1969,10 +2312,7 @@ function proteksiHalamanStockOpname() {
         }
 
         function getTanggalWITA() {
-            const now = new Date();
-            const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-            const wita = new Date(utc + (3600000 * 8));
-            return wita.toISOString().substring(0, 10);
+            return window.LDMLocalTime.dateKey();
         }
 
         function initStockOpname() {
@@ -1993,6 +2333,8 @@ if (!session) {
 
 const loggedUser =
     session.username;
+            penggunaDraftAktif = loggedUser;
+            tanggalDraftAktif = tanggalAktif;
             const txtInfoRole = document.getElementById("txtInfoRole");
 
             document.getElementById("printPetugasNama").innerText = loggedUser;
@@ -2003,13 +2345,18 @@ const loggedUser =
                 txtInfoRole.innerHTML = `👤 Hak Akses: <b>${role.toUpperCase()}</b> (${loggedUser}) - Input Pending`;
             }
 
+            pulihkanDraftStockOpname(tanggalAktif);
+            pasangAutosaveDraftStockOpname();
             renderTabelOpname();
         }
 
         function gantiTanggalOpname(tanggalBaru) {
+            if (!tanggalBaru || tanggalBaru === tanggalDraftAktif) return;
+            simpanDraftStockOpnameSekarang(tanggalDraftAktif);
             localStorage.setItem("currentOpnameTanggal", tanggalBaru);
             document.getElementById("printInfoTanggal").innerText = "Tanggal Laporan / Cetak: " + tanggalBaru;
-            daftarItemSementara = [];
+            tanggalDraftAktif = tanggalBaru;
+            pulihkanDraftStockOpname(tanggalBaru);
             renderTabelOpname();
         }
 
@@ -2089,6 +2436,7 @@ if (
 
 
     hitungPreviewBaris();
+    jadwalkanSimpanDraftStockOpname();
 
 
     return;
@@ -2120,6 +2468,7 @@ if (
                     dropdown.style.display = "none";
                     document.getElementById("inputStokFisik").focus();
                     hitungPreviewBaris();
+                    jadwalkanSimpanDraftStockOpname();
                 };
                 dropdown.appendChild(div);
             });
@@ -2358,6 +2707,9 @@ if (
             Date.now() +
             Math.random(),
 
+        productId:
+            barang.id || null,
+
         tanggal:
             tanggal,
 
@@ -2452,6 +2804,7 @@ if (
      * Render tabel lagi.
      */
     renderTabelOpname();
+    simpanDraftStockOpnameSekarang();
 
 
     showAlert(
@@ -2608,7 +2961,11 @@ else if (
                 )
             "
         >
-            Hapus
+            ${
+                item.status === "Tervalidasi"
+                    ? "Batalkan"
+                    : "Arsipkan"
+            }
         </button>
     `;
 
@@ -2735,6 +3092,8 @@ else if (
 
     let totalSelisih = 0;
 
+    let totalNominalSelisih = 0;
+
 
     /*
      * Buat isi tabel.
@@ -2762,6 +3121,22 @@ else if (
                 stokSistem;
 
 
+            const nominalAbsolut =
+                Math.abs(
+                    Number(
+                        item.nominal ?? 0
+                    )
+                );
+
+
+            const nominalSelisih =
+                selisih < 0
+                    ? -nominalAbsolut
+                    : selisih > 0
+                        ? nominalAbsolut
+                        : 0;
+
+
             totalItem++;
 
             totalStokSistem +=
@@ -2773,11 +3148,24 @@ else if (
             totalSelisih +=
                 selisih;
 
+            totalNominalSelisih +=
+                nominalSelisih;
+
 
             let selisihText =
                 selisih > 0
                     ? `+${selisih}`
                     : `${selisih}`;
+
+
+            const nominalSelisihText =
+                `${
+                    nominalSelisih > 0
+                        ? "+ "
+                        : nominalSelisih < 0
+                            ? "- "
+                            : ""
+                }Rp ${Math.abs(nominalSelisih).toLocaleString("id-ID")}`;
 
 
             rowsHTML += `
@@ -2827,6 +3215,13 @@ else if (
                         class="so-print-center"
                     >
                         ${selisihText}
+                    </td>
+
+
+                    <td
+                        class="so-print-money"
+                    >
+                        ${nominalSelisihText}
                     </td>
 
 
@@ -2987,6 +3382,11 @@ const usernameOwner =
                     </th>
 
                     <th>
+                        Nominal
+                        Selisih
+                    </th>
+
+                    <th>
                         Alasan /
                         Keterangan
                     </th>
@@ -3073,6 +3473,27 @@ const usernameOwner =
 
             </div>
 
+
+            <div
+                class="so-print-summary-row"
+            >
+
+                <strong>
+                    Total Nominal Selisih
+                </strong>
+
+                <strong>
+                    ${
+                        totalNominalSelisih > 0
+                            ? "+ "
+                            : totalNominalSelisih < 0
+                                ? "- "
+                                : ""
+                    }Rp ${Math.abs(totalNominalSelisih).toLocaleString("id-ID")}
+                </strong>
+
+            </div>
+
         </div>
 
 
@@ -3145,7 +3566,7 @@ const usernameOwner =
 
 }
 
-        function simpanFinalStockOpname() {
+        async function simpanFinalStockOpname() {
 
     if (
         !requirePermission(
@@ -3155,144 +3576,108 @@ const usernameOwner =
         return;
     }
 
-
     if (
         daftarItemSementara.length === 0
     ) {
-
         showAlert(
             "Informasi",
             "Belum ada barang di lembar opname yang ditambahkan!"
         );
-
         return;
-
     }
 
-
-    let dataOpname =
-        JSON.parse(
-            localStorage.getItem(
-                "dataStockOpname"
-            )
-        ) || [];
-
-
-    let dataBarang =
-        JSON.parse(
-            localStorage.getItem(
-                "dataBarang"
-            )
-        ) || [];
-
+    if (
+        !window.LDMStockOpname ||
+        typeof window.LDMStockOpname.submit !==
+            "function"
+    ) {
+        showAlert(
+            "Cloud Stock Opname Belum Siap",
+            "stock-opname-service.js belum termuat."
+        );
+        return;
+    }
 
     const bolehApprove =
         hasPermission(
             "stockopname.approve"
         );
 
+    const tanggal =
+        document.getElementById(
+            "inputTanggalOpname"
+        ).value;
 
-    daftarItemSementara.forEach(
-        item => {
+    const dataBarang =
+        JSON.parse(
+            localStorage.getItem(
+                "dataBarang"
+            ) || "[]"
+        );
 
-            /*
-             * OWNER:
-             * langsung tervalidasi.
-             */
-            if (bolehApprove) {
-
-                item.status =
-                    "Tervalidasi";
-
-
-                if (
+    const payload =
+        daftarItemSementara.map(
+            item => {
+                const barang =
                     dataBarang[
                         item.barangIndex
-                    ]
-                ) {
+                    ];
 
-                    dataBarang[
-                        item.barangIndex
-                    ].stok =
-                        item.stokFisik;
-
-                }
-
+                return {
+                    ...item,
+                    productId:
+                        item.productId ||
+                        barang?.id ||
+                        null
+                };
             }
+        );
 
+    try {
+        await window.LDMStockOpname
+            .submit({
+                businessDate:
+                    tanggal,
+                items:
+                    payload,
+                directApprove:
+                    bolehApprove
+            });
 
-            /*
-             * ADMIN / KASIR:
-             * harus menunggu Owner.
-             */
-            else {
+        daftarItemSementara = [];
+        hapusPenyimpananDraftStockOpname(tanggal);
+        resetFormDraftStockOpname();
 
-                item.status =
-                    "Pending";
+        renderTabelOpname();
+        setStatusDraftStockOpname("✅ Draft berhasil dikirim dan dibersihkan");
 
-            }
-
-
-            dataOpname.unshift(
-                item
+        if (bolehApprove) {
+            showAlert(
+                "Berhasil",
+                "Stock Opname disimpan ke Supabase dan stok cloud diperbarui secara atomik."
             );
-
+        } else {
+            showAlert(
+                "Berhasil Disimpan",
+                "Stock Opname tersimpan sebagai PENDING di Supabase. Stok belum berubah sampai Owner melakukan approval."
+            );
         }
-    );
 
-
-    /*
-     * Stok permanen hanya berubah
-     * jika role mempunyai approval.
-     */
-
-    if (bolehApprove) {
-
-        localStorage.setItem(
-            "dataBarang",
-            JSON.stringify(
-                dataBarang
-            )
+    } catch (error) {
+        console.error(
+            "Cloud Stock Opname gagal:",
+            error
         );
-
-    }
-
-
-    localStorage.setItem(
-        "dataStockOpname",
-        JSON.stringify(
-            dataOpname
-        )
-    );
-
-
-    daftarItemSementara = [];
-
-
-    renderTabelOpname();
-
-
-    if (bolehApprove) {
 
         showAlert(
-            "Berhasil",
-            "Stock opname berhasil disimpan dan stok permanen diperbarui."
+            "Stock Opname Gagal",
+            error.message ||
+            String(error)
         );
-
     }
-
-    else {
-
-        showAlert(
-            "Berhasil Disimpan",
-            "Stock opname disimpan sebagai PENDING dan menunggu validasi Owner sebelum stok permanen diperbarui."
-        );
-
-    }
-
 }
 
-        function terimaPendingOpname(
+        async function terimaPendingOpname(
     idItem
 ) {
 
@@ -3301,29 +3686,44 @@ const usernameOwner =
             "stockopname.approve"
         )
     ) {
-
         return;
-
     }
 
-            let dataOpname = JSON.parse(localStorage.getItem("dataStockOpname")) || [];
-            let dataBarang = JSON.parse(localStorage.getItem("dataBarang")) || [];
+    if (
+        !window.LDMStockOpname ||
+        typeof window.LDMStockOpname.approve !==
+            "function"
+    ) {
+        showAlert(
+            "Cloud Stock Opname Belum Siap",
+            "stock-opname-service.js belum termuat."
+        );
+        return;
+    }
 
-            const indexOpname = dataOpname.findIndex(i => i.id == idItem);
-            if (indexOpname !== -1) {
-                let item = dataOpname[indexOpname];
-                item.status = "Tervalidasi";
-                if (dataBarang[item.barangIndex]) {
-                    dataBarang[item.barangIndex].stok = item.stokFisik;
-                }
-                localStorage.setItem("dataStockOpname", JSON.stringify(dataOpname));
-                localStorage.setItem("dataBarang", JSON.stringify(dataBarang));
-                renderTabelOpname();
-                showAlert("Berhasil", "Pending stock opname diterima dan stok permanen berhasil diperbarui.");
-            }
-        }
+    try {
+        await window.LDMStockOpname
+            .approve(
+                idItem
+            );
 
-        function hapusAtauTolakOpname(
+        renderTabelOpname();
+
+        showAlert(
+            "Berhasil",
+            "Pending Stock Opname diterima. Delta hasil hitung diterapkan ke stok cloud terbaru secara atomik."
+        );
+
+    } catch (error) {
+        showAlert(
+            "Approval Gagal",
+            error.message ||
+            String(error)
+        );
+    }
+}
+
+        async function hapusAtauTolakOpname(
     idItem
 ) {
 
@@ -3335,73 +3735,191 @@ const usernameOwner =
         return;
     }
 
+    const idxSmt =
+        daftarItemSementara
+            .findIndex(
+                i => i.id == idItem
+            );
 
-    showAlert(
-        "Konfirmasi Hapus",
-        "Apakah Anda yakin ingin menghapus atau menolak hasil stock opname ini?",
-        function() {
+    if (
+        idxSmt !== -1
+    ) {
+        const ok =
+            await ldmDialog.confirm(
+                "Hapus Item Sementara",
+                "Hapus item dari lembar Stock Opname yang belum dikirim?",
+                "warning",
+                {
+                    okText:
+                        "Hapus"
+                }
+            );
 
-            const idxSmt =
-                daftarItemSementara
-                    .findIndex(
-                        i =>
-                            i.id ==
-                            idItem
-                    );
+        if (!ok) {
+            return;
+        }
 
+        daftarItemSementara
+            .splice(
+                idxSmt,
+                1
+            );
 
-            if (
-                idxSmt !== -1
-            ) {
+        simpanDraftStockOpnameSekarang();
+        renderTabelOpname();
+        return;
+    }
 
-                daftarItemSementara
-                    .splice(
-                        idxSmt,
-                        1
-                    );
+    const dataOpname =
+        JSON.parse(
+            localStorage.getItem(
+                "dataStockOpname"
+            ) || "[]"
+        );
 
-            }
+    const item =
+        dataOpname.find(
+            i => String(i.id) === String(idItem)
+        );
 
-            else {
+    if (!item) {
+        showAlert(
+            "Tidak Ditemukan",
+            "Record Stock Opname tidak ditemukan."
+        );
+        return;
+    }
 
-                let dataOpname =
-                    JSON.parse(
-                        localStorage.getItem(
-                            "dataStockOpname"
-                        )
-                    ) || [];
+    if (
+        !window.LDMStockOpname
+    ) {
+        showAlert(
+            "Cloud Stock Opname Belum Siap",
+            "stock-opname-service.js belum termuat."
+        );
+        return;
+    }
 
+    const status =
+        String(
+            item.status || ""
+        ).toLowerCase();
 
-                dataOpname =
-                    dataOpname.filter(
-                        i =>
-                            i.id !=
-                            idItem
-                    );
+    try {
 
+        if (status === "pending") {
 
-                localStorage.setItem(
-                    "dataStockOpname",
-                    JSON.stringify(
-                        dataOpname
-                    )
+            const ok =
+                await ldmDialog.confirm(
+                    "Tolak Stock Opname",
+                    "Tolak Stock Opname PENDING ini? Stok cloud tidak akan berubah.",
+                    "warning",
+                    {
+                        okText:
+                            "Tolak"
+                    }
                 );
 
+            if (!ok) {
+                return;
             }
 
-
-            renderTabelOpname();
-
+            await window.LDMStockOpname
+                .reject(
+                    idItem,
+                    "Ditolak Owner"
+                );
 
             showAlert(
-                "Berhasil",
-                "Hasil stock opname berhasil dihapus / ditolak."
+                "Ditolak",
+                "Stock Opname PENDING berhasil ditolak."
             );
 
         }
-    );
 
+        else if (
+            status === "tervalidasi" ||
+            status === "approved"
+        ) {
+
+            const ok =
+                await ldmDialog.confirm(
+                    "Batalkan Stock Opname",
+                    "Stock Opname ini sudah mengubah stok. Pembatalan akan melakukan reverse delta pada stok cloud.",
+                    "danger",
+                    {
+                        okText:
+                            "Batalkan & Reverse"
+                    }
+                );
+
+            if (!ok) {
+                return;
+            }
+
+            await window.LDMStockOpname
+                .cancel(
+                    idItem,
+                    "Dibatalkan Owner"
+                );
+
+            showAlert(
+                "Dibatalkan",
+                "Stock Opname berhasil dibatalkan dan perubahan stok dibalik secara atomik."
+            );
+
+        }
+
+        else {
+
+            const ok =
+                await ldmDialog.confirm(
+                    "Arsipkan Stock Opname",
+                    "Arsipkan record Stock Opname ini dari daftar aktif? Database menggunakan soft delete.",
+                    "danger",
+                    {
+                        okText:
+                            "Arsipkan"
+                    }
+                );
+
+            if (!ok) {
+                return;
+            }
+
+            await window.LDMStockOpname
+                .softDelete(
+                    idItem
+                );
+
+            showAlert(
+                "Diarsipkan",
+                "Record Stock Opname berhasil di-soft-delete."
+            );
+        }
+
+        renderTabelOpname();
+
+    } catch (error) {
+        showAlert(
+            "Proses Gagal",
+            error.message ||
+            String(error)
+        );
+    }
 }
+
+window.addEventListener(
+    "ldm-stock-opname-cache-updated",
+    function() {
+        if (
+            typeof renderTabelOpname ===
+            "function"
+        ) {
+            renderTabelOpname();
+        }
+    }
+);
 
         function bukaScannerKamera() {
             document.getElementById("modalScanner").style.display = "flex";
@@ -4163,7 +4681,7 @@ document.addEventListener(
         "absensi.html":["owner","admin","kasir"],
         "kasir.html":["owner","admin","kasir"],
         "retur.html":["owner","admin","kasir"],
-        "barang.html":["owner","admin"],
+        "barang.html":["owner","admin","kasir"],
         "supplier.html":["owner","admin"],
         "Purchase-Order.html":["owner","admin"],
         "goods.receipt.html":["owner","admin"],
@@ -4235,7 +4753,7 @@ document.addEventListener(
         {page:"kasir.html", icon:"💵", label:"Kasir", group:"Utama", roles:["owner","admin","kasir"], quick:true},
         {page:"retur.html", icon:"↩️", label:"Retur", group:"Keuangan & Laporan", roles:["owner","admin","kasir"]},
 
-        {page:"barang.html", icon:"📦", label:"Barang", group:"Inventori", roles:["owner","admin"], badge:"navBadge"},
+        {page:"barang.html", icon:"📦", label:"Barang", group:"Inventori", roles:["owner","admin","kasir"], badge:"navBadge"},
         {page:"kartu-stok.html", icon:"📒", label:"Kartu Stok", group:"Inventori", roles:["owner","admin","kasir"]},
         {page:"stock-opname.html", icon:"📋", label:"Stock Opname", group:"Inventori", roles:["owner","admin","kasir"]},
 
@@ -4561,15 +5079,7 @@ document.addEventListener(
     }
 
     function witaDate(value){
-        const source=value instanceof Date?value:new Date(value??Date.now());
-        const time=isNaN(source)?Date.now():source.getTime();
-        const d=new Date(time+(8*60*60*1000));
-
-        return (
-            d.getUTCFullYear()+"-"+
-            String(d.getUTCMonth()+1).padStart(2,"0")+"-"+
-            String(d.getUTCDate()).padStart(2,"0")
-        );
+        return window.LDMLocalTime.dateKey(value);
     }
 
     function recordDate(item){
@@ -4673,16 +5183,7 @@ document.addEventListener(
             ready:
                 pendingAccounts.length===0
                 && hasShift1
-                && hasShift2
-                && (function(){
-                    const sessionsToday=readArray("shiftSessions").filter(s=>String(s.tanggal||"")===today&&String(s.status||"").toUpperCase()!=="CANCELLED");
-                    const txShiftIds=[...new Set(transactions.map(t=>String(t.shiftId||"")).filter(Boolean))];
-                    const closingShiftIds=new Set(closingToday.map(l=>String(l.shiftId||"")).filter(Boolean));
-                    const byId=new Map(sessionsToday.map(s=>[String(s.id),s]));
-                    const exact=txShiftIds.every(id=>String(byId.get(id)?.status||"").toUpperCase()==="CLOSED"&&closingShiftIds.has(id));
-                    const noOpen=sessionsToday.every(s=>!["ACTIVE","CLOSING"].includes(String(s.status||"").toUpperCase()));
-                    return exact&&noOpen;
-                })(),
+                && hasShift2,
             activeAccounts:[...activeAccounts],
             pendingAccounts,
             hasShift1,
@@ -4752,7 +5253,6 @@ document.addEventListener(
                 "laporan",
                 "dataLaporan",
                 "shiftClosingLog",
-                "shiftSessions",
                 "dataRetur"
             ].includes(event.key)
         ){
@@ -4779,5 +5279,6 @@ document.addEventListener(
 })();
 </script>
 
+<script src="js/global-system-navigation.js?v=25.2"></script>
 </body>
 </html>

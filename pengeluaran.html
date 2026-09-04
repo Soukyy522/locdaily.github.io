@@ -1,4 +1,9 @@
-<!DOCTYPE html><html lang="id" class="secure-page-pending"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Pengeluaran - LocDailyMar POS</title><link rel="manifest" href="manifest.json"><meta name="theme-color" content="#0d2240"><link rel="stylesheet" href="style.css"><link rel="icon" type="image/png" href="icon.png"><link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Fira+Code:wght@500;700&family=Fredoka:wght@600;700&family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@500;700&family=Lato:wght@400;700&family=Lobster&family=Merriweather:wght@400;700&family=Montserrat:wght@400;600;700&family=Nunito:wght@400;700&family=Open+Sans:wght@400;600;700&family=Oswald:wght@500;700&family=Pacifico&family=Playfair+Display:wght@600;800&family=Poppins:wght@400;600;700&family=Raleway:wght@500;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet"><style>.secure-page-pending body{visibility:hidden!important;}
+<!DOCTYPE html><html lang="id" class="secure-page-pending"><head>
+    <script src="js/storage-engine.js?v=27.7.1"></script>
+    <script src="js/storage-quota-guard.js?v=27.7.1"></script>
+    <script defer src="js/storage-health-monitor.js?v=27.7.1"></script>
+<script src="js/local-time.js?v=26.4.0"></script><meta name="referrer" content="strict-origin-when-cross-origin"><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><script src="js/security-hardening.js?v=19.0"></script>    <script src="js/error-monitor.js?v=27.9.0-monitor1"></script>
+<script defer src="js/qa-runtime.js?v=19.0"></script><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Pengeluaran - LocDailyMar POS</title><link rel="manifest" href="manifest.json"><meta name="theme-color" content="#0d2240"><link rel="stylesheet" href="style.css"><link rel="icon" type="image/png" href="icon.png"><link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Fira+Code:wght@500;700&family=Fredoka:wght@600;700&family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@500;700&family=Lato:wght@400;700&family=Lobster&family=Merriweather:wght@400;700&family=Montserrat:wght@400;600;700&family=Nunito:wght@400;700&family=Open+Sans:wght@400;600;700&family=Oswald:wght@500;700&family=Pacifico&family=Playfair+Display:wght@600;800&family=Poppins:wght@400;600;700&family=Raleway:wght@500;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet"><style>.secure-page-pending body{visibility:hidden!important;}
 
         :root {
             --app-font: 'Poppins', sans-serif;
@@ -778,7 +783,6 @@
     }
 
     /* Kasir: sembunyikan route yang memang tidak dapat dibuka. */
-    html[data-ldm-role="kasir"] .nav-bar a[href="barang.html"],
     html[data-ldm-role="kasir"] .nav-bar a[href="supplier.html"],
     html[data-ldm-role="kasir"] .nav-bar a[href="Purchase-Order.html"],
     html[data-ldm-role="kasir"] .nav-bar a[href="goods.receipt.html"],
@@ -1224,14 +1228,7 @@
     }
 
     function witaDate(value){
-        const source=value instanceof Date?value:new Date(value??Date.now());
-        const time=isNaN(source)?Date.now():source.getTime();
-        const d=new Date(time+(8*60*60*1000));
-        return (
-            d.getUTCFullYear()+"-"+
-            String(d.getUTCMonth()+1).padStart(2,"0")+"-"+
-            String(d.getUTCDate()).padStart(2,"0")
-        );
+        return window.LDMLocalTime.dateKey(value);
     }
 
     function recordDate(item){
@@ -1304,14 +1301,7 @@
         const hasShift2=closingToday.some(
             item=>shiftName(item?.shift)==="shift 2"
         );
-
-        const sessionsToday=readArray("shiftSessions").filter(s=>String(s.tanggal||"")===today&&String(s.status||"").toUpperCase()!=="CANCELLED");
-        const txShiftIds=[...new Set(transaksi.map(t=>String(t.shiftId||"")).filter(Boolean))];
-        const closedShiftIds=new Set(closingToday.map(l=>String(l.shiftId||"")).filter(Boolean));
-        const sessionById=new Map(sessionsToday.map(s=>[String(s.id),s]));
-        const exactReady=txShiftIds.every(id=>String(sessionById.get(id)?.status||"").toUpperCase()==="CLOSED"&&closedShiftIds.has(id));
-        const noOpen=sessionsToday.every(s=>!["ACTIVE","CLOSING"].includes(String(s.status||"").toUpperCase()));
-        return allClosed && hasShift1 && hasShift2 && exactReady && noOpen;
+        return allClosed && hasShift1 && hasShift2;
     }
 
     try{
@@ -1742,6 +1732,21 @@
 })();
 </script>
 
+    <!-- Live Sync Tahap 6: Supabase Auth authoritative guard -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/supabase-client.js"></script>
+    <script src="js/cloud-auth.js?v=15.0"></script>
+    <script src="js/cloud-session.js?v=6.0"></script>
+    <script src="js/cloud-session-guard.js?v=15.0"></script>
+
+
+    <!-- Live Sync Tahap 12: Final Cloud Reporting Authority -->
+    <script src="js/reporting-service.js?v=27.7.1"></script>
+    <script src="js/reporting-bootstrap.js?v=25.2.1"></script>
+<script src="js/license-v2-config.js?v=25.2.0"></script>
+<script src="js/license-v2-client.js?v=25.2.0"></script>
+<script defer src="js/license-v2-guard.js?v=25.2.0"></script>
 </head>
 <body>
 <div class="nav-overlay" id="navOverlay" onclick="tutupMenuNavigasi()"></div>
@@ -1837,8 +1842,8 @@
 <script>
 const DEFAULT_HEADER={judul:"LocDailyMar",subJudul:"POS & Management",warnaJudul:"#ffffff",warnaOutline:"#d99b00",warnaSubJudul:"#ffc107",warnaBgHeader:"#0d2240",fontFamily:"'Poppins', sans-serif",brandFontFamily:"'Poppins', sans-serif",bgPrimary:"#f4f6f9",bgSecondary:"#ffffff",darkMode:false,logoData:null};
 let currentUser="",currentRole="";
-function getTanggalWITA(d=new Date()){const x=new Date(d);const w=new Date((isNaN(x)?Date.now():x.getTime())+8*3600000);return `${w.getUTCFullYear()}-${String(w.getUTCMonth()+1).padStart(2,'0')}-${String(w.getUTCDate()).padStart(2,'0')}`}
-function getWaktuWITA(){const w=new Date(Date.now()+8*3600000);return `${String(w.getUTCHours()).padStart(2,'0')}:${String(w.getUTCMinutes()).padStart(2,'0')}:${String(w.getUTCSeconds()).padStart(2,'0')}`}
+function getTanggalWITA(d=new Date()){return window.LDMLocalTime.dateKey(d)}
+function getWaktuWITA(){return window.LDMLocalTime.timeKey()}
 function bukaMenuNavigasi(){document.getElementById('navSidebar')?.classList.add('active');document.getElementById('navOverlay')?.classList.add('active')}
 function tutupMenuNavigasi(){document.getElementById('navSidebar')?.classList.remove('active');document.getElementById('navOverlay')?.classList.remove('active')}
 function escapeHtml(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}
@@ -2564,7 +2569,7 @@ window.addEventListener(
         "absensi.html":["owner","admin","kasir"],
         "kasir.html":["owner","admin","kasir"],
         "retur.html":["owner","admin","kasir"],
-        "barang.html":["owner","admin"],
+        "barang.html":["owner","admin","kasir"],
         "supplier.html":["owner","admin"],
         "Purchase-Order.html":["owner","admin"],
         "goods.receipt.html":["owner","admin"],
@@ -2636,7 +2641,7 @@ window.addEventListener(
         {page:"kasir.html", icon:"💵", label:"Kasir", group:"Utama", roles:["owner","admin","kasir"], quick:true},
         {page:"retur.html", icon:"↩️", label:"Retur", group:"Keuangan & Laporan", roles:["owner","admin","kasir"]},
 
-        {page:"barang.html", icon:"📦", label:"Barang", group:"Inventori", roles:["owner","admin"], badge:"navBadge"},
+        {page:"barang.html", icon:"📦", label:"Barang", group:"Inventori", roles:["owner","admin","kasir"], badge:"navBadge"},
         {page:"kartu-stok.html", icon:"📒", label:"Kartu Stok", group:"Inventori", roles:["owner","admin","kasir"]},
         {page:"stock-opname.html", icon:"📋", label:"Stock Opname", group:"Inventori", roles:["owner","admin","kasir"]},
 
@@ -2962,15 +2967,7 @@ window.addEventListener(
     }
 
     function witaDate(value){
-        const source=value instanceof Date?value:new Date(value??Date.now());
-        const time=isNaN(source)?Date.now():source.getTime();
-        const d=new Date(time+(8*60*60*1000));
-
-        return (
-            d.getUTCFullYear()+"-"+
-            String(d.getUTCMonth()+1).padStart(2,"0")+"-"+
-            String(d.getUTCDate()).padStart(2,"0")
-        );
+        return window.LDMLocalTime.dateKey(value);
     }
 
     function recordDate(item){
@@ -3074,16 +3071,7 @@ window.addEventListener(
             ready:
                 pendingAccounts.length===0
                 && hasShift1
-                && hasShift2
-                && (function(){
-                    const sessionsToday=readArray("shiftSessions").filter(s=>String(s.tanggal||"")===today&&String(s.status||"").toUpperCase()!=="CANCELLED");
-                    const txShiftIds=[...new Set(transactions.map(t=>String(t.shiftId||"")).filter(Boolean))];
-                    const closingShiftIds=new Set(closingToday.map(l=>String(l.shiftId||"")).filter(Boolean));
-                    const byId=new Map(sessionsToday.map(s=>[String(s.id),s]));
-                    const exact=txShiftIds.every(id=>String(byId.get(id)?.status||"").toUpperCase()==="CLOSED"&&closingShiftIds.has(id));
-                    const noOpen=sessionsToday.every(s=>!["ACTIVE","CLOSING"].includes(String(s.status||"").toUpperCase()));
-                    return exact&&noOpen;
-                })(),
+                && hasShift2,
             activeAccounts:[...activeAccounts],
             pendingAccounts,
             hasShift1,
@@ -3153,7 +3141,6 @@ window.addEventListener(
                 "laporan",
                 "dataLaporan",
                 "shiftClosingLog",
-                "shiftSessions",
                 "dataRetur"
             ].includes(event.key)
         ){
@@ -3180,4 +3167,106 @@ window.addEventListener(
 })();
 </script>
 
-</body></html>
+
+<script id="ldmStage12ExpenseCloudOverride">
+(function(){
+    "use strict";
+
+    window.saveExpense = async function(ev){
+        ev.preventDefault();
+        if(!["owner","admin"].includes(currentRole)) return;
+
+        if(receiptProcessing){
+            showAlert("Foto Sedang Diproses","Tunggu kompresi Nota selesai.","warning");
+            return;
+        }
+
+        const tanggal = document.getElementById("expenseDate").value || getTanggalWITA();
+        const nominal = Number(document.getElementById("expenseAmount").value || 0);
+        const ket = document.getElementById("expenseDesc").value.trim();
+
+        if(!(nominal > 0) || !ket){
+            showAlert("Data Belum Lengkap","Nominal dan keterangan wajib diisi.","warning");
+            return;
+        }
+
+        if(!window.LDMReporting){
+            showAlert("Cloud Reporting Belum Siap","reporting-service.js belum termuat.","danger");
+            return;
+        }
+
+        const button = document.getElementById("btnSaveExpense");
+        const oldText = button ? button.textContent : "";
+        if(button){
+            button.disabled = true;
+            button.textContent = "☁️ Menyimpan ke Cloud...";
+        }
+
+        try{
+            await window.LDMReporting.saveExpense({
+                businessDate:tanggal,
+                description:ket,
+                category:document.getElementById("expenseCategory").value,
+                target:document.getElementById("expenseTarget").value.trim(),
+                reference:document.getElementById("expenseRef").value.trim(),
+                amount:nominal,
+                receiptDataURL:receiptDataUrl || "",
+                receiptName:receiptOriginalName || "",
+                receiptOriginalSize:receiptOriginalSize || 0
+            });
+
+            document.getElementById("expenseAmount").value = "";
+            document.getElementById("expenseDesc").value = "";
+            document.getElementById("expenseTarget").value = "";
+            document.getElementById("expenseRef").value = "";
+            clearReceipt();
+            renderExpenses();
+            showAlert("Pengeluaran Disimpan","Pengeluaran berhasil disimpan ke cloud.","success");
+        }catch(error){
+            showAlert("Pengeluaran Gagal",error?.message || String(error),"danger");
+        }finally{
+            if(button){
+                button.disabled = false;
+                button.textContent = oldText || "💾 Simpan Pengeluaran";
+            }
+        }
+    };
+
+    window.deleteExpense = async function(id){
+        if(currentRole !== "owner"){
+            showAlert("Akses Ditolak","Hanya Owner yang dapat menghapus pengeluaran.","warning");
+            return;
+        }
+
+        const target = arr(EXPENSE_KEY).find(row => Number(row.id) === Number(id));
+        if(!target) return;
+
+        if(!target.cloudId){
+            showAlert("Pengeluaran Legacy","Migrasikan data ini ke Tahap 12 terlebih dahulu.","warning");
+            return;
+        }
+
+        const ok = await ldmDialog.confirm(
+            "Hapus Pengeluaran",
+            `Hapus pengeluaran ${rupiah(target.nominal)} - ${target.ket}?`,
+            "danger",
+            {okText:"Hapus"}
+        );
+        if(!ok) return;
+
+        try{
+            await window.LDMReporting.deleteExpense(target.cloudId);
+            renderExpenses();
+            showAlert("Pengeluaran Dihapus","Data cloud di-soft-delete.","success");
+        }catch(error){
+            showAlert("Hapus Gagal",error?.message || String(error),"danger");
+        }
+    };
+
+    window.addEventListener("ldm-reporting-cache-updated",function(){
+        if(typeof renderExpenses === "function") renderExpenses();
+    });
+})();
+</script>
+
+<script src="js/global-system-navigation.js?v=25.2"></script></body></html>

@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+    <script src="js/storage-engine.js?v=27.7.1"></script>
+    <script src="js/storage-quota-guard.js?v=27.7.1"></script>
+    <script defer src="js/storage-health-monitor.js?v=27.7.1"></script>
+<script src="js/local-time.js?v=26.4.0"></script><meta name="referrer" content="strict-origin-when-cross-origin"><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><script src="js/security-hardening.js?v=19.0"></script>    <script src="js/error-monitor.js?v=27.9.0-monitor1"></script>
+<script defer src="js/qa-runtime.js?v=19.0"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Goods Receipt - LocDailyMar POS</title>
@@ -512,17 +517,21 @@
             display: none !important;
         }
 
-        body.role-owner .owner-purchase-value {
+        body.role-owner .owner-procurement-total,
+        html[data-ldm-primary-owner="true"] body.role-owner .owner-unit-cost {
             display: revert !important;
         }
 
         /* Untuk elemen form/card yang membutuhkan display normal */
-        body.role-owner div.owner-purchase-value {
+        body.role-owner div.owner-procurement-total,
+        html[data-ldm-primary-owner="true"] body.role-owner div.owner-unit-cost {
             display: block !important;
         }
 
-        body.role-owner th.owner-purchase-value,
-        body.role-owner td.owner-purchase-value {
+        body.role-owner th.owner-procurement-total,
+        body.role-owner td.owner-procurement-total,
+        html[data-ldm-primary-owner="true"] body.role-owner th.owner-unit-cost,
+        html[data-ldm-primary-owner="true"] body.role-owner td.owner-unit-cost {
             display: table-cell !important;
         }
 
@@ -585,7 +594,6 @@
     }
 
     /* Kasir: sembunyikan route yang memang tidak dapat dibuka. */
-    html[data-ldm-role="kasir"] .nav-bar a[href="barang.html"],
     html[data-ldm-role="kasir"] .nav-bar a[href="supplier.html"],
     html[data-ldm-role="kasir"] .nav-bar a[href="Purchase-Order.html"],
     html[data-ldm-role="kasir"] .nav-bar a[href="goods.receipt.html"],
@@ -1031,14 +1039,7 @@
     }
 
     function witaDate(value){
-        const source=value instanceof Date?value:new Date(value??Date.now());
-        const time=isNaN(source)?Date.now():source.getTime();
-        const d=new Date(time+(8*60*60*1000));
-        return (
-            d.getUTCFullYear()+"-"+
-            String(d.getUTCMonth()+1).padStart(2,"0")+"-"+
-            String(d.getUTCDate()).padStart(2,"0")
-        );
+        return window.LDMLocalTime.dateKey(value);
     }
 
     function recordDate(item){
@@ -1111,14 +1112,7 @@
         const hasShift2=closingToday.some(
             item=>shiftName(item?.shift)==="shift 2"
         );
-
-        const sessionsToday=readArray("shiftSessions").filter(s=>String(s.tanggal||"")===today&&String(s.status||"").toUpperCase()!=="CANCELLED");
-        const txShiftIds=[...new Set(transaksi.map(t=>String(t.shiftId||"")).filter(Boolean))];
-        const closedShiftIds=new Set(closingToday.map(l=>String(l.shiftId||"")).filter(Boolean));
-        const sessionById=new Map(sessionsToday.map(s=>[String(s.id),s]));
-        const exactReady=txShiftIds.every(id=>String(sessionById.get(id)?.status||"").toUpperCase()==="CLOSED"&&closedShiftIds.has(id));
-        const noOpen=sessionsToday.every(s=>!["ACTIVE","CLOSING"].includes(String(s.status||"").toUpperCase()));
-        return allClosed && hasShift1 && hasShift2 && exactReady && noOpen;
+        return allClosed && hasShift1 && hasShift2;
     }
 
     try{
@@ -1549,6 +1543,23 @@
 })();
 </script>
 
+    <!-- Live Sync Tahap 6: Supabase Auth authoritative guard -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/supabase-client.js"></script>
+    <script src="js/cloud-auth.js?v=15.0"></script>
+    <script src="js/cloud-session.js?v=6.0"></script>
+    <script src="js/cloud-session-guard.js?v=15.0"></script>
+    <script src="js/unit-conversion.js?v=20.0"></script>
+    <script src="js/procurement-service.js?v=25.3.1"></script>
+    <script src="js/procurement-bootstrap.js?v=11.0"></script>
+    <!-- Live Sync Tahap 7: Cloud Master Barang -->
+    <script src="js/products-service.js?v=25.3.1"></script>
+    <script src="js/products-bootstrap.js?v=7.0"></script>
+
+<script src="js/license-v2-config.js?v=25.2.0"></script>
+<script src="js/license-v2-client.js?v=25.2.0"></script>
+<script defer src="js/license-v2-guard.js?v=25.2.0"></script>
 </head>
 
 <body>
@@ -1697,12 +1708,22 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="inputQtyGR">Qty Diterima</label>
+                    <label for="inputQtyGR" id="labelQtyGR">Qty Diterima</label>
                     <input type="number" id="inputQtyGR" min="0.01" step="0.01" placeholder="0" oninput="hitungPreviewGR()">
                 </div>
 
                 <div class="form-group">
-                    <label for="inputHargaBeliGR">Harga Beli / Satuan (Rp)</label>
+                    <label>Satuan Beli</label>
+                    <input type="text" id="inputSatuanBeliGR" value="Pcs" readonly>
+                </div>
+
+                <div class="form-group">
+                    <label>Konversi ke Stok Dasar</label>
+                    <input type="text" id="inputKonversiGR" value="1 Pcs = 1 Pcs" readonly>
+                </div>
+
+                <div class="form-group owner-purchase-value owner-unit-cost">
+                    <label for="inputHargaBeliGR">Harga Beli / Kemasan (Rp)</label>
                     <input type="number" id="inputHargaBeliGR" min="0" step="1" placeholder="0" oninput="hitungPreviewGR()">
                 </div>
 
@@ -1711,7 +1732,7 @@
                     <input type="date" id="inputExpiredGR">
                 </div>
 
-                <div class="form-group owner-purchase-value">
+                <div class="form-group owner-purchase-value owner-procurement-total">
                     <label>Subtotal</label>
                     <input type="text" id="inputSubtotalGR" value="Rp 0" readonly>
                 </div>
@@ -1738,8 +1759,8 @@
                             <th>Barcode</th>
                             <th>Stok Awal</th>
                             <th>Qty Terima</th>
-                            <th class="owner-purchase-value">Harga Beli</th>
-                            <th class="owner-purchase-value">Subtotal</th>
+                            <th class="owner-purchase-value owner-unit-cost">Harga Beli</th>
+                            <th class="owner-purchase-value owner-procurement-total">Subtotal</th>
                             <th>Expired</th>
                             <th>Aksi</th>
                         </tr>
@@ -1759,7 +1780,7 @@
                     <strong id="sumQty">0</strong>
                 </div>
 
-                <div class="summary-box owner-purchase-value">
+                <div class="summary-box owner-purchase-value owner-procurement-total">
                     <span>Total Nilai</span>
                     <strong id="sumNilai">Rp 0</strong>
                 </div>
@@ -1802,7 +1823,7 @@
                             <th>Surat Jalan</th>
                             <th>Petugas</th>
                             <th>Item / Qty</th>
-                            <th class="owner-purchase-value">Total Nilai</th>
+                            <th class="owner-purchase-value owner-procurement-total">Total Nilai</th>
                             <th>Status</th>
                             <th>Aksi</th>
                         </tr>
@@ -3337,6 +3358,7 @@ function safeReadObject(key) {
 
 function getSecuritySession() {
     const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+    const isCloudSession = localStorage.getItem("ldmAuthSource") === "supabase";
 
     const username =
         localStorage.getItem("username") ||
@@ -3355,14 +3377,16 @@ function getSecuritySession() {
         return null;
     }
 
-    if (loginTimestamp && (Date.now() - loginTimestamp > SECURITY_CONFIG.SESSION_TIME)) {
+    // Masa berlaku sesi cloud dikelola Supabase, bukan timer legacy 30 menit.
+    if (!isCloudSession && loginTimestamp && (Date.now() - loginTimestamp > SECURITY_CONFIG.SESSION_TIME)) {
         return null;
     }
 
     return {
         username: String(username).trim(),
         role,
-        loginTimestamp
+        loginTimestamp,
+        isCloudSession
     };
 }
 
@@ -3402,6 +3426,10 @@ function getDatabaseAkun() {
 function validateSessionAgainstAccounts() {
     const session = getSecuritySession();
     if (!session) return false;
+
+    // Profile Supabase adalah sumber role authoritative untuk sesi cloud.
+    // daftarAkun lokal hanya dipakai oleh mode kompatibilitas lama.
+    if (session.isCloudSession) return true;
 
     const akunList = getDatabaseAkun();
 
@@ -3467,17 +3495,23 @@ function proteksiHalamanGoodsReceipt() {
 function terapkanVisibilitasNilaiPembelian() {
     const session = getSecuritySession();
     const isOwner = Boolean(session && normalizeRole(session.role) === "owner");
+    const isPrimaryOwner =
+        document.documentElement.dataset.ldmPrimaryOwner === "true"
+        || Boolean(window.LDMPrimaryOwner && window.LDMPrimaryOwner.isPrimaryOwner());
 
     document.body.classList.toggle("role-owner", isOwner);
 
     document.querySelectorAll(".owner-purchase-value").forEach(el => {
-        if (isOwner) {
+        const isTotal = el.classList.contains("owner-procurement-total");
+        if (isOwner && (isTotal || isPrimaryOwner)) {
             el.removeAttribute("aria-hidden");
         } else {
             el.setAttribute("aria-hidden", "true");
         }
     });
 }
+
+window.addEventListener("ldm-primary-owner-ready",terapkanVisibilitasNilaiPembelian);
 
 function terapkanMenuRole() {
     const session = getSecuritySession();
@@ -3895,6 +3929,35 @@ function getDataBarang() {
     return safeReadArray("dataBarang");
 }
 
+function terapkanHargaServerPadaDraftGR(items,gunakanSubtotalSumberPO=false) {
+    const products = getDataBarang();
+    return (Array.isArray(items) ? items : []).map(source => {
+        const item = { ...source };
+        const product = products.find(row =>
+            (item.productId && String(row.id || "") === String(item.productId))
+            || (item.barcode && String(row.barcode || "") === String(item.barcode))
+            || String(row.nama || "").trim().toLowerCase() === String(item.namaBarang || "").trim().toLowerCase()
+        );
+        const factor = Math.max(
+            Number(item.faktorKonversi || product?.konversiBeli || 1),
+            0.001
+        );
+        const qty = Math.max(Number(item.qtyDiterima || 0),0);
+        const sourceQty = Math.max(Number(item.qtyOrdered || qty),0);
+        const sourceSubtotal = Math.max(Number(item.subtotal || 0),0);
+        const packagePriceFromPO =
+            gunakanSubtotalSumberPO && sourceQty > 0 && sourceSubtotal > 0
+                ? sourceSubtotal / sourceQty
+                : 0;
+        const basePrice = Math.max(Number(product?.hargaBeli || 0),0);
+        const existingPackagePrice = Math.max(Number(item.hargaBeli || 0),0);
+        item.hargaBeli = existingPackagePrice || packagePriceFromPO || (basePrice * factor);
+        item.hargaBeliDasar = item.hargaBeli / factor;
+        item.subtotal = qty * item.hargaBeli;
+        return item;
+    });
+}
+
 function cariBarangGoodsReceipt(keyword) {
     const dropdown = document.getElementById("dropdownBarangGR");
     const input = document.getElementById("inputCariBarangGR");
@@ -3968,12 +4031,20 @@ function pilihBarangGoodsReceipt(index) {
     document.getElementById("inputCariBarangGR").value = item.nama || "";
     document.getElementById("inputNamaBarangGR").value = item.nama || "";
 
-    const satuan = item.satuan || "Pcs";
+    const normalized = window.LDMUnits
+        ? window.LDMUnits.normalizeProduct(item)
+        : {...item,satuanDasar:item.satuan || "Pcs",satuanBeli:item.satuanBeli || item.satuan || "Pcs",konversiBeli:Number(item.konversiBeli || 1)};
+    const satuan = normalized.satuanDasar;
     document.getElementById("inputStokSekarangGR").value =
         `${formatQty(item.stok || 0)} ${satuan}`;
 
-    document.getElementById("inputHargaBeliGR").value =
-        Number(item.hargaBeli || 0);
+    document.getElementById("inputSatuanBeliGR").value = normalized.satuanBeli;
+    document.getElementById("inputKonversiGR").value =
+        `1 ${normalized.satuanBeli} = ${normalized.konversiBeli} ${normalized.satuanDasar}`;
+    document.getElementById("labelQtyGR").textContent = `Qty Diterima (${normalized.satuanBeli})`;
+    document.getElementById("inputHargaBeliGR").value = window.LDMUnits
+        ? window.LDMUnits.packagePrice(item.hargaBeli || 0,normalized)
+        : Number(item.hargaBeli || 0) * Number(normalized.konversiBeli || 1);
 
     document.getElementById("inputQtyGR").value = "1";
 
@@ -3999,6 +4070,9 @@ function resetFormBarangGR() {
     document.getElementById("inputCariBarangGR").value = "";
     document.getElementById("inputNamaBarangGR").value = "";
     document.getElementById("inputStokSekarangGR").value = "0";
+    document.getElementById("inputSatuanBeliGR").value = "Pcs";
+    document.getElementById("inputKonversiGR").value = "1 Pcs = 1 Pcs";
+    document.getElementById("labelQtyGR").textContent = "Qty Diterima";
     document.getElementById("inputQtyGR").value = "";
     document.getElementById("inputHargaBeliGR").value = "";
     document.getElementById("inputExpiredGR").value = "";
@@ -4032,6 +4106,15 @@ function tambahBarangKeGoodsReceipt() {
 
     const qty = Number(document.getElementById("inputQtyGR").value);
     const hargaBeli = Number(document.getElementById("inputHargaBeliGR").value);
+    const normalized = window.LDMUnits
+        ? window.LDMUnits.normalizeProduct(barang)
+        : {...barang,satuanDasar:barang.satuan || "Pcs",satuanBeli:barang.satuanBeli || barang.satuan || "Pcs",konversiBeli:Number(barang.konversiBeli || 1)};
+    const qtyBase = window.LDMUnits
+        ? window.LDMUnits.toBase(qty,normalized)
+        : qty * Number(normalized.konversiBeli || 1);
+    const hargaBeliDasar = window.LDMUnits
+        ? window.LDMUnits.basePrice(hargaBeli,normalized)
+        : hargaBeli / Number(normalized.konversiBeli || 1);
 
     if (!Number.isFinite(qty) || qty <= 0) {
         tampilkanNotifikasi("Qty Tidak Valid", "Jumlah barang diterima harus lebih dari 0.");
@@ -4050,7 +4133,9 @@ function tambahBarangKeGoodsReceipt() {
 
     if (existing) {
         existing.qtyDiterima += qty;
+        existing.qtyDiterimaBase = Number(existing.qtyDiterima || 0) * Number(existing.faktorKonversi || 1);
         existing.hargaBeli = hargaBeli;
+        existing.hargaBeliDasar = hargaBeliDasar;
         existing.subtotal = existing.qtyDiterima * existing.hargaBeli;
 
         const exp = document.getElementById("inputExpiredGR").value;
@@ -4065,11 +4150,15 @@ function tambahBarangKeGoodsReceipt() {
             barcode,
             namaBarang: String(barang.nama || "Tanpa Nama"),
             kategori: String(barang.kategori || ""),
-            satuan: String(barang.satuan || "Pcs"),
+            satuan: String(normalized.satuanBeli),
+            satuanDasar: String(normalized.satuanDasar),
+            faktorKonversi: Number(normalized.konversiBeli || 1),
             stokSnapshot: Number(barang.stok || 0),
             hargaBeliSebelum: Number(barang.hargaBeli || 0),
             qtyDiterima: qty,
+            qtyDiterimaBase: qtyBase,
             hargaBeli,
+            hargaBeliDasar,
             subtotal: qty * hargaBeli,
             expiredDate: document.getElementById("inputExpiredGR").value || ""
         });
@@ -4099,6 +4188,7 @@ function editQtyDraft(id, delta) {
     }
 
     item.qtyDiterima = next;
+    item.qtyDiterimaBase = item.qtyDiterima * Number(item.faktorKonversi || 1);
     item.subtotal = item.qtyDiterima * item.hargaBeli;
     renderDraftGoodsReceipt();
     jadwalkanAutoDraftGR();
@@ -4121,17 +4211,17 @@ function renderDraftGoodsReceipt() {
                 <td>${index + 1}</td>
                 <td>
                     <strong>${escapeHTML(item.namaBarang)}</strong><br>
-                    <small style="color:var(--label-color);">${escapeHTML(item.kategori || "-")} • ${escapeHTML(item.satuan)}</small>
+                    <small style="color:var(--label-color);">${escapeHTML(item.kategori || "-")} • 1 ${escapeHTML(item.satuan)} = ${formatQty(item.faktorKonversi || 1)} ${escapeHTML(item.satuanDasar || item.satuan || "Pcs")}</small>
                 </td>
                 <td>${escapeHTML(item.barcode || "-")}</td>
-                <td>${formatQty(item.stokSnapshot)} ${escapeHTML(item.satuan)}</td>
+                <td>${formatQty(item.stokSnapshot)} ${escapeHTML(item.satuanDasar || item.satuan || "Pcs")}</td>
                 <td>
                     <button type="button" class="btn btn-soft" style="padding:4px 7px;" onclick="editQtyDraft('${item.id}', -1)">−</button>
-                    <strong style="margin:0 7px;">${formatQty(item.qtyDiterima)}</strong>
+                    <strong style="margin:0 7px;">${formatQty(item.qtyDiterima)} ${escapeHTML(item.satuan || "")}</strong>
                     <button type="button" class="btn btn-soft" style="padding:4px 7px;" onclick="editQtyDraft('${item.id}', 1)">+</button>
                 </td>
-                <td class="owner-purchase-value"></td>
-                <td class="owner-purchase-value"></td>
+                <td class="owner-purchase-value owner-unit-cost">${formatRupiah(item.hargaBeli || 0)}</td>
+                <td class="owner-purchase-value owner-procurement-total"><strong>${formatRupiah(item.subtotal || 0)}</strong></td>
                 <td>${item.expiredDate ? formatTanggalIndo(item.expiredDate) : "-"}</td>
                 <td>
                     <button type="button" class="btn btn-danger" style="padding:5px 8px;" onclick="hapusDraftItem('${item.id}')">Hapus</button>
@@ -4311,11 +4401,12 @@ function simpanGoodsReceipt() {
             return;
         }
 
-        const qty =
-            Number(draft.qtyDiterima || 0);
+        const qty = Number(draft.qtyDiterima || 0);
+        const faktorKonversi = Math.max(Number(draft.faktorKonversi || 1),0.001);
+        const qtyBase = Number(draft.qtyDiterimaBase ?? (qty * faktorKonversi));
 
-        const hargaBeliBaru =
-            Number(draft.hargaBeli || 0);
+        const hargaBeliBaru = Number(draft.hargaBeli || 0);
+        const hargaBeliDasar = Number(draft.hargaBeliDasar ?? (hargaBeliBaru / faktorKonversi));
 
         preparedItems.push({
             barangIndex: index,
@@ -4337,20 +4428,19 @@ function simpanGoodsReceipt() {
                     draft.kategori ||
                     ""
                 ),
-            satuan:
-                String(
-                    barang.satuan ||
-                    draft.satuan ||
-                    "Pcs"
-                ),
+            satuan: String(draft.satuan || barang.satuanBeli || barang.satuan || "Pcs"),
+            satuanDasar: String(barang.satuan || draft.satuanDasar || "Pcs"),
+            faktorKonversi,
             stokSebelum:
                 Number(barang.stok || 0),
             qtyDiterima: qty,
+            qtyDiterimaBase: qtyBase,
             stokSesudah:
-                Number(barang.stok || 0) + qty,
+                Number(barang.stok || 0) + qtyBase,
             hargaBeliSebelum:
                 Number(barang.hargaBeli || 0),
             hargaBeli: hargaBeliBaru,
+            hargaBeliDasar,
             subtotal:
                 qty * hargaBeliBaru,
             expiredDate:
@@ -4552,13 +4642,13 @@ function terapkanGoodsReceiptKeStok(receipt) {
         item.stokSebelum = stokSebelum;
         item.stokSesudah =
             stokSebelum +
-            Number(item.qtyDiterima || 0);
+            Number(item.qtyDiterimaBase ?? (Number(item.qtyDiterima || 0) * Number(item.faktorKonversi || 1)));
 
         barang.stok =
             item.stokSesudah;
 
         barang.hargaBeli =
-            Number(item.hargaBeli || 0);
+            Number(item.hargaBeliDasar ?? (Number(item.hargaBeli || 0) / Number(item.faktorKonversi || 1)));
 
         if (item.expiredDate) {
             barang.expiredTerakhir =
@@ -4706,7 +4796,7 @@ function renderRiwayatGoodsReceipt() {
             <td>${escapeHTML(gr.suratJalan || "-")}</td>
             <td>${escapeHTML(gr.petugas || "-")}<br><small style="color:var(--label-color);">${escapeHTML(String(gr.rolePetugas || "").toUpperCase())}</small></td>
             <td>${Number(gr.totalJenis || 0)} jenis / ${formatQty(gr.totalQty || 0)}</td>
-            <td class="owner-purchase-value">${formatRupiah(gr.totalNilai || 0)}</td>
+            <td class="owner-purchase-value owner-procurement-total">${formatRupiah(gr.totalNilai || 0)}</td>
             <td>
                 <span class="badge ${gr.status === "PendingApproval" ? "badge-pending" : "badge-approved"}">
                     ${gr.status === "PendingApproval" ? "Pending Approval" : "Accepted"}
@@ -4748,8 +4838,8 @@ function lihatDetailGoodsReceipt(id) {
             <td>${formatQty(item.stokSebelum || 0)}</td>
             <td>${formatQty(item.qtyDiterima || 0)}</td>
             <td>${formatQty(item.stokSesudah || 0)}</td>
-            <td class="owner-purchase-value"></td>
-            <td class="owner-purchase-value"></td>
+            <td class="owner-purchase-value owner-unit-cost">${formatRupiah(item.hargaBeli || 0)}</td>
+            <td class="owner-purchase-value owner-procurement-total">${formatRupiah(item.subtotal || 0)}</td>
         </tr>
     `).join("");
 
@@ -4771,8 +4861,8 @@ function lihatDetailGoodsReceipt(id) {
                         <th>Stok Awal</th>
                         <th>Qty Masuk</th>
                         <th>Stok Akhir</th>
-                        <th class="owner-purchase-value">Harga Beli</th>
-                        <th class="owner-purchase-value">Subtotal</th>
+                        <th class="owner-purchase-value owner-unit-cost">Harga Beli</th>
+                        <th class="owner-purchase-value owner-procurement-total">Subtotal</th>
                     </tr>
                 </thead>
                 <tbody>${rows}</tbody>
@@ -4783,7 +4873,7 @@ function lihatDetailGoodsReceipt(id) {
             <div class="summary-box"><span>Petugas</span><strong>${escapeHTML(receipt.petugas || "-")}</strong></div>
             <div class="summary-box"><span>Status</span><strong>${escapeHTML(receipt.status === "PendingApproval" ? "Pending Approval" : "Accepted")}</strong></div>
             <div class="summary-box"><span>Total Qty</span><strong>${formatQty(receipt.totalQty || 0)}</strong></div>
-            <div class="summary-box owner-purchase-value"><span>Total Nilai</span><strong>${formatRupiah(receipt.totalNilai || 0)}</strong></div>
+            <div class="summary-box owner-purchase-value owner-procurement-total"><span>Total Nilai</span><strong>${formatRupiah(receipt.totalNilai || 0)}</strong></div>
         </div>
 
         ${
@@ -4854,7 +4944,7 @@ function hapusGoodsReceiptDanRollback(id) {
         if (!barang) continue;
 
         const stokSekarang = Number(barang.stok || 0);
-        const qty = Number(item.qtyDiterima || 0);
+        const qty = Number(item.qtyDiterimaBase ?? (Number(item.qtyDiterima || 0) * Number(item.faktorKonversi || 1)));
 
         if (stokSekarang >= qty) {
             barang.stok = stokSekarang - qty;
@@ -4862,7 +4952,7 @@ function hapusGoodsReceiptDanRollback(id) {
             barang.stok = 0;
         }
 
-        if (Number(barang.hargaBeli || 0) === Number(item.hargaBeli || 0)) {
+        if (Number(barang.hargaBeli || 0) === Number(item.hargaBeliDasar ?? (Number(item.hargaBeli || 0) / Number(item.faktorKonversi || 1)))) {
             barang.hargaBeli = Number(item.hargaBeliSebelum || 0);
         }
     }
@@ -4914,8 +5004,8 @@ function cetakGoodsReceiptById(id) {
             <td>${escapeHTML(item.namaBarang || "-")}</td>
             <td>${escapeHTML(item.barcode || "-")}</td>
             <td style="text-align:right;">${formatQty(item.qtyDiterima || 0)} ${escapeHTML(item.satuan || "")}</td>
-            <td style="text-align:right;" class="owner-purchase-value"></td>
-            <td style="text-align:right;" class="owner-purchase-value"></td>
+            <td style="text-align:right;" class="owner-purchase-value owner-unit-cost">${formatRupiah(item.hargaBeli || 0)}</td>
+            <td style="text-align:right;" class="owner-purchase-value owner-procurement-total">${formatRupiah(item.subtotal || 0)}</td>
             <td style="text-align:center;">${item.expiredDate ? formatTanggalIndo(item.expiredDate) : "-"}</td>
         </tr>
     `).join("");
@@ -4944,8 +5034,8 @@ function cetakGoodsReceiptById(id) {
                         <th>Barang</th>
                         <th>Barcode</th>
                         <th>Qty</th>
-                        <th class="owner-purchase-value">Harga Beli</th>
-                        <th class="owner-purchase-value">Subtotal</th>
+                        <th class="owner-purchase-value owner-unit-cost">Harga Beli</th>
+                        <th class="owner-purchase-value owner-procurement-total">Subtotal</th>
                         <th>Expired</th>
                     </tr>
                 </thead>
@@ -5172,6 +5262,17 @@ function muatSumberPurchaseOrder() {
         const barang = dataBarang[indexBarang];
         if (!barang) return;
 
+        const factor = Math.max(
+            Number(poItem.faktorKonversi || barang.konversiBeli || 1),
+            0.001
+        );
+        const orderedQty = Math.max(Number(poItem.qtyOrdered || 0),0);
+        const poPackagePrice =
+            Number(poItem.hargaBeli || 0)
+            || (orderedQty > 0 && Number(poItem.subtotal || 0) > 0
+                ? Number(poItem.subtotal) / orderedQty
+                : Number(barang.hargaBeli || 0) * factor);
+
         daftarBarangGoodsReceipt.push({
             id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
             keyBarang:
@@ -5181,14 +5282,16 @@ function muatSumberPurchaseOrder() {
             barcode: String(barang.barcode || ""),
             namaBarang: String(barang.nama || poItem.namaBarang || "Tanpa Nama"),
             kategori: String(barang.kategori || poItem.kategori || ""),
-            satuan: String(barang.satuan || poItem.satuan || "Pcs"),
+            satuan: String(poItem.satuan || barang.satuanBeli || barang.satuan || "Pcs"),
+            satuanDasar: String(poItem.satuanDasar || barang.satuan || "Pcs"),
+            faktorKonversi: factor,
             stokSnapshot: Number(barang.stok || 0),
             hargaBeliSebelum: Number(barang.hargaBeli || 0),
             qtyDiterima: remaining,
-            hargaBeli: Number(poItem.hargaBeli || barang.hargaBeli || 0),
-            subtotal:
-                remaining *
-                Number(poItem.hargaBeli || barang.hargaBeli || 0),
+            qtyDiterimaBase: Number(poItem.qtyOrderedBase || (Number(poItem.qtyOrdered || 0) * Number(poItem.faktorKonversi || 1))) - Number(poItem.qtyReceivedBase || (Number(poItem.qtyReceived || 0) * Number(poItem.faktorKonversi || 1))),
+            hargaBeli: poPackagePrice,
+            hargaBeliDasar: poPackagePrice / factor,
+            subtotal: remaining * poPackagePrice,
             expiredDate: ""
         });
     });
@@ -5506,10 +5609,10 @@ function pulihkanAutoDraftGR() {
             currentSourcePONumber;
     }
 
-    daftarBarangGoodsReceipt =
-        draft.items.map(
-            item => ({ ...item })
-        );
+    daftarBarangGoodsReceipt = terapkanHargaServerPadaDraftGR(
+        draft.items,
+        Boolean(currentSourcePOId)
+    );
 
     renderDraftGoodsReceipt();
 
@@ -5589,7 +5692,18 @@ document.addEventListener("click", event => {
     }
 });
 
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", async function() {
+    try {
+        if (window.LDMCloudSession) {
+            await window.LDMCloudSession.ensureAuthenticated({
+                registerDevice: false
+            });
+        }
+    } catch (error) {
+        console.error("Akses cloud Goods Receipt gagal:", error);
+        return;
+    }
+
     if (!proteksiHalamanGoodsReceipt()) return;
 
     terapkanMenuRole();
@@ -5669,7 +5783,7 @@ window.addEventListener(
         "absensi.html":["owner","admin","kasir"],
         "kasir.html":["owner","admin","kasir"],
         "retur.html":["owner","admin","kasir"],
-        "barang.html":["owner","admin"],
+        "barang.html":["owner","admin","kasir"],
         "supplier.html":["owner","admin"],
         "Purchase-Order.html":["owner","admin"],
         "goods.receipt.html":["owner","admin"],
@@ -5741,7 +5855,7 @@ window.addEventListener(
         {page:"kasir.html", icon:"💵", label:"Kasir", group:"Utama", roles:["owner","admin","kasir"], quick:true},
         {page:"retur.html", icon:"↩️", label:"Retur", group:"Keuangan & Laporan", roles:["owner","admin","kasir"]},
 
-        {page:"barang.html", icon:"📦", label:"Barang", group:"Inventori", roles:["owner","admin"], badge:"navBadge"},
+        {page:"barang.html", icon:"📦", label:"Barang", group:"Inventori", roles:["owner","admin","kasir"], badge:"navBadge"},
         {page:"kartu-stok.html", icon:"📒", label:"Kartu Stok", group:"Inventori", roles:["owner","admin","kasir"]},
         {page:"stock-opname.html", icon:"📋", label:"Stock Opname", group:"Inventori", roles:["owner","admin","kasir"]},
 
@@ -6067,15 +6181,7 @@ window.addEventListener(
     }
 
     function witaDate(value){
-        const source=value instanceof Date?value:new Date(value??Date.now());
-        const time=isNaN(source)?Date.now():source.getTime();
-        const d=new Date(time+(8*60*60*1000));
-
-        return (
-            d.getUTCFullYear()+"-"+
-            String(d.getUTCMonth()+1).padStart(2,"0")+"-"+
-            String(d.getUTCDate()).padStart(2,"0")
-        );
+        return window.LDMLocalTime.dateKey(value);
     }
 
     function recordDate(item){
@@ -6179,16 +6285,7 @@ window.addEventListener(
             ready:
                 pendingAccounts.length===0
                 && hasShift1
-                && hasShift2
-                && (function(){
-                    const sessionsToday=readArray("shiftSessions").filter(s=>String(s.tanggal||"")===today&&String(s.status||"").toUpperCase()!=="CANCELLED");
-                    const txShiftIds=[...new Set(transactions.map(t=>String(t.shiftId||"")).filter(Boolean))];
-                    const closingShiftIds=new Set(closingToday.map(l=>String(l.shiftId||"")).filter(Boolean));
-                    const byId=new Map(sessionsToday.map(s=>[String(s.id),s]));
-                    const exact=txShiftIds.every(id=>String(byId.get(id)?.status||"").toUpperCase()==="CLOSED"&&closingShiftIds.has(id));
-                    const noOpen=sessionsToday.every(s=>!["ACTIVE","CLOSING"].includes(String(s.status||"").toUpperCase()));
-                    return exact&&noOpen;
-                })(),
+                && hasShift2,
             activeAccounts:[...activeAccounts],
             pendingAccounts,
             hasShift1,
@@ -6258,7 +6355,6 @@ window.addEventListener(
                 "laporan",
                 "dataLaporan",
                 "shiftClosingLog",
-                "shiftSessions",
                 "dataRetur"
             ].includes(event.key)
         ){
@@ -6285,5 +6381,8 @@ window.addEventListener(
 })();
 </script>
 
+
+<script src="js/goods-receipt-cloud-adapter.js?v=11.0"></script>
+<script src="js/global-system-navigation.js?v=25.3.1"></script>
 </body>
 </html>

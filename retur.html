@@ -1,5 +1,10 @@
 <!DOCTYPE html>
-<html lang="id" class="secure-page-pending"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Retur Penjualan - LocDailyMar POS</title><link rel="manifest" href="manifest.json"><meta name="theme-color" content="#0d2240"><link rel="stylesheet" href="style.css"><link rel="icon" type="image/png" href="icon.png"><link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Fira+Code:wght@500;700&family=Fredoka:wght@600;700&family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@500;700&family=Lato:wght@400;700&family=Lobster&family=Merriweather:wght@400;700&family=Montserrat:wght@400;600;700&family=Nunito:wght@400;700&family=Open+Sans:wght@400;600;700&family=Oswald:wght@500;700&family=Pacifico&family=Playfair+Display:wght@600;800&family=Poppins:wght@400;600;700&family=Raleway:wght@500;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet"><style>
+<html lang="id" class="secure-page-pending"><head>
+    <script src="js/storage-engine.js?v=27.7.1"></script>
+    <script src="js/storage-quota-guard.js?v=27.7.1"></script>
+    <script defer src="js/storage-health-monitor.js?v=27.7.1"></script>
+<script src="js/local-time.js?v=26.4.0"></script><meta name="referrer" content="strict-origin-when-cross-origin"><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><script src="js/security-hardening.js?v=19.0"></script>    <script src="js/error-monitor.js?v=27.9.0-monitor1"></script>
+<script defer src="js/qa-runtime.js?v=19.0"></script><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Retur Penjualan - LocDailyMar POS</title><link rel="manifest" href="manifest.json"><meta name="theme-color" content="#0d2240"><link rel="stylesheet" href="style.css"><link rel="icon" type="image/png" href="icon.png"><link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Fira+Code:wght@500;700&family=Fredoka:wght@600;700&family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@500;700&family=Lato:wght@400;700&family=Lobster&family=Merriweather:wght@400;700&family=Montserrat:wght@400;600;700&family=Nunito:wght@400;700&family=Open+Sans:wght@400;600;700&family=Oswald:wght@500;700&family=Pacifico&family=Playfair+Display:wght@600;800&family=Poppins:wght@400;600;700&family=Raleway:wght@500;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet"><style>
         :root{
             --app-font:'Poppins',sans-serif;--brand-font:'Poppins',sans-serif;
             --bg-primary:#f4f6f9;--bg-secondary:#fff;--text-color:#334155;
@@ -114,7 +119,6 @@
     }
 
     /* Kasir: sembunyikan route yang memang tidak dapat dibuka. */
-    html[data-ldm-role="kasir"] .nav-bar a[href="barang.html"],
     html[data-ldm-role="kasir"] .nav-bar a[href="supplier.html"],
     html[data-ldm-role="kasir"] .nav-bar a[href="Purchase-Order.html"],
     html[data-ldm-role="kasir"] .nav-bar a[href="goods.receipt.html"],
@@ -560,14 +564,7 @@
     }
 
     function witaDate(value){
-        const source=value instanceof Date?value:new Date(value??Date.now());
-        const time=isNaN(source)?Date.now():source.getTime();
-        const d=new Date(time+(8*60*60*1000));
-        return (
-            d.getUTCFullYear()+"-"+
-            String(d.getUTCMonth()+1).padStart(2,"0")+"-"+
-            String(d.getUTCDate()).padStart(2,"0")
-        );
+        return window.LDMLocalTime.dateKey(value);
     }
 
     function recordDate(item){
@@ -1409,9 +1406,29 @@
 })();
 </script>
 
+    <!-- Live Sync Tahap 6: Supabase Auth authoritative guard -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/supabase-client.js"></script>
+    <script src="js/cloud-auth.js?v=15.0"></script>
+    <script src="js/cloud-session.js?v=6.0"></script>
+    <script src="js/cloud-session-guard.js?v=15.0"></script>
+    <!-- Live Sync Tahap 9: Cloud Absensi -->
+    <script src="js/attendance-service.js?v=9.1"></script>
+    <script src="js/attendance-bootstrap.js?v=9.0"></script>
+    <!-- Live Sync Tahap 7: Cloud Master Barang -->
+    <script src="js/products-service.js?v=21.0"></script>
+    <script src="js/products-bootstrap.js?v=7.0"></script>
+    <!-- Live Sync Tahap 10: Cloud Retur -->
+    <script src="js/returns-service.js?v=10.0"></script>
+    <script src="js/returns-bootstrap.js?v=10.0"></script>
+
+<script src="js/license-v2-config.js?v=25.2.0"></script>
+<script src="js/license-v2-client.js?v=25.2.0"></script>
+<script defer src="js/license-v2-guard.js?v=25.2.0"></script>
 </head><body><div class="app-layout"><div class="nav-overlay" id="navOverlay" onclick="tutupMenu()"></div><nav class="nav-bar" id="navSidebar"><div class="nav-header-mobile"><span>☰ Menu</span><button class="btn-close-menu" onclick="tutupMenu()">✕</button></div><a href="dashboard.html" class="nav-item"><span>📊</span> Dashboard</a><a href="absensi.html" class="nav-item"><span>📝</span> Absensi</a><a href="kasir.html" class="nav-item"><span>💵</span> Kasir</a><a href="retur.html" class="nav-item active"><span>↩️</span> Retur</a><a href="barang.html" class="nav-item"><span>📦</span> Barang</a><a href="supplier.html" class="nav-item" data-role-access="owner,admin"><span>🏢</span> Supplier</a><a href="Purchase-Order.html" class="nav-item" data-role-access="owner,admin"><span>🛒</span> Purchase Order</a><a href="goods.receipt.html" class="nav-item" data-role-access="owner,admin"><span>📥</span> Goods Receipt</a><a href="kartu-stok.html" class="nav-item"><span>📒</span> Kartu Stok</a><a href="stock-opname.html" class="nav-item"><span>📋</span> Stock Opname</a><a href="laporan.html" class="nav-item"><span>📋</span> Laporan</a><a href="shift-closing.html" class="nav-item" data-role-access="owner,admin"><span>🔒</span> Closing Shift</a><a href="eod.html" class="nav-item" data-role-access="owner,admin"><span>🌙</span> End of Day</a><a href="pengeluaran.html" class="nav-item" data-role-access="owner,admin"><span>💸</span> Pengeluaran</a><a href="backup%20%26%20restore.html" class="nav-item" data-role-access="owner,admin"><span>💾</span> Backup & Restore</a></nav><main class="main-content">
 <header class="header-app" id="headerApp"><div class="header-brand-container"><button class="btn-toggle-menu" onclick="bukaMenu()">☰</button><img id="imgLogoToko" class="header-logo-img" alt="Logo"><div><h1 id="txtJudulToko">LocDailyMar</h1><p id="txtSubJudulToko">Retur Penjualan</p></div></div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span id="txtUserLoggedIn" style="font-size:.72rem;font-weight:650;background:rgba(255,255,255,.15);padding:5px 9px;border-radius:20px">👤 -</span><button class="btn-header-action btn-header-logout" onclick="logout()">🚪 Logout</button></div></header>
-<div class="user-strip"><span>↩️ Retur tidak menghapus transaksi asli. Refund, stok, Kartu Stok, dan kas shift dicatat sebagai histori terpisah.</span><span id="returUpdateInfo">Retur lokal</span></div>
+<div class="user-strip"><span>↩️ Retur tidak menghapus transaksi asli. Refund, stok, Kartu Stok, dan kas shift dicatat sebagai histori terpisah.</span><span id="returUpdateInfo">Retur Cloud • Tahap 10</span></div>
 <div class="summary-grid"><div class="summary-card"><span>Retur Hari Ini</span><strong id="sumReturToday">0</strong></div><div class="summary-card"><span>Pending Approval</span><strong id="sumReturPending">0</strong></div><div class="summary-card"><span>Approved Hari Ini</span><strong id="sumReturApproved">0</strong></div><div class="summary-card"><span>Nilai Retur Hari Ini</span><strong id="sumReturValue">Rp 0</strong></div><div class="summary-card"><span>Barang Kembali Stok</span><strong id="sumReturStock">0</strong></div></div>
 <div class="page-grid" style="grid-template-columns:minmax(330px,.9fr) minmax(560px,1.55fr)">
 <section class="box"><div class="box-title"><span>🔎 Cari Transaksi</span><small>ID / Kasir / Barang</small></div><div class="hint">Cari transaksi asli menggunakan ID <strong>LDM-...</strong>. Qty yang sudah diretur atau sedang Pending otomatis mengurangi batas retur agar tidak melebihi qty pembelian.</div><div class="form-group"><label>Transaksi</label><div class="retur-search"><input id="returTxSearch" class="form-control" autocomplete="off" placeholder="Contoh: LDM-260823-101500-A7P2" oninput="searchTransaction(this.value)" onfocus="searchTransaction(this.value)"><div id="returTxDropdown" class="search-dropdown"></div></div></div><div id="returSelectedTx" class="tx-selected"><div style="display:flex;justify-content:space-between;gap:10px"><div><span class="code-pill" id="returTxCode">-</span><div style="margin-top:5px;font-size:.7rem;font-weight:800" id="returTxCashier">-</div></div><div style="text-align:right"><strong id="returTxTotal">Rp 0</strong><br><small id="returTxDate">-</small></div></div></div>
@@ -1425,7 +1442,7 @@
 <div id="returPrintArea" style="display:none"></div>
 <script id="returPageScript">
 const DEFAULT_HEADER={judul:'LocDailyMar',subJudul:'POS & Management',warnaJudul:'#ffffff',warnaOutline:'#d99b00',warnaSubJudul:'#ffc107',warnaBgHeader:'#0d2240',fontFamily:"'Poppins', sans-serif",brandFontFamily:"'Poppins', sans-serif",bgPrimary:'#f4f6f9',bgSecondary:'#ffffff',darkMode:false,logoData:null};const RETUR_KEY='dataRetur',MUTASI_KEY='mutasiKasShift';let currentUser='',currentRole='',selectedTransactionCode='';
-function safeArray(k){try{const v=JSON.parse(localStorage.getItem(k)||'[]');return Array.isArray(v)?v:[]}catch{return[]}}function saveArray(k,v){localStorage.setItem(k,JSON.stringify(Array.isArray(v)?v:[]))}function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}function rp(n){return'Rp '+Number(n||0).toLocaleString('id-ID')}function getUser(){return localStorage.getItem('activeUsername')||localStorage.getItem('loggedInUser')||localStorage.getItem('currentUser')||localStorage.getItem('username')||'-'}function getRole(){return String(localStorage.getItem('userRole')||localStorage.getItem('role')||'').trim().toLowerCase()}function dateWITA(){const d=new Date(Date.now()+8*3600000);return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`}function timeWITA(){const d=new Date(Date.now()+8*3600000);return `${String(d.getUTCHours()).padStart(2,'0')}:${String(d.getUTCMinutes()).padStart(2,'0')}:${String(d.getUTCSeconds()).padStart(2,'0')}`}
+function safeArray(k){try{const v=JSON.parse(localStorage.getItem(k)||'[]');return Array.isArray(v)?v:[]}catch{return[]}}function saveArray(k,v){localStorage.setItem(k,JSON.stringify(Array.isArray(v)?v:[]))}function esc(v){return String(v??'').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;')}function rp(n){return'Rp '+Number(n||0).toLocaleString('id-ID')}function getUser(){return localStorage.getItem('activeUsername')||localStorage.getItem('loggedInUser')||localStorage.getItem('currentUser')||localStorage.getItem('username')||'-'}function getRole(){return String(localStorage.getItem('userRole')||localStorage.getItem('role')||'').trim().toLowerCase()}function dateWITA(){return window.LDMLocalTime.dateKey()}function timeWITA(){return window.LDMLocalTime.timeKey()}
 function requireAccess(){if(localStorage.getItem('isLoggedIn')!=='true'){location.replace('index.html');return false}currentUser=getUser();currentRole=getRole();if(!['owner','admin','kasir'].includes(currentRole)){location.replace('dashboard.html');return false}document.documentElement.classList.remove('secure-page-pending');return true}function bukaMenu(){document.getElementById('navSidebar')?.classList.add('active');document.getElementById('navOverlay')?.classList.add('active')}function tutupMenu(){document.getElementById('navSidebar')?.classList.remove('active');document.getElementById('navOverlay')?.classList.remove('active')}async function logout(){
     const ok=await ldmDialog.confirm(
         'Keluar dari Aplikasi',
@@ -1456,6 +1473,12 @@ function requireAccess(){if(localStorage.getItem('isLoggedIn')!=='true'){locatio
 function theme(){let c=DEFAULT_HEADER;try{c={...DEFAULT_HEADER,...(JSON.parse(localStorage.getItem('headerConfig')||'null')||{})}}catch{}document.body.classList.toggle('dark-mode',!!c.darkMode);document.documentElement.style.setProperty('--app-font',c.fontFamily||DEFAULT_HEADER.fontFamily);document.documentElement.style.setProperty('--brand-font',c.brandFontFamily||c.fontFamily||DEFAULT_HEADER.brandFontFamily);document.documentElement.style.setProperty('--bg-primary',c.bgPrimary||DEFAULT_HEADER.bgPrimary);document.documentElement.style.setProperty('--bg-secondary',c.bgSecondary||DEFAULT_HEADER.bgSecondary);document.getElementById('headerApp').style.background=c.warnaBgHeader||DEFAULT_HEADER.warnaBgHeader;const t=document.getElementById('txtJudulToko');t.textContent=c.judul||'LocDailyMar';t.style.color=c.warnaJudul||'#fff';t.style.textShadow=`1px 1px 0 ${c.warnaOutline||'#d99b00'}`;document.getElementById('txtSubJudulToko').style.color=c.warnaSubJudul||'#ffc107';const logo=document.getElementById('imgLogoToko');if(c.logoData){logo.src=c.logoData;logo.style.display='block'}else logo.style.display='none'}
 function showInfo(t,m){document.getElementById('returInfoTitle').textContent=t;document.getElementById('returInfoBody').innerHTML=m;document.getElementById('returInfoModal').style.display='flex'}function closeReturInfo(){document.getElementById('returInfoModal').style.display='none'}function closeReturDetail(){document.getElementById('returDetailModal').style.display='none'}function closeApproveRetur(){document.getElementById('approveReturModal').style.display='none'}
 function txKey(t){return String(t.kodeTransaksi||t.id||t.timestamp||'')}function transactions(){
+    const cloud=safeArray('ldmReturnTransactions');
+
+    if(cloud.length){
+        return cloud;
+    }
+
     const out=[];
     const seen=new Set();
 
@@ -1517,7 +1540,6 @@ function txKey(t){return String(t.kodeTransaksi||t.id||t.timestamp||'')}function
             tx.tanggal || tx.waktu_teks || ""
         ).slice(0,10);
 
-        // Bersihkan ghost delete lama khusus transaksi hari ini.
         if(
             txDate===today &&
             !activeKeys.has(key)
@@ -1535,7 +1557,8 @@ function txKey(t){return String(t.kodeTransaksi||t.id||t.timestamp||'')}function
             -
             Number(a.timestamp||a.id||0)
     );
-}function findTx(code){return transactions().find(t=>String(t.kodeTransaksi||t.id||t.timestamp)===String(code))||null}
+}
+function findTx(code){return transactions().find(t=>String(t.kodeTransaksi||t.id||t.timestamp)===String(code))||null}
 function activeShifts(){
     const today=dateWITA();
     const logs=safeArray('dataAbsensi');
@@ -1612,10 +1635,49 @@ function usedReturnQty(txCode,item,excludeId=''){const key=itemKey(item);return 
 function searchTransaction(q=''){const el=document.getElementById('returTxDropdown'),query=String(q||'').trim().toLowerCase();const rows=transactions().filter(t=>{if(!query)return true;return [t.kodeTransaksi,t.kasir,t.barang,...(Array.isArray(t.keranjang)?t.keranjang.map(i=>i.nama):[])].some(v=>String(v||'').toLowerCase().includes(query))}).slice(0,25);el.innerHTML=rows.length?rows.map(t=>`<div class="search-option" onclick="selectTransaction('${esc(txKey(t))}')"><strong>${esc(t.kodeTransaksi||txKey(t))}</strong><small>${esc(t.waktu_teks||t.tanggal||'-')} • ${esc(t.kasir||'-')} • ${rp(t.total||0)}</small></div>`).join(''):'<div class="search-option"><strong>Tidak ditemukan</strong><small>Coba ID transaksi, nama kasir, atau barang.</small></div>';el.classList.add('show')}
 function selectTransaction(code){const tx=findTx(code);if(!tx)return;selectedTransactionCode=txKey(tx);document.getElementById('returTxSearch').value=tx.kodeTransaksi||selectedTransactionCode;document.getElementById('returTxDropdown').classList.remove('show');document.getElementById('returTxCode').textContent=tx.kodeTransaksi||selectedTransactionCode;document.getElementById('returTxCashier').textContent=`Kasir: ${tx.kasir||'-'}`;document.getElementById('returTxTotal').textContent=rp(tx.total||0);document.getElementById('returTxDate').textContent=tx.waktu_teks||tx.tanggal||'-';document.getElementById('returSelectedTx').classList.add('show');renderReturnItems(tx);updateReturnTotal()}
 function renderReturnItems(tx){const box=document.getElementById('returItems'),items=Array.isArray(tx.keranjang)?tx.keranjang:[];document.getElementById('returItemCount').textContent=`${items.length} Item`;if(!items.length){box.innerHTML='<div class="empty-state">Transaksi lama tidak memiliki detail keranjang sehingga retur per-item tidak dapat diproses otomatis.</div>';return}box.innerHTML=items.map((it,idx)=>{const bought=itemQty(it),used=usedReturnQty(txKey(tx),it),max=Math.max(0,bought-used),price=itemPrice(it);return `<div class="retur-item" data-retur-index="${idx}"><div class="retur-item-head"><div><div class="retur-item-name">${esc(it.nama||'Barang')}</div><div class="retur-item-meta">Dibeli ${bought} ${esc(it.satuan||'Pcs')} • Sudah/Pending Retur ${used} • Maksimal ${max}<br>Harga transaksi ${rp(price)} / ${esc(it.satuan||'Pcs')}</div></div><span class="code-pill">${esc(it.barcode||'-')}</span></div><div class="retur-item-controls"><div><label>Qty Retur</label><input type="number" class="form-control retur-qty" min="0" max="${max}" value="0" step="1" data-index="${idx}" oninput="updateReturnTotal()"></div><div><label>Alasan</label><select class="form-control retur-reason" data-index="${idx}"><option>Salah Barang</option><option>Barang Rusak</option><option>Expired</option><option>Kemasan Rusak</option><option>Tidak Sesuai</option><option>Kesalahan Kasir</option><option>Lainnya</option></select></div><div><label>Kondisi Stok</label><select class="form-control retur-restock" data-index="${idx}"><option value="true">Kembali ke Stok</option><option value="false">Tidak Layak Jual</option></select></div></div></div>`}).join('')}
-function selectedReturnItems(){const tx=findTx(selectedTransactionCode);if(!tx||!Array.isArray(tx.keranjang))return[];return [...document.querySelectorAll('.retur-qty')].map(el=>{const idx=Number(el.dataset.index),src=tx.keranjang[idx],q=Number(el.value||0),reason=document.querySelector(`.retur-reason[data-index="${idx}"]`)?.value||'',restock=document.querySelector(`.retur-restock[data-index="${idx}"]`)?.value==='true';return{index:idx,barcode:src.barcode||'',nama:src.nama||'',satuan:src.satuan||'Pcs',qtyBeli:itemQty(src),qtyRetur:q,harga:itemPrice(src),nilaiRetur:itemPrice(src)*q,alasan:reason,kembaliKeStok:restock}}).filter(i=>i.qtyRetur>0)}
+function selectedReturnItems(){
+    const tx=findTx(selectedTransactionCode);
+
+    if(!tx || !Array.isArray(tx.keranjang)){
+        return [];
+    }
+
+    return [
+        ...document.querySelectorAll('.retur-qty')
+    ].map(el=>{
+        const idx=Number(el.dataset.index);
+        const src=tx.keranjang[idx];
+        const q=Number(el.value||0);
+        const reason=
+            document.querySelector(
+                `.retur-reason[data-index="${idx}"]`
+            )?.value||'';
+        const restock=
+            document.querySelector(
+                `.retur-restock[data-index="${idx}"]`
+            )?.value==='true';
+
+        return {
+            index:idx,
+            transactionItemId:
+                src.transactionItemId || null,
+            productId:
+                src.productId || src.id || null,
+            barcode:src.barcode||'',
+            nama:src.nama||'',
+            satuan:src.satuan||'Pcs',
+            qtyBeli:itemQty(src),
+            qtyRetur:q,
+            harga:itemPrice(src),
+            nilaiRetur:itemPrice(src)*q,
+            alasan:reason,
+            kembaliKeStok:restock
+        };
+    }).filter(i=>i.qtyRetur>0);
+}
 function updateReturnTotal(){const total=selectedReturnItems().reduce((a,i)=>a+Number(i.nilaiRetur||0),0);document.getElementById('returTotalPreview').textContent=rp(total)}
-function hashCode(t){let h=2166136261;String(t).split('').forEach(c=>{h^=c.charCodeAt(0);h=Math.imul(h,16777619)});return(h>>>0).toString(36).toUpperCase().padStart(4,'0').slice(-4)}function makeReturnId(){const d=new Date(Date.now()+8*3600000),pad=n=>String(n).padStart(2,'0'),ymd=String(d.getUTCFullYear()).slice(-2)+pad(d.getUTCMonth()+1)+pad(d.getUTCDate()),hms=pad(d.getUTCHours())+pad(d.getUTCMinutes())+pad(d.getUTCSeconds());return `RTR-${ymd}-${hms}-${hashCode(Date.now()+'|'+currentUser+'|'+Math.random())}`}
-function createReturn(directApprove){
+function hashCode(t){let h=2166136261;String(t).split('').forEach(c=>{h^=c.charCodeAt(0);h=Math.imul(h,16777619)});return(h>>>0).toString(36).toUpperCase().padStart(4,'0').slice(-4)}function makeReturnId(){const d=new Date(),pad=n=>String(n).padStart(2,'0'),ymd=String(d.getFullYear()).slice(-2)+pad(d.getMonth()+1)+pad(d.getDate()),hms=pad(d.getHours())+pad(d.getMinutes())+pad(d.getSeconds());return `RTR-${ymd}-${hms}-${hashCode(Date.now()+'|'+currentUser+'|'+Math.random())}`}
+async function createReturn(directApprove){
     const tx=findTx(selectedTransactionCode);
 
     if(!tx){
@@ -1636,25 +1698,16 @@ function createReturn(directApprove){
         return;
     }
 
-    for(const i of items){
-        const src=tx.keranjang[i.index];
-        const max=Math.max(
-            0,
-            itemQty(src)
-            -
-            usedReturnQty(
-                txKey(tx),
-                src
-            )
+    if(
+        items.some(
+            item=>!item.transactionItemId
+        )
+    ){
+        showInfo(
+            'Transaksi Belum Cloud',
+            'Item transaksi tidak memiliki transaction_item_id cloud. Tahap 10 hanya memproses transaksi yang tersimpan di Supabase Tahap 8+.'
         );
-
-        if(i.qtyRetur>max){
-            showInfo(
-                'Qty Melebihi Batas',
-                `${esc(i.nama)} hanya dapat diretur maksimal ${max}.`
-            );
-            return;
-        }
+        return;
     }
 
     const shiftId=
@@ -1662,118 +1715,87 @@ function createReturn(directApprove){
             'returRefundShift'
         ).value;
 
-    if(!shiftId){
-        showInfo(
-            'Shift Refund Belum Ada',
-            'Pastikan akun yang memproses refund sudah Absen Masuk dan belum Absen Keluar.'
-        );
-        return;
-    }
-
-    if(
-        !activeShifts().some(
+    const session=
+        activeShifts().find(
             s=>String(s.id)===String(shiftId)
-        )
-    ){
+        );
+
+    if(!session){
         showInfo(
-            'Kasir Tidak Aktif',
-            'Kasir/shift dari Absensi sudah tidak aktif. Pilih akun lain yang masih bekerja.'
+            'Kasir Refund Tidak Aktif',
+            'Pilih akun yang sudah Absen Masuk cloud dan belum Absen Keluar.'
         );
-
-        fillRefundShift(
-            'returRefundShift'
-        );
-
+        fillRefundShift('returRefundShift');
         return;
     }
 
-    const now=new Date().toISOString();
-
-    const rec={
-        returId:makeReturnId(),
-        transaksiId:
-            tx.kodeTransaksi
-            || txKey(tx),
-        transaksiRawId:
-            tx.id
-            || tx.timestamp
-            || null,
-        tanggal:dateWITA(),
-        waktu:timeWITA(),
-        createdAt:now,
-        dibuatOleh:currentUser,
-        rolePembuat:currentRole,
-        kasirAsli:tx.kasir||'',
-        shiftIdAsli:tx.shiftId||'',
-        items,
-        totalRetur:
-            items.reduce(
-                (a,i)=>
-                    a
-                    +
-                    Number(i.nilaiRetur||0),
-                0
-            ),
-        metodeRefund:
-            document.getElementById(
-                'returRefundMethod'
-            ).value,
-        refundShiftId:'',
-        refundContextKey:shiftId,
-        catatan:
-            document.getElementById(
-                'returNote'
-            ).value.trim(),
-        status:'PENDING',
-        approvedBy:null,
-        approvedAt:null,
-        rejectedBy:null,
-        rejectedAt:null,
-        rejectReason:'',
-        cancelledBy:null,
-        cancelledAt:null,
-        cancelReason:'',
-        versiRetur:2
-    };
-
-    const data=safeArray(RETUR_KEY);
-
-    data.unshift(rec);
-
-    saveArray(
-        RETUR_KEY,
-        data
-    );
-
-    localStorage.setItem(
-        'returLastUpdate',
-        String(Date.now())
-    );
-
     if(
-        directApprove
-        &&
-        currentRole==='owner'
+        !window.LDMReturns ||
+        typeof window.LDMReturns.submit!=='function'
     ){
-        applyApproval(
-            rec.returId,
-            shiftId
+        showInfo(
+            'Cloud Retur Belum Siap',
+            'returns-service.js belum termuat.'
         );
-    }else{
+        return;
+    }
+
+    try{
+        const result=
+            await window.LDMReturns.submit({
+                transaction:tx,
+                items,
+                refundMethod:
+                    document.getElementById(
+                        'returRefundMethod'
+                    ).value,
+                refundUsername:
+                    session.kasir,
+                note:
+                    document.getElementById(
+                        'returNote'
+                    ).value.trim()
+            });
+
+        if(
+            directApprove &&
+            currentRole==='owner'
+        ){
+            await window.LDMReturns.approve(
+                result.id,
+                session.kasir
+            );
+        }
+
         syncTransactionReturnMeta(
-            rec.transaksiId
+            tx.kodeTransaksi || txKey(tx)
         );
 
         resetReturnForm();
         renderReturns();
 
         showInfo(
-            'Retur Diajukan',
-            `Retur <span class="code-pill">${esc(rec.returId)}</span> disimpan sebagai <strong>PENDING</strong>. Stok dan refund baru berubah setelah <strong>Owner</strong> melakukan approval.`
+            directApprove && currentRole==='owner'
+                ? 'Retur Disetujui'
+                : 'Retur Diajukan',
+            directApprove && currentRole==='owner'
+                ? `Retur <span class="code-pill">${esc(result.return_code||'')}</span> sudah disimpan dan <strong>APPROVED di Supabase</strong>. Stok cloud diperbarui secara atomik.`
+                : `Retur <span class="code-pill">${esc(result.return_code||'')}</span> disimpan sebagai <strong>PENDING di Supabase</strong>. Qty Pending langsung mereservasi jatah retur agar device lain tidak over-return.`
+        );
+
+    }catch(error){
+        console.error(
+            'Cloud Retur submit gagal:',
+            error
+        );
+
+        showInfo(
+            'Retur Gagal',
+            esc(error.message||String(error))
         );
     }
 }
-function applyApproval(id,shiftId){
+async function applyApproval(id,shiftId){
     if(currentRole!=='owner'){
         showInfo(
             'Akses Ditolak',
@@ -1782,17 +1804,15 @@ function applyApproval(id,shiftId){
         return false;
     }
 
-    const data=safeArray(RETUR_KEY);
-    const r=data.find(
+    const r=safeArray(RETUR_KEY).find(
         x=>
-            String(x.returId)
-            ===
-            String(id)
+            String(x.returId)===String(id)
+            ||
+            String(x.cloudId)===String(id)
     );
 
     if(
-        !r
-        ||
+        !r ||
         String(r.status).toUpperCase()!=='PENDING'
     ){
         return false;
@@ -1800,195 +1820,56 @@ function applyApproval(id,shiftId){
 
     const session=
         activeShifts().find(
-            s=>
-                String(s.id)
-                ===
-                String(shiftId)
+            s=>String(s.id)===String(shiftId)
         );
 
     if(!session){
         showInfo(
             'Kasir Refund Tidak Aktif',
-            'Pilih akun yang sudah Absen Masuk dan belum Absen Keluar untuk memproses refund.'
+            'Pilih akun yang sudah Absen Masuk cloud dan belum Absen Keluar.'
         );
         return false;
     }
 
-    const barang=safeArray('dataBarang');
-    const logs=safeArray('kartuStokMutasi');
-
-    r.items.forEach(it=>{
-        if(!it.kembaliKeStok)return;
-
-        let idx=barang.findIndex(
-            b=>
-                it.barcode
-                &&
-                String(b.barcode||'')
-                ===
-                String(it.barcode)
-        );
-
-        if(idx<0){
-            idx=barang.findIndex(
-                b=>
-                    String(b.nama||'')
-                        .trim()
-                        .toLowerCase()
-                    ===
-                    String(it.nama||'')
-                        .trim()
-                        .toLowerCase()
-            );
-        }
-
-        if(idx<0)return;
-
-        const before=
-            Number(
-                barang[idx].stok||0
-            );
-
-        const after=
-            before
-            +
-            Number(
-                it.qtyRetur||0
-            );
-
-        barang[idx].stok=after;
-
-        logs.unshift({
-            id:
-                `${Date.now()}-${Math.random()
-                    .toString(16)
-                    .slice(2)}`,
-            timestamp:Date.now(),
-            tanggal:dateWITA(),
-            waktu:timeWITA(),
-            barcode:
-                barang[idx].barcode
-                || it.barcode
-                || '',
-            namaBarang:
-                barang[idx].nama
-                || it.nama
-                || '',
-            barangIndex:idx,
-            jenis:'retur_penjualan',
-            sumber:'retur',
-            referensi:r.returId,
-            delta:
-                Number(
-                    it.qtyRetur||0
-                ),
-            stokSebelum:before,
-            stokSesudah:after,
-            keterangan:
-                `Retur dari ${r.transaksiId}`,
-            petugas:currentUser
-        });
-    });
-
-    saveArray(
-        'dataBarang',
-        barang
-    );
-
-    saveArray(
-        'kartuStokMutasi',
-        logs
-    );
-
-    let cashMutationId=null;
-
     if(
-        String(r.metodeRefund)
-            .toLowerCase()
-        ===
-        'tunai'
+        !window.LDMReturns ||
+        typeof window.LDMReturns.approve!=='function'
     ){
-        const muts=safeArray(MUTASI_KEY);
-
-        cashMutationId=Date.now();
-
-        muts.unshift({
-            id:cashMutationId,
-            tanggal:dateWITA(),
-            waktu:timeWITA(),
-            kasir:session.kasir,
-            shift:session.shift,
-            shiftId:'',
-            jenis:'keluar',
-            nominal:
-                Number(
-                    r.totalRetur||0
-                ),
-            keterangan:
-                `Refund Retur ${r.returId}`,
-            sumber:'retur',
-            returId:r.returId,
-            createdBy:currentUser,
-            closingId:null
-        });
-
-        saveArray(
-            MUTASI_KEY,
-            muts
+        showInfo(
+            'Cloud Retur Belum Siap',
+            'returns-service.js belum termuat.'
         );
+        return false;
     }
 
-    r.status='APPROVED';
-    r.refundShiftId='';
-    r.refundContextKey=session.id;
-    r.refundKasir=session.kasir;
-    r.refundShift=session.shift;
-    r.approvedBy=currentUser;
-    r.approvedAt=
-        new Date().toISOString();
-    r.approvedTanggal=dateWITA();
-    r.refundCashMutationId=cashMutationId;
+    try{
+        await window.LDMReturns.approve(
+            r.cloudId || r._cloud?.id,
+            session.kasir
+        );
 
-    saveArray(
-        RETUR_KEY,
-        data
-    );
+        syncTransactionReturnMeta(
+            r.transaksiId
+        );
 
-    syncTransactionReturnMeta(
-        r.transaksiId
-    );
+        resetReturnForm();
+        renderReturns();
 
-    localStorage.setItem(
-        'returLastUpdate',
-        String(Date.now())
-    );
+        showInfo(
+            'Retur Disetujui',
+            `Retur <span class="code-pill">${esc(r.returId)}</span> sudah <strong>APPROVED oleh Owner</strong>. Perubahan stok dan refund cloud dilakukan atomik.`
+        );
 
-    window.dispatchEvent(
-        new Event('storage')
-    );
+        return true;
 
-    resetReturnForm();
-    renderReturns();
+    }catch(error){
+        showInfo(
+            'Approval Gagal',
+            esc(error.message||String(error))
+        );
 
-    showInfo(
-        'Retur Disetujui',
-        `Retur <span class="code-pill">${esc(r.returId)}</span> sudah <strong>APPROVED oleh Owner</strong>. ${
-            r.items.some(
-                i=>i.kembaliKeStok
-            )
-                ? 'Barang layak jual sudah dikembalikan ke stok. '
-                : ''
-        }${
-            String(r.metodeRefund)
-                .toLowerCase()
-            ===
-            'tunai'
-                ? 'Refund tunai sudah dicatat sebagai Kas Keluar pada shift refund.'
-                : ''
-        }`
-    );
-
-    return true;
+        return false;
+    }
 }
 function openApproveReturn(id){
     if(currentRole!=='owner'){
@@ -2024,7 +1905,8 @@ function openApproveReturn(id){
     document.getElementById(
         'approveReturModal'
     ).style.display='flex';
-}function confirmApproveReturn(){
+}
+async function confirmApproveReturn(){
     if(currentRole!=='owner'){
         showInfo(
             'Akses Ditolak',
@@ -2053,7 +1935,7 @@ function openApproveReturn(id){
     }
 
     if(
-        applyApproval(
+        await applyApproval(
             id,
             shift
         )
@@ -2063,8 +1945,7 @@ function openApproveReturn(id){
 }
 async function rejectReturn(id){
     if(
-        !['owner','admin']
-            .includes(currentRole)
+        !['owner','admin'].includes(currentRole)
     ){
         showInfo(
             'Akses Ditolak',
@@ -2083,45 +1964,40 @@ async function rejectReturn(id){
         }
     );
 
-    if(reason===null)return;
+    if(reason===null){
+        return;
+    }
 
-    const data=safeArray(RETUR_KEY);
-
-    const r=data.find(
-        x=>
-            String(x.returId)
-            ===
-            String(id)
+    const r=safeArray(RETUR_KEY).find(
+        x=>String(x.returId)===String(id)
     );
 
-    if(
-        !r
-        ||
-        r.status!=='PENDING'
-    )return;
+    if(!r || r.status!=='PENDING'){
+        return;
+    }
 
-    r.status='REJECTED';
-    r.rejectedBy=currentUser;
-    r.rejectedAt=
-        new Date().toISOString();
-    r.rejectReason=
-        String(reason||'').trim();
+    try{
+        await window.LDMReturns.reject(
+            r.cloudId || r._cloud?.id,
+            String(reason||'').trim()
+        );
 
-    saveArray(
-        RETUR_KEY,
-        data
-    );
+        syncTransactionReturnMeta(
+            r.transaksiId
+        );
 
-    syncTransactionReturnMeta(
-        r.transaksiId
-    );
+        renderReturns();
 
-    renderReturns();
-
-    showInfo(
-        'Retur Ditolak',
-        `Retur <span class="code-pill">${esc(r.returId)}</span> berstatus <strong>REJECTED</strong>.`
-    );
+        showInfo(
+            'Retur Ditolak',
+            `Retur <span class="code-pill">${esc(r.returId)}</span> berstatus <strong>REJECTED</strong> di cloud.`
+        );
+    }catch(error){
+        showInfo(
+            'Reject Gagal',
+            esc(error.message||String(error))
+        );
+    }
 }
 function canCancelReturn(r){
     const status=
@@ -2361,16 +2237,13 @@ function reverseApprovedReturnForCancel(r){
 }
 
 async function cancelReturn(id){
-    const data=safeArray(RETUR_KEY);
-
-    const r=data.find(
-        x=>
-            String(x.returId)
-            ===
-            String(id)
+    const r=safeArray(RETUR_KEY).find(
+        x=>String(x.returId)===String(id)
     );
 
-    if(!r)return;
+    if(!r){
+        return;
+    }
 
     if(!canCancelReturn(r)){
         showInfo(
@@ -2381,12 +2254,33 @@ async function cancelReturn(id){
     }
 
     const status=
-        String(r.status||'')
-            .toUpperCase();
+        String(r.status||'').toUpperCase();
+
+    if(status==='APPROVED'){
+        const closingExists=
+            safeArray('shiftClosingLog').some(log=>
+                String(log.tanggal||'')===
+                    String(r.approvedTanggal||r.tanggal||'')
+                &&
+                String(log.kasir||'').trim().toLowerCase()===
+                    String(r.refundKasir||'').trim().toLowerCase()
+                &&
+                String(log.shift||'').trim().toLowerCase()===
+                    String(r.refundShift||'').trim().toLowerCase()
+            );
+
+        if(closingExists){
+            showInfo(
+                'Tidak Dapat Dicancel',
+                'Closing lokal untuk kasir/shift refund ini sudah ada. Batalkan/rekonsiliasi Closing terlebih dahulu sebelum reversal retur.'
+            );
+            return;
+        }
+    }
 
     const reason=await ldmDialog.prompt(
         'Cancel Retur',
-        `Masukkan alasan cancel ${r.returId}. Riwayat tetap disimpan sebagai CANCELLED.`,
+        `Masukkan alasan cancel ${r.returId}.`,
         status==='APPROVED'
             ? 'Pembatalan retur yang sudah disetujui'
             : 'Pengajuan dibatalkan',
@@ -2399,11 +2293,13 @@ async function cancelReturn(id){
         }
     );
 
-    if(reason===null)return;
+    if(reason===null){
+        return;
+    }
 
     const ok=await ldmDialog.confirm(
         'Konfirmasi Cancel Retur',
-        `Cancel ${r.returId}? Riwayat tetap tersimpan dengan status CANCELLED.`,
+        `Cancel ${r.returId}? Jika APPROVED, stok cloud akan dibalik secara atomik.`,
         status==='APPROVED'
             ? 'danger'
             : 'warning',
@@ -2412,81 +2308,55 @@ async function cancelReturn(id){
         }
     );
 
-    if(!ok)return;
-
-    if(status==='APPROVED'){
-        const reversed=
-            reverseApprovedReturnForCancel(r);
-
-        if(!reversed.ok){
-            showInfo(
-                'Tidak Dapat Dicancel',
-                reversed.message
-            );
-            return;
-        }
-
-        r.wasApprovedBeforeCancel=true;
+    if(!ok){
+        return;
     }
 
-    r.status='CANCELLED';
-    r.cancelledBy=currentUser;
-    r.cancelledAt=
-        new Date().toISOString();
-    r.cancelReason=
-        String(reason||'').trim();
+    try{
+        await window.LDMReturns.cancel(
+            r.cloudId || r._cloud?.id,
+            String(reason||'').trim()
+        );
 
-    saveArray(
-        RETUR_KEY,
-        data
-    );
+        syncTransactionReturnMeta(
+            r.transaksiId
+        );
 
-    syncTransactionReturnMeta(
-        r.transaksiId
-    );
+        renderReturns();
 
-    localStorage.setItem(
-        'returLastUpdate',
-        String(Date.now())
-    );
+        showInfo(
+            'Retur Dicancel',
+            `Retur <span class="code-pill">${esc(r.returId)}</span> tetap tersimpan dengan status <strong>CANCELLED</strong>.`
+        );
 
-    window.dispatchEvent(
-        new Event('storage')
-    );
-
-    renderReturns();
-
-    showInfo(
-        'Retur Dicancel',
-        `Retur <span class="code-pill">${esc(r.returId)}</span> tetap tersimpan di riwayat dengan status <strong>CANCELLED</strong>.`
-    );
+    }catch(error){
+        showInfo(
+            'Cancel Gagal',
+            esc(error.message||String(error))
+        );
+    }
 }
 
 async function deleteReturnPermanent(id){
     if(currentRole!=='owner'){
         showInfo(
             'Akses Ditolak',
-            'Hanya Owner yang dapat menghapus retur secara permanen.'
+            'Hanya Owner yang dapat mengarsipkan retur.'
         );
         return;
     }
 
-    let data=safeArray(RETUR_KEY);
-
-    const r=data.find(
-        x=>
-            String(x.returId)
-            ===
-            String(id)
+    const r=safeArray(RETUR_KEY).find(
+        x=>String(x.returId)===String(id)
     );
 
-    if(!r)return;
+    if(!r){
+        return;
+    }
 
-    const status=
-        String(r.status||'')
-            .toUpperCase();
-
-    if(status==='APPROVED'){
+    if(
+        String(r.status||'').toUpperCase()==='APPROVED'
+    ){
         showInfo(
             'Cancel Terlebih Dahulu',
             'Retur APPROVED harus dicancel terlebih dahulu agar efek stok dan kas dibalik dengan aman.'
@@ -2494,96 +2364,40 @@ async function deleteReturnPermanent(id){
         return;
     }
 
-    if(
-        !['PENDING','REJECTED','CANCELLED']
-            .includes(status)
-    ){
-        showInfo(
-            'Tidak Dapat Dihapus',
-            'Status retur ini tidak dapat dihapus permanen.'
-        );
-        return;
-    }
-
     const ok=await ldmDialog.confirm(
-        'Hapus Permanen Retur',
-        `Hapus permanen ${r.returId}? Data retur tidak dapat dikembalikan.`,
+        'Arsipkan Retur',
+        `Arsipkan ${r.returId}? Record cloud memakai soft delete dan tidak dihapus keras.`,
         'danger',
         {
-            okText:'Hapus Permanen'
+            okText:'Arsipkan'
         }
     );
 
-    if(!ok)return;
-
-    data=data.filter(
-        x=>
-            String(x.returId)
-            !==
-            String(id)
-    );
-
-    saveArray(
-        RETUR_KEY,
-        data
-    );
-
-    if(
-        status==='CANCELLED'
-        &&
-        r.wasApprovedBeforeCancel
-    ){
-        const logs=
-            safeArray('kartuStokMutasi')
-                .filter(
-                    log=>
-                        !(
-                            String(log.referensi||'')
-                            ===
-                            String(r.returId)
-                            &&
-                            ['retur','retur_cancel']
-                                .includes(
-                                    String(log.sumber||'')
-                                )
-                        )
-                );
-
-        saveArray(
-            'kartuStokMutasi',
-            logs
-        );
+    if(!ok){
+        return;
     }
 
-    const muts=
-        safeArray(MUTASI_KEY)
-            .filter(
-                m=>
-                    String(m.returId||'')
-                    !==
-                    String(r.returId)
-            );
+    try{
+        await window.LDMReturns.softDelete(
+            r.cloudId || r._cloud?.id
+        );
 
-    saveArray(
-        MUTASI_KEY,
-        muts
-    );
+        syncTransactionReturnMeta(
+            r.transaksiId
+        );
 
-    syncTransactionReturnMeta(
-        r.transaksiId
-    );
+        renderReturns();
 
-    localStorage.setItem(
-        'returLastUpdate',
-        String(Date.now())
-    );
-
-    renderReturns();
-
-    showInfo(
-        'Retur Dihapus Permanen',
-        'Record retur sudah dihapus dari penyimpanan lokal.'
-    );
+        showInfo(
+            'Retur Diarsipkan',
+            'Record retur sudah di-soft-delete dari tampilan aktif cloud.'
+        );
+    }catch(error){
+        showInfo(
+            'Arsip Gagal',
+            esc(error.message||String(error))
+        );
+    }
 }
 
 function approvedForTx(code){return safeArray(RETUR_KEY).filter(r=>String(r.transaksiId)===String(code)&&String(r.status).toUpperCase()==='APPROVED')}
@@ -2762,7 +2576,7 @@ function renderReturns(){
                         .includes(status)
                 ){
                     act+=
-                        `<button class="btn danger" onclick="deleteReturnPermanent('${r.returId}')">🗑 Hapus Permanen</button>`;
+                        `<button class="btn danger" onclick="deleteReturnPermanent('${r.returId}')">🗄 Arsipkan</button>`;
                 }
 
                 return `
@@ -2969,6 +2783,39 @@ function init(){
     renderReturns();
     consumeSelectedTransaction();
 }
+window.addEventListener(
+    'ldm-returns-cache-updated',
+    ()=>{
+        const codes=[
+            ...new Set(
+                safeArray(RETUR_KEY)
+                    .map(r=>r.transaksiId)
+                    .filter(Boolean)
+            )
+        ];
+
+        codes.forEach(
+            code=>syncTransactionReturnMeta(code)
+        );
+
+        fillRefundShift('returRefundShift');
+        renderReturns();
+    }
+);
+
+window.addEventListener(
+    'ldm-return-transactions-updated',
+    ()=>{
+        if(
+            document.activeElement?.id==='returTxSearch'
+        ){
+            searchTransaction(
+                document.getElementById('returTxSearch')?.value||''
+            );
+        }
+    }
+);
+
 document.addEventListener('click',e=>{const w=document.querySelector('.retur-search');if(w&&!w.contains(e.target))document.getElementById('returTxDropdown')?.classList.remove('show')});document.addEventListener('DOMContentLoaded',()=>{if(!requireAccess())return;init()});window.addEventListener('storage',e=>{if(['dataRetur','dataAbsensi','laporan','dataLaporan','laporanHistory','dataBarang'].includes(e.key)){fillRefundShift('returRefundShift');renderReturns()}if(e.key==='headerConfig')theme()});
 </script>
 <script id="ldmCompactNavigationScript">
@@ -2978,7 +2825,7 @@ document.addEventListener('click',e=>{const w=document.querySelector('.retur-sea
         "absensi.html":["owner","admin","kasir"],
         "kasir.html":["owner","admin","kasir"],
         "retur.html":["owner","admin","kasir"],
-        "barang.html":["owner","admin"],
+        "barang.html":["owner","admin","kasir"],
         "supplier.html":["owner","admin"],
         "Purchase-Order.html":["owner","admin"],
         "goods.receipt.html":["owner","admin"],
@@ -3050,7 +2897,7 @@ document.addEventListener('click',e=>{const w=document.querySelector('.retur-sea
         {page:"kasir.html", icon:"💵", label:"Kasir", group:"Utama", roles:["owner","admin","kasir"], quick:true},
         {page:"retur.html", icon:"↩️", label:"Retur", group:"Keuangan & Laporan", roles:["owner","admin","kasir"]},
 
-        {page:"barang.html", icon:"📦", label:"Barang", group:"Inventori", roles:["owner","admin"], badge:"navBadge"},
+        {page:"barang.html", icon:"📦", label:"Barang", group:"Inventori", roles:["owner","admin","kasir"], badge:"navBadge"},
         {page:"kartu-stok.html", icon:"📒", label:"Kartu Stok", group:"Inventori", roles:["owner","admin","kasir"]},
         {page:"stock-opname.html", icon:"📋", label:"Stock Opname", group:"Inventori", roles:["owner","admin","kasir"]},
 
@@ -3376,15 +3223,7 @@ document.addEventListener('click',e=>{const w=document.querySelector('.retur-sea
     }
 
     function witaDate(value){
-        const source=value instanceof Date?value:new Date(value??Date.now());
-        const time=isNaN(source)?Date.now():source.getTime();
-        const d=new Date(time+(8*60*60*1000));
-
-        return (
-            d.getUTCFullYear()+"-"+
-            String(d.getUTCMonth()+1).padStart(2,"0")+"-"+
-            String(d.getUTCDate()).padStart(2,"0")
-        );
+        return window.LDMLocalTime.dateKey(value);
     }
 
     function recordDate(item){
@@ -3584,4 +3423,4 @@ document.addEventListener('click',e=>{const w=document.querySelector('.retur-sea
 })();
 </script>
 
-</body></html>
+<script src="js/global-system-navigation.js?v=25.2"></script></body></html>

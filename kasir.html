@@ -1,29 +1,27 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+    <script src="js/storage-engine.js?v=27.7.1"></script>
+    <script src="js/storage-quota-guard.js?v=27.7.1"></script>
+    <script defer src="js/storage-health-monitor.js?v=27.7.1"></script>
+<script src="js/local-time.js?v=26.4.0"></script><meta name="referrer" content="strict-origin-when-cross-origin"><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><script src="js/security-hardening.js?v=19.0"></script>    <script src="js/error-monitor.js?v=27.9.0-monitor1"></script>
+<script defer src="js/qa-runtime.js?v=19.0"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kasir - LocDailyMar POS</title>
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#0d2240">
+    <meta name="theme-color" content="#0F9D58">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <link rel="stylesheet" href="style.css">
 
     <!-- Favicon standar -->
     <link rel="icon" type="image/x-icon" href="icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="icon.png">
 
-    <!-- Icon untuk Apple (iOS) -->
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js')
-            .then(reg => console.log('Service Worker terdaftar!', reg))
-            .catch(err => console.log('Gagal mendaftarkan Service Worker', err));
-        });
-      }
-    </script>
+    <!-- Icon dan PWA Manager Tahap 18 -->
+    <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+    <script src="js/pwa-manager.js?v=18.0"></script>
 
     <!-- Library HTML5-QRCode -->
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -502,7 +500,50 @@
             .btn-add { font-size: 0.95rem; }
             .btn-bayar, .btn-qris { font-size: 0.88rem; padding: 14px 2px; }
         }
-    </style>
+    
+
+        /* Mode Kafe = menu bergambar; Mode Warung = menu cepat tanpa gambar */
+        .ldm-visual-menu-panel{
+            margin:0 0 12px;
+            padding:11px;
+            border:1px solid var(--border-color);
+            border-radius:13px;
+            background:var(--bg-secondary);
+            box-shadow:0 5px 18px var(--card-shadow);
+        }
+        .ldm-visual-menu-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:9px;}
+        .ldm-visual-menu-head strong{display:block;color:var(--heading-color);font-size:.78rem;}
+        .ldm-visual-menu-head span{display:block;margin-top:2px;color:#64748b;font-size:.59rem;}
+        body.dark-mode .ldm-visual-menu-head span{color:#94a3b8;}
+        .ldm-visual-menu-categories{display:flex;gap:5px;overflow:auto;max-width:55%;padding-bottom:2px;scrollbar-width:thin;}
+        .ldm-visual-category{
+            border:1px solid var(--border-color);background:var(--input-bg);color:var(--text-color);
+            border-radius:999px;padding:5px 9px;font-size:.58rem;font-weight:700;cursor:pointer;white-space:nowrap;
+        }
+        .ldm-visual-category.active{background:#0f9d58;border-color:#0f9d58;color:#fff;}
+        .ldm-visual-menu-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:8px;max-height:370px;overflow:auto;padding:1px;}
+        .ldm-visual-menu-item{
+            border:1px solid var(--border-color);border-radius:11px;background:var(--input-bg);color:var(--text-color);
+            padding:0;overflow:hidden;cursor:pointer;text-align:left;transition:.16s ease;min-width:0;
+        }
+        .ldm-visual-menu-item:hover{transform:translateY(-1px);border-color:#0f9d58;box-shadow:0 6px 14px rgba(15,157,88,.09);}
+        .ldm-visual-menu-image{width:100%;aspect-ratio:16/9;background:#eef2f7;display:grid;place-items:center;color:#94a3b8;font-size:.58rem;font-weight:800;overflow:hidden;}
+        .ldm-visual-menu-image img{width:100%;height:100%;object-fit:cover;display:block;}
+        .ldm-visual-menu-content{padding:8px;}
+        .ldm-visual-menu-name{display:block;font-size:.68rem;font-weight:800;color:var(--heading-color);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+        .ldm-visual-menu-price{display:block;margin-top:3px;font-size:.69rem;font-weight:800;color:#0f9d58;}
+        .ldm-visual-menu-category{display:block;margin-top:2px;font-size:.54rem;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+        html[data-ldm-store-mode="warung"] .ldm-visual-menu-grid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr));}
+        html[data-ldm-store-mode="warung"] .ldm-visual-menu-item{display:flex;align-items:center;gap:10px;min-height:66px;}
+        html[data-ldm-store-mode="warung"] .ldm-visual-menu-image{display:none!important;}
+        html[data-ldm-store-mode="warung"] .ldm-visual-menu-content{display:flex;flex:1;min-width:0;flex-direction:column;justify-content:center;}
+        @media(max-width:700px){
+            .ldm-visual-menu-head{flex-direction:column;}
+            .ldm-visual-menu-categories{max-width:100%;width:100%;}
+            .ldm-visual-menu-grid{grid-template-columns:repeat(2,minmax(0,1fr));max-height:330px;}
+            html[data-ldm-store-mode="warung"] .ldm-visual-menu-grid{grid-template-columns:1fr;}
+        }
+</style>
 
 <script id="ldmCompactNavRoleEarly">
 (function(){
@@ -561,7 +602,6 @@
     }
 
     /* Kasir: sembunyikan route yang memang tidak dapat dibuka. */
-    html[data-ldm-role="kasir"] .nav-bar a[href="barang.html"],
     html[data-ldm-role="kasir"] .nav-bar a[href="supplier.html"],
     html[data-ldm-role="kasir"] .nav-bar a[href="Purchase-Order.html"],
     html[data-ldm-role="kasir"] .nav-bar a[href="goods.receipt.html"],
@@ -1007,14 +1047,7 @@
     }
 
     function witaDate(value){
-        const source=value instanceof Date?value:new Date(value??Date.now());
-        const time=isNaN(source)?Date.now():source.getTime();
-        const d=new Date(time+(8*60*60*1000));
-        return (
-            d.getUTCFullYear()+"-"+
-            String(d.getUTCMonth()+1).padStart(2,"0")+"-"+
-            String(d.getUTCDate()).padStart(2,"0")
-        );
+        return window.LDMLocalTime.dateKey(value);
     }
 
     function recordDate(item){
@@ -1521,6 +1554,31 @@
 
 
 
+    <!-- Live Sync Tahap 6: Supabase Auth authoritative guard -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/supabase-client.js"></script>
+    <script src="js/offline-queue.js?v=16.0"></script>
+    <script src="js/cloud-auth.js?v=15.0"></script>
+    <script src="js/cloud-session.js?v=16.0"></script>
+    <script src="js/store-mode.js?v=27.9.0-mode1"></script>
+    <script src="js/product-visuals.js?v=27.9.0-mode1"></script>
+    <link rel="stylesheet" href="css/store-modes.css?v=27.9.0-mode2">
+    <script src="js/cloud-session-guard.js?v=16.0"></script>
+    <script src="js/recovery-service.js?v=17.0"></script>
+    <!-- Live Sync Tahap 9: Cloud Absensi -->
+    <script src="js/attendance-service.js?v=9.1"></script>
+    <script src="js/attendance-bootstrap.js?v=9.0"></script>
+    <!-- Tahap 21: Promo dan Harga Lanjutan -->
+    <script src="js/promo-pricing.js?v=21.0"></script>
+    <!-- Live Sync Tahap 7: Cloud Master Barang -->
+    <script src="js/products-service.js?v=21.0"></script>
+    <script src="js/transactions-service.js?v=16.0"></script>
+    <script src="js/products-bootstrap.js?v=7.0"></script>
+    <!-- Live Sync Tahap 10: Cloud Retur compatibility -->
+    <script src="js/returns-service.js?v=10.0"></script>
+    <script src="js/returns-bootstrap.js?v=10.0"></script>
+
 </head>
 <body>
 
@@ -1546,12 +1604,13 @@
             <a href="eod.html" class="nav-item" data-role-access="owner,admin"><span>🌙</span> End of Day</a>
             <a href="pengeluaran.html" class="nav-item" data-role-access="owner,admin"><span>💸</span> Pengeluaran</a>
             <a href="backup%20%26%20restore.html" class="nav-item" data-role-access="owner,admin"><span>💾</span> Backup & Restore</a>
+            <a href="pwa-settings.html" class="nav-item"><span>📲</span> Aplikasi & Update</a>
         </div>
 
         <div class="main-content">
             <div class="header-app" id="headerApp">
                 <div class="header-brand-container">
-                    <button type="button" class="btn-hamburger" onclick="toggleNavMobile()" title="Buka Menu Navigasi">☰</button>
+                    <button type="button" class="btn-hamburger btn-toggle-menu" data-ldm-menu-toggle="true" onclick="toggleNavMobile()" aria-label="Buka menu navigasi" aria-expanded="false" title="Buka Menu Navigasi">☰</button>
                     
                     <img id="imgLogoToko" class="header-logo-img" alt="Logo Toko" style="display: none;">
                     <div class="header-title-box">
@@ -1565,6 +1624,19 @@
                     <span class="shortcut-hint">F2/F4: Cari | F8: Bayar</span>
                 </div>
             </div>
+
+            <!-- KAFE: menu bergambar. WARUNG: menu cepat tanpa gambar. Retail: pencarian/barcode tanpa gambar. -->
+            <section id="ldmVisualMenuPanel" class="ldm-visual-menu-panel" style="display:none;">
+                <div class="ldm-visual-menu-head">
+                    <div>
+                        <strong id="ldmVisualMenuTitle">☕ Menu Cepat</strong>
+                        <span id="ldmVisualMenuHint">Tekan item untuk langsung menambahkan 1 ke keranjang.</span>
+                    </div>
+                    <div id="ldmVisualMenuCategories" class="ldm-visual-menu-categories"></div>
+                </div>
+                <div id="ldmVisualMenuGrid" class="ldm-visual-menu-grid"></div>
+            </section>
+
 <div class="kasir-grid">
                 <div>
                     <div class="box-form">
@@ -1852,7 +1924,7 @@
     <div class="popup" id="popupKembali">
         <div class="popup-box">
             <div style="font-size: 2.5rem;">🎉</div>
-            <h4 style="color:#64748b; font-size:0.8rem; text-transform:uppercase; margin-top:5px;">Kembalian</h4>
+            <h4 id="judulPopupKembali" style="color:#64748b; font-size:0.8rem; text-transform:uppercase; margin-top:5px;">Kembalian</h4>
             <h2 style="color:#10b981; font-size:1.8rem; margin: 5px 0 15px 0; word-break: break-word;">Rp <span id="teksKembali">0</span></h2>
             
             <div class="modal-buttons">
@@ -2007,6 +2079,8 @@ document.addEventListener(
         let nominalDiskon = 0;
         let uang = 0;
         let lastTransaksiData = null;
+        let pembayaranSedangDiproses = false;
+
         let activeDropdownIndex = -1;
         let html5QrCodeScanner = null;
 
@@ -2326,6 +2400,9 @@ document.addEventListener(
    ========================================================= */
 
 function getHargaEfektif(barang, qty = 1) {
+    if (window.LDMPromoPricing) {
+        return window.LDMPromoPricing.resolve(barang, qty).unitPrice;
+    }
     const hargaNormal = Number(barang?.harga) || 0;
 
     // Tidak ada promo
@@ -2340,16 +2417,8 @@ function getHargaEfektif(barang, qty = 1) {
         return hargaNormal;
     }
 
-    // Cek tanggal WITA
-    const now = new Date();
-    const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-    const wita = new Date(utc + (8 * 60 * 60 * 1000));
-
-    const tahun = wita.getFullYear();
-    const bulan = String(wita.getMonth() + 1).padStart(2, "0");
-    const hari = String(wita.getDate()).padStart(2, "0");
-
-    const hariIni = `${tahun}-${bulan}-${hari}`;
+    // Periode promo mengikuti tanggal lokal perangkat.
+    const hariIni = window.LDMLocalTime.dateKey();
 
     // Belum masuk tanggal promo
     if (promo.tglMulai && hariIni < promo.tglMulai) {
@@ -2388,7 +2457,113 @@ function isPromoAktif(barang, qty = 1) {
     return hargaEfektif < hargaNormal;
 }
 
+function getKeputusanHarga(barang, qty = 1) {
+    if (window.LDMPromoPricing) {
+        return window.LDMPromoPricing.resolve(barang, qty);
+    }
+    const normalPrice = Number(barang?.harga) || 0;
+    const unitPrice = getHargaEfektif(barang, qty);
+    return {
+        normalPrice,
+        unitPrice,
+        applied: unitPrice < normalPrice,
+        label: barang?.promo?.nama || "Promo Produk"
+    };
+}
 
+
+
+
+        /* CACHE LAPORAN LOKAL TERBATAS
+         * Supabase tetap menjadi sumber utama histori transaksi.
+         * localStorage hanya dipakai sebagai compatibility cache agar tidak
+         * memenuhi quota browser dan tidak boleh menggagalkan checkout cloud.
+         */
+        const LDM_REPORT_CACHE_LIMIT = 200;
+        const LDM_REPORT_CACHE_FALLBACK_LIMIT = 50;
+
+        function bacaArrayLocalStorageAman(key) {
+            try {
+                const parsed = JSON.parse(
+                    localStorage.getItem(key) || "[]"
+                );
+                return Array.isArray(parsed) ? parsed : [];
+            } catch (error) {
+                console.warn(
+                    `Cache ${key} tidak dapat dibaca.`,
+                    error
+                );
+                return [];
+            }
+        }
+
+        function simpanArrayLocalStorageAman(
+            key,
+            rows,
+            maxItems = LDM_REPORT_CACHE_LIMIT
+        ) {
+            const source =
+                Array.isArray(rows)
+                    ? rows
+                    : [];
+
+            const limited = source.slice(
+                -Math.max(
+                    1,
+                    Number(maxItems) ||
+                        LDM_REPORT_CACHE_LIMIT
+                )
+            );
+
+            try {
+                localStorage.setItem(
+                    key,
+                    JSON.stringify(limited)
+                );
+                return true;
+            } catch (error) {
+                const quotaExceeded =
+                    error && (
+                        error.name ===
+                            "QuotaExceededError" ||
+                        error.name ===
+                            "NS_ERROR_DOM_QUOTA_REACHED" ||
+                        error.code === 22 ||
+                        error.code === 1014
+                    );
+
+                if (!quotaExceeded) {
+                    console.warn(
+                        `Cache ${key} gagal disimpan.`,
+                        error
+                    );
+                    return false;
+                }
+
+                console.warn(
+                    `Quota localStorage penuh saat menyimpan ${key}. Cache diperkecil otomatis.`
+                );
+
+                const fallback =
+                    source.slice(
+                        -LDM_REPORT_CACHE_FALLBACK_LIMIT
+                    );
+
+                try {
+                    localStorage.setItem(
+                        key,
+                        JSON.stringify(fallback)
+                    );
+                    return true;
+                } catch (retryError) {
+                    console.warn(
+                        `Cache ${key} tetap tidak dapat disimpan setelah diperkecil. Transaksi cloud tidak dibatalkan.`,
+                        retryError
+                    );
+                    return false;
+                }
+            }
+        }
 
         /* SINKRONISASI LAPORAN AMAN (MENCEGAH RESET OTOMATIS) */
         function checkAndResetLaporan24Jam() {
@@ -2413,18 +2588,48 @@ function isPromoAktif(barang, qty = 1) {
                 dataLaporan = [];
             }
 
-            let historyLaporan = JSON.parse(localStorage.getItem("laporanHistory")) || [];
+            let historyLaporan =
+                bacaArrayLocalStorageAman(
+                    "laporanHistory"
+                );
 
-            // Sinkronkan seluruh transaksi ke laporanHistory agar data historis tetap tersimpan aman
+            // History lokal hanya compatibility cache.
+            // Histori lengkap tetap berada di Supabase.
             dataLaporan.forEach(item => {
-                if (!historyLaporan.some(h => h.id === item.id)) {
+                const itemKey =
+                    item && (
+                        item.cloudId ||
+                        item.clientTransactionId ||
+                        item.kodeTransaksi ||
+                        item.id
+                    );
+
+                if (!historyLaporan.some(h =>
+                    String(
+                        h && (
+                            h.cloudId ||
+                            h.clientTransactionId ||
+                            h.kodeTransaksi ||
+                            h.id
+                        )
+                    ) === String(itemKey)
+                )) {
                     historyLaporan.push(item);
                 }
             });
-            
-            localStorage.setItem("laporanHistory", JSON.stringify(historyLaporan));
-            localStorage.setItem("laporan", JSON.stringify(dataLaporan));
-            localStorage.setItem("dataLaporan", JSON.stringify(dataLaporan));
+
+            simpanArrayLocalStorageAman(
+                "laporanHistory",
+                historyLaporan
+            );
+            simpanArrayLocalStorageAman(
+                "laporan",
+                dataLaporan
+            );
+            simpanArrayLocalStorageAman(
+                "dataLaporan",
+                dataLaporan
+            );
         }
 
         /* LOGIKA TOGGLE MENU NAVIGASI MOBILE */
@@ -2790,19 +2995,81 @@ function isPromoAktif(barang, qty = 1) {
         }
 
         function cekPeringatanStok() {
+            const badge = document.getElementById("navBadge");
+            const isRetail = !window.LDMStoreMode || window.LDMStoreMode.isRetail();
+            if (!isRetail) {
+                if (badge) badge.style.display = "none";
+                return;
+            }
             const BATAS_STOK_MINIMAL = 9;
             let localData = localStorage.getItem("dataBarang");
             if (!localData) return;
             let data = JSON.parse(localData);
             let adaStokTipis = data.some(item => (Number(item.stok) || 0) <= BATAS_STOK_MINIMAL);
-            
-            let badge = document.getElementById("navBadge");
-            if (badge) {
-                badge.style.display = adaStokTipis ? "flex" : "none";
-            }
+            if (badge) badge.style.display = adaStokTipis ? "flex" : "none";
         }
 
         /* LOGIKA TRANSAKSI KASIR */
+let ldmVisualMenuCategory = "Semua";
+
+function escapeModeHtml(value){
+    return String(value ?? "").replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"})[ch]);
+}
+
+function renderMenuVisualMode(){
+    const panel=document.getElementById("ldmVisualMenuPanel");
+    const grid=document.getElementById("ldmVisualMenuGrid");
+    const cats=document.getElementById("ldmVisualMenuCategories");
+    if(!panel || !grid || !cats) return;
+    const api=window.LDMStoreMode;
+    const mode=api ? api.getMode() : "retail";
+    const show=mode==="cafe" || mode==="warung";
+    panel.style.display=show ? "block" : "none";
+    if(!show) return;
+
+    const data=JSON.parse(localStorage.getItem("dataBarang")||"[]");
+    const title=document.getElementById("ldmVisualMenuTitle");
+    const hint=document.getElementById("ldmVisualMenuHint");
+    if(title) title.textContent=mode==="cafe" ? "☕ Menu Kafe" : "🍜 Menu Cepat Warung";
+    if(hint) hint.textContent=mode==="cafe"
+        ? "Pilih menu bergambar untuk menambahkan 1 item ke keranjang."
+        : "Daftar cepat tanpa gambar untuk barang/menu yang sering dijual.";
+
+    const categories=["Semua",...new Set(data.map(item=>String(item.kategori||"Lainnya").trim()).filter(Boolean))];
+    if(!categories.includes(ldmVisualMenuCategory)) ldmVisualMenuCategory="Semua";
+    cats.innerHTML=categories.map(cat=>`<button type="button" class="ldm-visual-category ${cat===ldmVisualMenuCategory?'active':''}" onclick="pilihKategoriMenuMode(decodeURIComponent('${encodeURIComponent(cat)}'))">${escapeModeHtml(cat)}</button>`).join("");
+
+    const filtered=data.map((item,index)=>({item,index})).filter(row=>ldmVisualMenuCategory==="Semua" || String(row.item.kategori||"Lainnya")===ldmVisualMenuCategory);
+    grid.innerHTML=filtered.map(({item,index})=>{
+        const useImage = mode === "cafe";
+        const visual = useImage && window.LDMProductVisuals ? window.LDMProductVisuals.get(item) : "";
+        const price=Number(item.harga)||0;
+        return `<button type="button" class="ldm-visual-menu-item ${mode==='warung'?'ldm-warung-quick-item':''}" onclick="tambahItemDariMenuMode(${index})" title="Tambah ${escapeModeHtml(item.nama)} ke keranjang">
+            ${useImage ? `<span class="ldm-visual-menu-image">${visual ? `<img src="${visual}" alt="">` : 'FOTO MENU'}</span>` : ''}
+            <span class="ldm-visual-menu-content">
+                <span class="ldm-visual-menu-name">${escapeModeHtml(item.nama)}</span>
+                <span class="ldm-visual-menu-price">Rp ${price.toLocaleString('id-ID')}</span>
+                <span class="ldm-visual-menu-category">${escapeModeHtml(item.kategori||'Lainnya')}</span>
+            </span>
+            ${mode==='warung' ? '<span class="ldm-warung-quick-add">＋</span>' : ''}
+        </button>`;
+    }).join("") || `<div style="grid-column:1/-1;padding:16px;text-align:center;color:#94a3b8;font-size:.68rem;">Belum ada barang/menu pada kategori ini.</div>`;
+}
+
+function pilihKategoriMenuMode(category){
+    ldmVisualMenuCategory=String(category||"Semua").replace(/&#39;/g,"'");
+    renderMenuVisualMode();
+}
+
+function tambahItemDariMenuMode(index){
+    const data=JSON.parse(localStorage.getItem("dataBarang")||"[]");
+    if(!data[index]) return;
+    document.getElementById("selectedBarangIndex").value=String(index);
+    document.getElementById("inputCariBarang").value=data[index].nama||"";
+    document.getElementById("jumlah").value="1";
+    tambahItem();
+}
+
 function filterBarang() {
     const input = document
         .getElementById("inputCariBarang")
@@ -2817,6 +3084,8 @@ function filterBarang() {
 
     const dataBarang =
         JSON.parse(localStorage.getItem("dataBarang")) || [];
+    const isRetailMode = !window.LDMStoreMode || window.LDMStoreMode.isRetail();
+    const showVisual = window.LDMStoreMode && window.LDMStoreMode.supportsProductImages();
 
     const hasil = input
         ? dataBarang.filter(item =>
@@ -2897,23 +3166,24 @@ function filterBarang() {
             `;
         }
 
+        const visualUrl = showVisual && window.LDMProductVisuals
+            ? window.LDMProductVisuals.get(item)
+            : "";
+        const visualHTML = showVisual
+            ? `<div style="width:42px;height:42px;flex:0 0 42px;border-radius:8px;overflow:hidden;background:#eef2f7;display:grid;place-items:center;color:#94a3b8;font-size:.55rem;">${visualUrl ? `<img src="${visualUrl}" alt="" style="width:100%;height:100%;object-fit:cover;">` : "MENU"}</div>`
+            : "";
+        const stockHTML = isRetailMode
+            ? `<small style="color:#94a3b8;margin-left:4px;">(Stok: ${Number(item.stok) || 0})</small>`
+            : "";
+
         itemDiv.innerHTML = `
-            <div style="
-                display:flex;
-                justify-content:space-between;
-                align-items:center;
-            ">
-                <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:9px;">
+                ${visualHTML}
+                <div style="min-width:0;flex:1;">
                     <strong>${item.nama}</strong>
                     – ${hargaHTML}
                     ${satuanText}
-
-                    <small style="
-                        color:#94a3b8;
-                        margin-left:4px;
-                    ">
-                        (Stok: ${item.stok || 0})
-                    </small>
+                    ${stockHTML}
                 </div>
             </div>
         `;
@@ -3027,20 +3297,51 @@ function tambahItem() {
         return;
     }
 
+    // Mode Retail memakai Strict Stock. Kafe/Warung memakai Soft Stock.
+    if (!window.LDMStoreMode || window.LDMStoreMode.isRetail()) {
+        const stokTersedia = Number(barang.stok) || 0;
+        const existing = keranjang.find(k =>
+            (barang.id && k.productId === barang.id) ||
+            (!barang.id && k.nama === barang.nama)
+        );
+        const totalDiminta = qty + (existing ? Number(existing.qty) || 0 : 0);
+        if (totalDiminta > stokTersedia) {
+            tampilkanAlertModal(
+                stokTersedia <= 0 ? "Stok Habis" : "Stok Tidak Cukup",
+                stokTersedia <= 0
+                    ? `${barang.nama} tidak dapat dijual karena stok sudah habis pada Mode Toko Ritel.`
+                    : `${barang.nama} hanya tersedia ${stokTersedia} ${barang.satuan || "Pcs"}. Jumlah yang diminta ${totalDiminta}.`,
+                "⚠️"
+            );
+            return;
+        }
+    }
+
     // ==========================================
     // HITUNG HARGA NORMAL DAN HARGA EFEKTIF
     // ==========================================
 
-    const hargaNormal = Number(barang.harga) || 0;
-    const hargaEfektif = getHargaEfektif(barang, qty);
-    const promoAktif = hargaEfektif < hargaNormal;
+    const keputusanHarga = getKeputusanHarga(barang, qty);
+    const hargaNormal = keputusanHarga.normalPrice;
+    const hargaEfektif = keputusanHarga.unitPrice;
+    const promoAktif = keputusanHarga.applied;
 
     // ==========================================
     // MASUKKAN KE KERANJANG
     // ==========================================
 
     let existingIdx = keranjang.findIndex(
-        k => k.nama === barang.nama
+        k =>
+            (
+                barang.id &&
+                k.productId &&
+                k.productId === barang.id
+            )
+            ||
+            (
+                !barang.id &&
+                k.nama === barang.nama
+            )
     );
 
     if (existingIdx !== -1) {
@@ -3050,11 +3351,19 @@ function tambahItem() {
         // Hitung ulang harga berdasarkan total quantity
         const qtyBaru = keranjang[existingIdx].qty;
 
-        const hargaBaru = getHargaEfektif(barang, qtyBaru);
+        const keputusanBaru = getKeputusanHarga(barang, qtyBaru);
+        const hargaBaru = keputusanBaru.unitPrice;
 
+        keranjang[existingIdx].productId =
+            barang.id || keranjang[existingIdx].productId || null;
+        keranjang[existingIdx].barcode =
+            barang.barcode || keranjang[existingIdx].barcode || "";
+        keranjang[existingIdx].hargaBeli =
+            Number(barang.hargaBeli) || 0;
         keranjang[existingIdx].harga = hargaBaru;
         keranjang[existingIdx].hargaNormal = hargaNormal;
         keranjang[existingIdx].isPromo = hargaBaru < hargaNormal;
+        keranjang[existingIdx].promoLabel = keputusanBaru.label || "Promo Produk";
 
         keranjang[existingIdx].subtotal =
             qtyBaru * hargaBaru;
@@ -3062,7 +3371,10 @@ function tambahItem() {
     } else {
 
         keranjang.push({
+            productId: barang.id || null,
+            barcode: barang.barcode || "",
             nama: barang.nama,
+            hargaBeli: Number(barang.hargaBeli) || 0,
 
             // INI YANG PENTING:
             // gunakan harga promo jika promo aktif
@@ -3073,6 +3385,7 @@ function tambahItem() {
             hargaNormal: hargaNormal,
 
             isPromo: promoAktif,
+            promoLabel: keputusanHarga.label || "Promo Produk",
 
             qty: qty,
 
@@ -3108,6 +3421,8 @@ function tambahItem() {
             subtotalBelanja = 0;
 
             keranjang.forEach((item, index) => {
+                // Pulihkan draft/keranjang memakai aturan promo terbaru.
+                hitungUlangHargaItemKeranjang(index);
                 subtotalBelanja += item.subtotal;
 
                 const row = document.createElement("div");
@@ -3179,7 +3494,7 @@ function tambahItem() {
                 if (keranjang[index].qty <= 0) {
                     keranjang.splice(index, 1);
                 } else {
-                    keranjang[index].subtotal = keranjang[index].qty * keranjang[index].harga;
+                    hitungUlangHargaItemKeranjang(index);
                 }
                 renderKeranjang();
             }
@@ -3191,9 +3506,31 @@ function tambahItem() {
                 keranjang.splice(index, 1);
             } else {
                 keranjang[index].qty = parsed;
-                keranjang[index].subtotal = keranjang[index].qty * keranjang[index].harga;
+                hitungUlangHargaItemKeranjang(index);
             }
             renderKeranjang();
+        }
+
+        function hitungUlangHargaItemKeranjang(index) {
+            const cartItem = keranjang[index];
+            if (!cartItem) return;
+
+            const products = JSON.parse(localStorage.getItem("dataBarang") || "[]");
+            const product = products.find(row =>
+                (cartItem.productId && row.id === cartItem.productId) ||
+                (cartItem.barcode && String(row.barcode || "") === String(cartItem.barcode)) ||
+                (!cartItem.productId && !cartItem.barcode && row.nama === cartItem.nama)
+            );
+
+            if (product) {
+                const decision = getKeputusanHarga(product, cartItem.qty);
+                cartItem.hargaNormal = decision.normalPrice;
+                cartItem.harga = decision.unitPrice;
+                cartItem.isPromo = decision.applied;
+                cartItem.promoLabel = decision.label || "Promo Produk";
+            }
+
+            cartItem.subtotal = cartItem.qty * cartItem.harga;
         }
 
         function hapusItemCart(index) {
@@ -3258,16 +3595,22 @@ function tambahItem() {
             simpanDraftKasirOtomatis();
         }
 
-        function potongStokDatabase() {
-            let dataBarang = JSON.parse(localStorage.getItem("dataBarang")) || [];
-            keranjang.forEach(item => {
-                let idx = dataBarang.findIndex(b => b.nama.toLowerCase() === item.nama.toLowerCase());
-                if (idx !== -1) {
-                    let stokLama = Number(dataBarang[idx].stok) || 0;
-                    dataBarang[idx].stok = Math.max(0, stokLama - item.qty);
-                }
-            });
-            localStorage.setItem("dataBarang", JSON.stringify(dataBarang));
+        async function potongStokDatabase() {
+            /*
+             * Tahap 8:
+             * Pengurangan stok TIDAK lagi dilakukan di browser.
+             * ldm_complete_sale() mengunci row produk, memotong stok,
+             * dan menulis stock_movements dalam satu transaksi database.
+             * Fungsi legacy ini sekarang hanya refresh cache setelah commit.
+             */
+            if (
+                window.LDMProducts &&
+                window.LDMProducts.isEnabled()
+            ) {
+                await window.LDMProducts
+                    .refreshCache();
+            }
+
             cekPeringatanStok();
         }
 
@@ -3327,7 +3670,7 @@ function tambahItem() {
             const today =
                 typeof getTanggalWITA === "function"
                     ? getTanggalWITA()
-                    : new Date().toISOString().slice(0,10);
+                    : window.LDMLocalTime.dateKey();
 
             let logs = [];
             try {
@@ -3358,18 +3701,24 @@ function tambahItem() {
             return sudahKeluar ? null : masuk;
         }
 
-        function simpanKeLaporan(metode, detailKombinasi = null) {
+        function simpanKeLaporan(metode, detailKombinasi = null, cloudResult = null) {
             checkAndResetLaporan24Jam();
 
             let dataLaporan = JSON.parse(localStorage.getItem("laporan")) || JSON.parse(localStorage.getItem("dataLaporan")) || [];
             let kasirAktif = localStorage.getItem("currentUser") || localStorage.getItem("username") || "Owner";
             let namaBarangStr = keranjang.map(k => `${k.nama} (${k.qty} ${k.satuan})`).join(", ");
             
-            let w = new Date();
+            let w = cloudResult && cloudResult.transacted_at
+                ? new Date(cloudResult.transacted_at)
+                : new Date();
             let pad = (n) => n.toString().padStart(2, '0');
-            let tglToday = `${w.getFullYear()}-${pad(w.getMonth()+1)}-${pad(w.getDate())}`;
+            let tglToday = cloudResult && cloudResult.business_date
+                ? String(cloudResult.business_date)
+                : `${w.getFullYear()}-${pad(w.getMonth()+1)}-${pad(w.getDate())}`;
             let waktuTeks = `${tglToday} ${pad(w.getHours())}:${pad(w.getMinutes())}:${pad(w.getSeconds())}`;
-            let skrg = Date.now();
+            let skrg = Number.isFinite(w.getTime())
+                ? w.getTime()
+                : Date.now();
 
             let bayarVal = 0;
             let kembaliVal = 0;
@@ -3395,37 +3744,101 @@ function tambahItem() {
                 }
             }
 
+            if (cloudResult) {
+                bayarVal = Number(cloudResult.cash_received) ||
+                    (Number(cloudResult.cash_amount) || 0) +
+                    (Number(cloudResult.qris_amount) || 0);
+                kembaliVal = Number(cloudResult.change_amount) || 0;
+                nominalCash = Number(cloudResult.cash_amount) || 0;
+                nominalQris = Number(cloudResult.qris_amount) || 0;
+            }
+
             const kodeTransaksi =
-                buatKodeTransaksiKasir(
-                    skrg,
-                    kasirAktif,
-                    totalAkhir
-                );
+                cloudResult && cloudResult.transaction_code
+                    ? cloudResult.transaction_code
+                    : buatKodeTransaksiKasir(
+                        skrg,
+                        kasirAktif,
+                        totalAkhir
+                    );
+
+            const cloudItems =
+                cloudResult &&
+                Array.isArray(cloudResult.items)
+                    ? cloudResult.items.map(item => ({
+                        productId: item.product_id || null,
+                        barcode: item.barcode || "",
+                        nama: item.nama || "",
+                        hargaBeli: Number(item.hargaBeli) || 0,
+                        harga: Number(item.harga) || 0,
+                        hargaNormal: Number(item.hargaNormal) || Number(item.harga) || 0,
+                        isPromo: (Number(item.harga) || 0) < (Number(item.hargaNormal) || Number(item.harga) || 0),
+                        qty: Number(item.qty) || 0,
+                        satuan: item.satuan || "Pcs",
+                        subtotal: Number(item.subtotal) || 0,
+                        diskon: Number(item.diskon) || 0
+                    }))
+                    : JSON.parse(JSON.stringify(keranjang));
+
+            const productDiscount = cloudResult
+                ? Number(cloudResult.product_discount) || 0
+                : keranjang.reduce((total, item) => {
+                    const hargaNormal = Number(item.hargaNormal) || Number(item.harga) || 0;
+                    const hargaPromo = Number(item.harga) || 0;
+                    const qty = Number(item.qty) || 0;
+                    return total + Math.max(0, (hargaNormal - hargaPromo) * qty);
+                }, 0);
+
+            const manualDiscount = cloudResult
+                ? Number(cloudResult.manual_discount) || 0
+                : Number(nominalDiskon) || 0;
+
+            const totalDiscount = cloudResult
+                ? Number(cloudResult.total_discount) || 0
+                : productDiscount + manualDiscount;
 
             lastTransaksiData = {
                 id: skrg,
                 timestamp: skrg,
+                cloudId: cloudResult ? cloudResult.id : null,
+                clientTransactionId: cloudResult ? cloudResult.client_transaction_id : null,
+                cloudStatus: cloudResult ? cloudResult.status : null,
+                offlineQueueId: cloudResult && cloudResult.offline_queue_id
+                    ? cloudResult.offline_queue_id
+                    : null,
+                offlineQueueStatus: cloudResult && cloudResult.offline_queued
+                    ? "pending"
+                    : null,
+                offlineQueuedAt: cloudResult && cloudResult.queued_at
+                    ? cloudResult.queued_at
+                    : null,
+                offlineSyncedAt: null,
                 kodeTransaksi,
                 tanggal: tglToday,
                 waktu_teks: waktuTeks,
-                kasir: kasirAktif,
+                kasir: cloudResult && cloudResult.cashier_username
+                    ? cloudResult.cashier_username
+                    : kasirAktif,
                 shiftId: "",
-                shift: (getAbsensiAktifKasir() || {}).shift || "",
+                shift: cloudResult && cloudResult.shift_label
+                    ? cloudResult.shift_label
+                    : (getAbsensiAktifKasir() || {}).shift || "",
                 shiftStartedAt: "",
-                barang: namaBarangStr,
-                keranjang: JSON.parse(JSON.stringify(keranjang)),
-                subtotal: subtotalBelanja,
-  diskon: keranjang.reduce((total, item) => {
-    const hargaNormal = Number(item.hargaNormal) || Number(item.harga) || 0;
-    const hargaPromo = Number(item.harga) || 0;
-    const qty = Number(item.qty) || 0;
-
-    return total + Math.max(
-        0,
-        (hargaNormal - hargaPromo) * qty
-    );
-}, 0),
-                total: totalAkhir,
+                barang: cloudItems.map(k => `${k.nama} (${k.qty} ${k.satuan})`).join(", "),
+                keranjang: cloudItems,
+                subtotal: cloudResult
+                    ? Number(cloudResult.subtotal) || 0
+                    : subtotalBelanja,
+                normalSubtotal: cloudResult
+                    ? Number(cloudResult.normal_subtotal) || 0
+                    : subtotalBelanja + productDiscount,
+                productDiscount,
+                manualDiscount,
+                totalDiskon: totalDiscount,
+                diskon: totalDiscount,
+                total: cloudResult
+                    ? Number(cloudResult.grand_total) || 0
+                    : totalAkhir,
                 bayar: bayarVal,
                 kembali: kembaliVal,
                 metode: metode,
@@ -3436,12 +3849,38 @@ function tambahItem() {
 
             dataLaporan.push(lastTransaksiData);
 
-            localStorage.setItem("laporan", JSON.stringify(dataLaporan));
-            localStorage.setItem("dataLaporan", JSON.stringify(dataLaporan));
+            if (
+                window.LDMStorageDB &&
+                typeof window.LDMStorageDB.putTransactions === "function"
+            ) {
+                window.LDMStorageDB.putTransactions(
+                    [lastTransaksiData],
+                    { cleanup: false }
+                ).catch(error => {
+                    console.warn("Arsip transaksi IndexedDB gagal diperbarui dari kasir:", error);
+                });
+            }
 
-            let historyLaporan = JSON.parse(localStorage.getItem("laporanHistory")) || [];
-            historyLaporan.push(lastTransaksiData);
-            localStorage.setItem("laporanHistory", JSON.stringify(historyLaporan));
+            simpanArrayLocalStorageAman(
+                "laporan",
+                dataLaporan
+            );
+            simpanArrayLocalStorageAman(
+                "dataLaporan",
+                dataLaporan
+            );
+
+            let historyLaporan =
+                bacaArrayLocalStorageAman(
+                    "laporanHistory"
+                );
+            historyLaporan.push(
+                lastTransaksiData
+            );
+            simpanArrayLocalStorageAman(
+                "laporanHistory",
+                historyLaporan
+            );
 
             window.dispatchEvent(new Event('storage'));
 
@@ -3454,25 +3893,366 @@ function tambahItem() {
             hapusDraftKasirOtomatis();
         }
 
-        function prosesBayar() {
+        function perbaruiLaporanHasilReconnect(clientTransactionId, cloudResult) {
+            if (!clientTransactionId || !cloudResult) return;
+
+            const cloudItems = Array.isArray(cloudResult.items)
+                ? cloudResult.items.map(item => ({
+                    productId: item.product_id || null,
+                    barcode: item.barcode || "",
+                    nama: item.nama || "",
+                    hargaBeli: Number(item.hargaBeli) || 0,
+                    harga: Number(item.harga) || 0,
+                    hargaNormal: Number(item.hargaNormal) || Number(item.harga) || 0,
+                    isPromo: (Number(item.harga) || 0) < (Number(item.hargaNormal) || Number(item.harga) || 0),
+                    qty: Number(item.qty) || 0,
+                    satuan: item.satuan || "Pcs",
+                    subtotal: Number(item.subtotal) || 0,
+                    diskon: Number(item.diskon) || 0
+                }))
+                : null;
+
+            ["laporan", "dataLaporan", "laporanHistory"].forEach(key => {
+                let rows;
+                try {
+                    rows = JSON.parse(localStorage.getItem(key) || "[]");
+                } catch (error) {
+                    rows = [];
+                }
+                if (!Array.isArray(rows)) return;
+
+                let changed = false;
+                rows.forEach(row => {
+                    if (String(row.clientTransactionId || "") !== String(clientTransactionId)) return;
+
+                    row.cloudId = cloudResult.id || row.cloudId || null;
+                    row.kodeTransaksi = cloudResult.transaction_code || row.kodeTransaksi;
+                    row.cloudStatus = cloudResult.status || "completed";
+                    row.offlineQueueStatus = "synced";
+                    row.offlineSyncedAt = cloudResult.synced_at || new Date().toISOString();
+                    row.tanggal = cloudResult.business_date || row.tanggal;
+                    row.total = Number(cloudResult.grand_total) || row.total;
+                    row.subtotal = Number(cloudResult.subtotal) || row.subtotal;
+                    row.normalSubtotal = Number(cloudResult.normal_subtotal) || row.normalSubtotal;
+                    row.productDiscount = Number(cloudResult.product_discount) || 0;
+                    row.manualDiscount = Number(cloudResult.manual_discount) || 0;
+                    row.totalDiskon = Number(cloudResult.total_discount) || 0;
+                    row.diskon = row.totalDiskon;
+                    row.bayar = Number(cloudResult.cash_received) ||
+                        (Number(cloudResult.cash_amount) || 0) + (Number(cloudResult.qris_amount) || 0);
+                    row.kembali = Number(cloudResult.change_amount) || 0;
+                    row.cash = Number(cloudResult.cash_amount) || 0;
+                    row.qris = Number(cloudResult.qris_amount) || 0;
+                    if (cloudItems) {
+                        row.keranjang = cloudItems;
+                        row.barang = cloudItems.map(item => `${item.nama} (${item.qty} ${item.satuan})`).join(", ");
+                    }
+                    changed = true;
+                });
+
+                if (changed) {
+                    simpanArrayLocalStorageAman(key, rows);
+                }
+            });
+
+            if (
+                lastTransaksiData &&
+                String(lastTransaksiData.clientTransactionId || "") === String(clientTransactionId)
+            ) {
+                lastTransaksiData.cloudId = cloudResult.id || null;
+                lastTransaksiData.kodeTransaksi = cloudResult.transaction_code || lastTransaksiData.kodeTransaksi;
+                lastTransaksiData.cloudStatus = cloudResult.status || "completed";
+                lastTransaksiData.offlineQueueStatus = "synced";
+                lastTransaksiData.offlineSyncedAt = cloudResult.synced_at || new Date().toISOString();
+            }
+
+            if (
+                lastTransaksiData &&
+                window.LDMStorageDB &&
+                typeof window.LDMStorageDB.putTransactions === "function"
+            ) {
+                window.LDMStorageDB.putTransactions(
+                    [lastTransaksiData],
+                    { cleanup: false }
+                ).catch(error => {
+                    console.warn("Arsip reconnect IndexedDB gagal diperbarui:", error);
+                });
+            }
+
+            window.dispatchEvent(new Event("storage"));
+        }
+
+        function tandaiLaporanReconnectBermasalah(clientTransactionId, status, message) {
+            ["laporan", "dataLaporan", "laporanHistory"].forEach(key => {
+                let rows;
+                try {
+                    rows = JSON.parse(localStorage.getItem(key) || "[]");
+                } catch (error) {
+                    rows = [];
+                }
+                if (!Array.isArray(rows)) return;
+                let changed = false;
+                rows.forEach(row => {
+                    if (String(row.clientTransactionId || "") === String(clientTransactionId || "")) {
+                        row.offlineQueueStatus = status || "failed";
+                        row.offlineSyncError = String(message || "Sinkronisasi gagal");
+                        changed = true;
+                    }
+                });
+                if (changed) simpanArrayLocalStorageAman(key, rows);
+            });
+        }
+
+        window.addEventListener("ldm-offline-sale-synced", event => {
+            const detail = event.detail || {};
+            perbaruiLaporanHasilReconnect(
+                detail.queueItem && detail.queueItem.client_transaction_id,
+                detail.cloudResult
+            );
+        });
+
+        window.addEventListener("ldm-offline-sale-sync-error", event => {
+            const detail = event.detail || {};
+            tandaiLaporanReconnectBermasalah(
+                detail.queueItem && detail.queueItem.client_transaction_id,
+                detail.status,
+                detail.message
+            );
+        });
+
+        let transactionsServiceLoadingPromise = null;
+
+        function pastikanTransactionsService() {
+            if (
+                window.LDMTransactions &&
+                typeof window.LDMTransactions.checkout === "function"
+            ) {
+                return Promise.resolve(
+                    window.LDMTransactions
+                );
+            }
+
+            if (transactionsServiceLoadingPromise) {
+                return transactionsServiceLoadingPromise;
+            }
+
+            transactionsServiceLoadingPromise =
+                new Promise((resolve, reject) => {
+
+                    const existing =
+                        document.querySelector(
+                            'script[data-ldm-transactions-loader="true"]'
+                        );
+
+                    if (existing) {
+                        existing.remove();
+                    }
+
+                    const script =
+                        document.createElement("script");
+
+                    script.src =
+                        "js/transactions-service.js?v=16.0&reload=" +
+                        Date.now();
+
+                    script.async = true;
+
+                    script.dataset.ldmTransactionsLoader =
+                        "true";
+
+                    script.onload = function() {
+                        if (
+                            window.LDMTransactions &&
+                            typeof window.LDMTransactions.checkout === "function"
+                        ) {
+                            resolve(
+                                window.LDMTransactions
+                            );
+                            return;
+                        }
+
+                        reject(
+                            new Error(
+                                "transactions-service.js berhasil dimuat tetapi LDMTransactions tidak terbentuk."
+                            )
+                        );
+                    };
+
+                    script.onerror = function() {
+                        reject(
+                            new Error(
+                                "File js/transactions-service.js tidak dapat dimuat. Pastikan file tersebut ada di repository GitHub pada folder js/."
+                            )
+                        );
+                    };
+
+                    document.head.appendChild(
+                        script
+                    );
+                })
+                .finally(() => {
+                    transactionsServiceLoadingPromise = null;
+                });
+
+            return transactionsServiceLoadingPromise;
+        }
+
+        async function prosesCheckoutCloud(metode, detailKombinasi = null) {
+            await pastikanTransactionsService();
+
+            const absensiAktif =
+                getAbsensiAktifKasir();
+
+            let cashReceived = 0;
+            let cashAmount = 0;
+            let qrisAmount = 0;
+
+            if (metode === "Tunai") {
+                cashReceived = uang;
+                cashAmount = totalAkhir;
+            } else if (detailKombinasi) {
+                cashReceived = detailKombinasi.cash;
+                cashAmount = detailKombinasi.cash;
+                qrisAmount = detailKombinasi.qris;
+            } else {
+                qrisAmount = totalAkhir;
+            }
+
+            return await window.LDMTransactions.checkout({
+                items: keranjang,
+                manualDiscount: nominalDiskon,
+                paymentMethod: metode,
+                cashReceived,
+                cashAmount,
+                qrisAmount,
+                shiftLabel: absensiAktif
+                    ? absensiAktif.shift || ""
+                    : ""
+            });
+        }
+
+        async function finalisasiTransaksiCloud(
+            metode,
+            detailKombinasi = null
+        ) {
+            if (pembayaranSedangDiproses) {
+                throw new Error(
+                    "Pembayaran sedang diproses. Jangan tekan tombol dua kali."
+                );
+            }
+
+            pembayaranSedangDiproses = true;
+
+            try {
+                const cloudResult =
+                    await prosesCheckoutCloud(
+                        metode,
+                        detailKombinasi
+                    );
+
+                if (cloudResult && cloudResult.offline_queued) {
+                    // Stok lokal sudah ditahan oleh IndexedDB queue.
+                    // Stok cloud baru dipotong oleh RPC saat reconnect berhasil.
+                    cekPeringatanStok();
+                } else {
+                    await potongStokDatabase();
+                }
+
+                /*
+                 * Baru setelah COMMIT cloud sukses,
+                 * kita tulis compatibility report lokal.
+                 */
+                try {
+                    simpanKeLaporan(
+                        metode,
+                        detailKombinasi,
+                        cloudResult
+                    );
+                } catch (localCacheError) {
+                    /*
+                     * Checkout cloud sudah COMMIT. Kegagalan compatibility
+                     * cache lokal tidak boleh mengubah transaksi sukses
+                     * menjadi "Transaksi Gagal".
+                     */
+                    console.warn(
+                        "Transaksi cloud berhasil, tetapi cache laporan lokal gagal diperbarui.",
+                        localCacheError
+                    );
+
+                    hapusDraftKasirOtomatis();
+                }
+
+                return cloudResult;
+
+            } finally {
+                pembayaranSedangDiproses = false;
+            }
+        }
+
+        async function prosesBayar() {
             if (keranjang.length === 0) {
-                tampilkanAlertModal("Keranjang Kosong", "Belum ada barang di dalam keranjang belanja!", "⚠️");
+                tampilkanAlertModal(
+                    "Keranjang Kosong",
+                    "Belum ada barang di dalam keranjang belanja!",
+                    "⚠️"
+                );
                 return;
             }
 
             if (uang < totalAkhir) {
-                tampilkanAlertModal("Uang Kurang", "Pembayaran tunai kurang dari total tagihan!", "⚠️");
+                tampilkanAlertModal(
+                    "Uang Kurang",
+                    "Pembayaran tunai kurang dari total tagihan!",
+                    "⚠️"
+                );
                 return;
             }
 
-            potongStokDatabase();
-            simpanKeLaporan("Tunai");
+            try {
+                const cloudResult =
+                    await finalisasiTransaksiCloud(
+                        "Tunai"
+                    );
 
-            let kembali = uang - totalAkhir;
-            document.getElementById("teksKembali").innerText = kembali.toLocaleString('id-ID');
-            document.getElementById("popupKembali").style.display = "flex";
+                const kembali =
+                    Number(cloudResult.change_amount) || 0;
 
-            cetakStrukManual(lastTransaksiData);
+                const judulKembali = document.getElementById("judulPopupKembali");
+                if (judulKembali) {
+                    judulKembali.innerText = cloudResult.offline_queued
+                        ? "Kembalian · Tersimpan Offline"
+                        : "Kembalian";
+                    judulKembali.style.color = cloudResult.offline_queued
+                        ? "#d97706"
+                        : "#64748b";
+                }
+
+                document
+                    .getElementById("teksKembali")
+                    .innerText =
+                        kembali.toLocaleString("id-ID");
+
+                document
+                    .getElementById("popupKembali")
+                    .style.display = "flex";
+
+                cetakStrukManual(
+                    lastTransaksiData
+                );
+
+            } catch (error) {
+                console.error(
+                    "Checkout cloud gagal:",
+                    error
+                );
+
+                tampilkanAlertModal(
+                    "Transaksi Gagal",
+                    (error.message || String(error)) +
+                    "\n\nTransaksi tidak dicatat dan stok tidak dipotong.",
+                    "❌"
+                );
+            }
         }
 
         function bukaPopupQris() {
@@ -3508,8 +4288,17 @@ function tambahItem() {
             document.getElementById("popupQris").style.display = "none";
         }
 
-        function prosesBayarQris() {
-            let sisaNonTunai = Math.max(0, totalAkhir - uang);
+        async function prosesBayarQris() {
+            if (pembayaranSedangDiproses) {
+                return;
+            }
+
+            let sisaNonTunai =
+                Math.max(
+                    0,
+                    totalAkhir - uang
+                );
+
             let detailKombinasi = null;
 
             if (uang > 0 && uang < totalAkhir) {
@@ -3519,14 +4308,50 @@ function tambahItem() {
                 };
             }
 
-            tutupPopupQris();
-            potongStokDatabase();
-            simpanKeLaporan("Non Tunai", detailKombinasi);
+            try {
+                const cloudResult =
+                    await finalisasiTransaksiCloud(
+                        "Non Tunai",
+                        detailKombinasi
+                    );
 
-            document.getElementById("teksKembali").innerText = "0";
-            document.getElementById("popupKembali").style.display = "flex";
+                tutupPopupQris();
 
-            cetakStrukManual(lastTransaksiData);
+                const judulKembali = document.getElementById("judulPopupKembali");
+                if (judulKembali) {
+                    judulKembali.innerText = cloudResult.offline_queued
+                        ? "Pembayaran · Tersimpan Offline"
+                        : "Pembayaran Berhasil";
+                    judulKembali.style.color = cloudResult.offline_queued
+                        ? "#d97706"
+                        : "#64748b";
+                }
+
+                document
+                    .getElementById("teksKembali")
+                    .innerText = "0";
+
+                document
+                    .getElementById("popupKembali")
+                    .style.display = "flex";
+
+                cetakStrukManual(
+                    lastTransaksiData
+                );
+
+            } catch (error) {
+                console.error(
+                    "Checkout Non Tunai cloud gagal:",
+                    error
+                );
+
+                tampilkanAlertModal(
+                    "Transaksi Gagal",
+                    (error.message || String(error)) +
+                    "\n\nTransaksi tidak dicatat dan stok tidak dipotong.",
+                    "❌"
+                );
+            }
         }
 
         function ulangCetakStruk() {
@@ -3746,6 +4571,14 @@ const totalDiskonHTML = totalDiskon > 0
       `
     : "";
 
+const offlineStatusHTML = trx.offlineQueueStatus && trx.offlineQueueStatus !== "synced"
+    ? `
+        <p style="margin:5px 0;padding:4px;border:1px dashed #000;font-size:9px;font-weight:bold;">
+            STATUS: MENUNGGU SINKRONISASI CLOUD
+        </p>
+      `
+    : "";
+
 
     /* =====================================================
        CETAK
@@ -3860,6 +4693,8 @@ const totalDiskonHTML = totalDiskon > 0
                             ${trx.kodeTransaksi || "-"}
                         </b>
                     </p>
+
+                    ${offlineStatusHTML}
 
                     <p
                         style="
@@ -3987,7 +4822,8 @@ ${totalDiskonHTML}
                 </div>
 
 
-            </body>
+            
+</body>
 
             </html>
         `);
@@ -4002,6 +4838,11 @@ ${totalDiskonHTML}
 
         function tutupPopup() {
             document.getElementById("popupKembali").style.display = "none";
+            const judulKembali = document.getElementById("judulPopupKembali");
+            if (judulKembali) {
+                judulKembali.innerText = "Kembalian";
+                judulKembali.style.color = "#64748b";
+            }
             keranjang = [];
             uang = 0;
             totalAkhir = 0;
@@ -4806,7 +5647,7 @@ document.addEventListener(
 );
     </script>
 
-    <script src="setting.js">
+    <script>
         /*
          * Backup terakhir ketika tab direfresh, ditutup,
          * atau pengguna pindah halaman.
@@ -4826,6 +5667,7 @@ document.addEventListener(
         );
 
 </script>
+<script src="setting.js"></script>
 
 <script id="ldmCompactNavigationScript">
 (function(){
@@ -4834,7 +5676,7 @@ document.addEventListener(
         "absensi.html":["owner","admin","kasir"],
         "kasir.html":["owner","admin","kasir"],
         "retur.html":["owner","admin","kasir"],
-        "barang.html":["owner","admin"],
+        "barang.html":["owner","admin","kasir"],
         "supplier.html":["owner","admin"],
         "Purchase-Order.html":["owner","admin"],
         "goods.receipt.html":["owner","admin"],
@@ -4906,7 +5748,7 @@ document.addEventListener(
         {page:"kasir.html", icon:"💵", label:"Kasir", group:"Utama", roles:["owner","admin","kasir"], quick:true},
         {page:"retur.html", icon:"↩️", label:"Retur", group:"Keuangan & Laporan", roles:["owner","admin","kasir"]},
 
-        {page:"barang.html", icon:"📦", label:"Barang", group:"Inventori", roles:["owner","admin"], badge:"navBadge"},
+        {page:"barang.html", icon:"📦", label:"Barang", group:"Inventori", roles:["owner","admin","kasir"], badge:"navBadge"},
         {page:"kartu-stok.html", icon:"📒", label:"Kartu Stok", group:"Inventori", roles:["owner","admin","kasir"]},
         {page:"stock-opname.html", icon:"📋", label:"Stock Opname", group:"Inventori", roles:["owner","admin","kasir"]},
 
@@ -5232,15 +6074,7 @@ document.addEventListener(
     }
 
     function witaDate(value){
-        const source=value instanceof Date?value:new Date(value??Date.now());
-        const time=isNaN(source)?Date.now():source.getTime();
-        const d=new Date(time+(8*60*60*1000));
-
-        return (
-            d.getUTCFullYear()+"-"+
-            String(d.getUTCMonth()+1).padStart(2,"0")+"-"+
-            String(d.getUTCDate()).padStart(2,"0")
-        );
+        return window.LDMLocalTime.dateKey(value);
     }
 
     function recordDate(item){
@@ -5439,9 +6273,30 @@ document.addEventListener(
     },2000);
 })();
 </script>
-
-
-
-
+<script src="js/license-v2-config.js?v=25.2.0"></script>
+<script src="js/license-v2-client.js?v=25.2.0"></script>
+<script defer src="js/license-v2-guard.js?v=25.2.0"></script>
+<script src="js/global-system-navigation.js?v=25.2"></script>
+<script>
+(function(){
+    function applyKasirMode(){
+        const api=window.LDMStoreMode;
+        const mode=api ? api.getMode() : "retail";
+        const input=document.getElementById("inputCariBarang");
+        if(input){
+            input.placeholder = mode === "cafe" ? "Cari menu / barcode..." : (mode === "warung" ? "Cari barang atau menu..." : "Nama / Barcode barang...");
+        }
+        if(typeof window.cekPeringatanStok === "function") window.cekPeringatanStok();
+        if(typeof window.renderMenuVisualMode === "function") window.renderMenuVisualMode();
+        const dropdown=document.getElementById("dropdownBarang");
+        if(dropdown && dropdown.style.display==="block" && typeof window.filterBarang === "function") window.filterBarang();
+    }
+    window.addEventListener("ldm-store-mode-change",applyKasirMode);
+    window.addEventListener("ldm-product-visual-change",()=>{ applyKasirMode(); if(typeof window.renderMenuVisualMode === "function") window.renderMenuVisualMode(); });
+    window.addEventListener("ldm-products-cache-updated",()=>typeof window.renderMenuVisualMode === "function" && window.renderMenuVisualMode());
+    window.addEventListener("ldm-cloud-session-ready",()=>window.LDMStoreMode && window.LDMStoreMode.refreshFromCloud({silent:true}));
+    if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",applyKasirMode,{once:true}); else applyKasirMode();
+})();
+</script>
 </body>
 </html>

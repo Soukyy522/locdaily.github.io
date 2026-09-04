@@ -1,26 +1,32 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+    <script src="js/storage-engine.js?v=27.7.1"></script>
+    <script src="js/storage-quota-guard.js?v=27.7.1"></script>
+    <script defer src="js/storage-health-monitor.js?v=27.7.1"></script>
+<script src="js/local-time.js?v=26.4.0"></script><meta name="referrer" content="strict-origin-when-cross-origin"><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><script src="js/security-hardening.js?v=19.0"></script>    <script src="js/error-monitor.js?v=27.9.0-monitor1"></script>
+<script defer src="js/qa-runtime.js?v=19.0"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - LocDailyMar POS</title>
     
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#0d2240">
+    <meta name="theme-color" content="#0F9D58">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <link rel="stylesheet" href="style.css">
 
     <!-- Favicon standar -->
     <link rel="icon" type="image/x-icon" href="icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="icon.png">
 
-    <!-- Icon untuk Apple (iOS) -->
+    <!-- Icon dan PWA Manager Tahap 18 -->
+    <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+    <script src="js/pwa-manager.js?v=18.0"></script>
 <!-- Library Chart.js untuk Grafik -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <!-- Library PeerJS untuk P2P Direct Connection -->
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-
-    <!-- Google Fonts Lengkap -->
+<!-- Google Fonts Lengkap -->
     <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Fira+Code:wght@500;700&family=Fredoka:wght@600;700&family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@500;700&family=Lato:wght@400;700&family=Lobster&family=Merriweather:wght@400;700&family=Montserrat:wght@400;600;700&family=Nunito:wght@400;700&family=Open+Sans:wght@400;600;700&family=Oswald:wght@500;700&family=Pacifico&family=Playfair+Display:wght@600;800&family=Poppins:wght@400;600;700&family=Raleway:wght@500;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     
     <style>
@@ -295,6 +301,138 @@
             font-weight: 600;
             outline: none;
             cursor: pointer;
+        }
+
+        /* FILTER RENTANG TANGGAL LAPORAN OWNER */
+        .dashboard-range-filter {
+            display: none;
+            margin-bottom: 12px;
+            padding: 14px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            box-shadow: 0 2px 8px var(--card-shadow);
+        }
+        .dashboard-range-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .dashboard-range-title {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+        }
+        .dashboard-range-title-icon {
+            width: 38px;
+            height: 38px;
+            display: grid;
+            place-items: center;
+            flex: 0 0 38px;
+            border-radius: 10px;
+            background: rgba(2,132,199,.12);
+            color: #0284c7;
+        }
+        .dashboard-range-title strong {
+            display: block;
+            color: var(--heading-color);
+            font-size: .82rem;
+        }
+        .dashboard-range-title span {
+            display: block;
+            margin-top: 2px;
+            color: #64748b;
+            font-size: .66rem;
+        }
+        body.dark-mode .dashboard-range-title span { color: #94a3b8; }
+        .dashboard-range-status {
+            padding: 5px 9px;
+            border-radius: 999px;
+            background: rgba(22,163,74,.12);
+            color: #15803d;
+            font-size: .66rem;
+            font-weight: 800;
+            text-align: center;
+        }
+        body.dark-mode .dashboard-range-status { color: #86efac; }
+        .dashboard-range-controls {
+            display: grid;
+            grid-template-columns: minmax(150px,1fr) minmax(150px,1fr) auto;
+            gap: 10px;
+            align-items: end;
+        }
+        .dashboard-range-field {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .dashboard-range-field label {
+            color: var(--text-color);
+            font-size: .68rem;
+            font-weight: 700;
+        }
+        .dashboard-range-field input {
+            width: 100%;
+            min-height: 40px;
+            padding: 8px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 9px;
+            background: var(--input-bg);
+            color: var(--text-color);
+            font-size: .75rem;
+            font-weight: 600;
+        }
+        .dashboard-range-actions {
+            display: flex;
+            gap: 7px;
+            flex-wrap: wrap;
+        }
+        .dashboard-range-btn {
+            min-height: 40px;
+            padding: 8px 12px;
+            border: 0;
+            border-radius: 9px;
+            background: #0d2240;
+            color: #fff;
+            font-size: .72rem;
+            font-weight: 750;
+            cursor: pointer;
+        }
+        .dashboard-range-btn.apply { background: #0f9d58; }
+        .dashboard-range-btn.light {
+            border: 1px solid var(--border-color);
+            background: var(--bg-primary);
+            color: var(--text-color);
+        }
+        .dashboard-range-note {
+            margin-top: 9px;
+            color: #64748b;
+            font-size: .64rem;
+            line-height: 1.45;
+        }
+        .dashboard-range-chart {
+            display: none;
+            height: 230px;
+            margin-top: 12px;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 11px;
+            background: var(--bg-primary);
+        }
+        .dashboard-range-chart canvas { width: 100% !important; height: 100% !important; }
+        @media (max-width: 760px) {
+            .dashboard-range-header { flex-direction: column; }
+            .dashboard-range-controls { grid-template-columns: 1fr 1fr; }
+            .dashboard-range-actions { grid-column: 1 / -1; }
+            .dashboard-range-actions button { flex: 1; }
+        }
+        @media (max-width: 480px) {
+            .dashboard-range-controls { grid-template-columns: 1fr; }
+            .dashboard-range-actions { grid-column: auto; display: grid; grid-template-columns: 1fr 1fr; }
+            .dashboard-range-actions .apply { grid-column: 1 / -1; }
+            .dashboard-range-chart { height: 205px; }
         }
 
         .action-bar-container {
@@ -978,18 +1116,6 @@ body.dark-mode
             transition: 0.2s;
         }
         .btn-copy-code:hover { background: #e0a800; }
-        .status-badge-p2p {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 0.75rem;
-            padding: 4px 10px;
-            border-radius: 20px;
-            background: rgba(22, 163, 74, 0.1);
-            color: #16a34a;
-            font-weight: 600;
-            margin-bottom: 10px;
-        }
         .status-pulse {
             width: 8px;
             height: 8px;
@@ -2146,7 +2272,6 @@ body.dark-mode
     }
 
     /* Kasir: sembunyikan route yang memang tidak dapat dibuka. */
-    html[data-ldm-role="kasir"] .nav-bar a[href="barang.html"],
     html[data-ldm-role="kasir"] .nav-bar a[href="supplier.html"],
     html[data-ldm-role="kasir"] .nav-bar a[href="Purchase-Order.html"],
     html[data-ldm-role="kasir"] .nav-bar a[href="goods.receipt.html"],
@@ -2205,28 +2330,28 @@ body.dark-mode
          * Sidebar lama hanya dipakai sebagai sumber struktur/menu
          * dan sebagai menu mobile. Desktop memakai Mega Menu.
          */
-        .nav-bar,
-        .nav-overlay,
-        .btn-toggle-menu,
-        .nav-header-mobile{
+        html.ldm-mega-ready .nav-bar,
+        html.ldm-mega-ready .nav-overlay,
+        html.ldm-mega-ready .btn-toggle-menu,
+        html.ldm-mega-ready .nav-header-mobile{
             display:none !important;
         }
 
-        .app-layout{
+        html.ldm-mega-ready .app-layout{
             display:flex !important;
             flex-direction:column !important;
             min-height:100vh !important;
             width:100% !important;
         }
 
-        .main-content{
+        html.ldm-mega-ready .main-content{
             width:100% !important;
             max-width:none !important;
             padding:24px 28px 30px !important;
             margin:0 !important;
         }
 
-        .ldm-mega-nav-shell{
+        html.ldm-mega-ready .ldm-mega-nav-shell{
             display:block;
             position:sticky;
             top:0;
@@ -2356,6 +2481,11 @@ body.dark-mode
             border-radius:0 0 16px 16px;
             box-shadow:0 24px 55px rgba(15,23,42,.24);
             padding:16px;
+            max-height:calc(100dvh - 64px);
+            overflow-x:hidden;
+            overflow-y:auto;
+            overscroll-behavior:contain;
+            scrollbar-width:thin;
         }
 
         .ldm-mega-nav-shell.open .ldm-mega-panel{
@@ -2506,6 +2636,22 @@ body.dark-mode
                 display:none;
             }
         }
+
+        @media (max-height:700px){
+            .ldm-mega-panel{
+                top:100%;
+                max-height:calc(100dvh - 58px);
+                border-radius:0 0 12px 12px;
+            }
+
+            .ldm-mega-panel-top{
+                position:sticky;
+                top:-16px;
+                z-index:2;
+                background:var(--bg-secondary);
+                padding-top:12px;
+            }
+        }
     }
 
     /* =====================================================
@@ -2592,14 +2738,7 @@ body.dark-mode
     }
 
     function witaDate(value){
-        const source=value instanceof Date?value:new Date(value??Date.now());
-        const time=isNaN(source)?Date.now():source.getTime();
-        const d=new Date(time+(8*60*60*1000));
-        return (
-            d.getUTCFullYear()+"-"+
-            String(d.getUTCMonth()+1).padStart(2,"0")+"-"+
-            String(d.getUTCDate()).padStart(2,"0")
-        );
+        return window.LDMLocalTime.dateKey(value);
     }
 
     function recordDate(item){
@@ -3103,6 +3242,369 @@ body.dark-mode
 })();
 </script>
 
+    <!-- Live Sync Tahap 6: Supabase Auth authoritative guard -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/supabase-client.js"></script>
+    <script src="js/cloud-auth.js?v=15.0"></script>
+    <script src="js/cloud-session.js?v=6.0"></script>
+    <script src="js/store-mode.js?v=27.9.0-mode1"></script>
+    <link rel="stylesheet" href="css/store-modes.css?v=27.9.0-mode2">
+    <script src="js/cloud-session-guard.js?v=15.0"></script>
+    <!-- Live Sync Tahap 9: Cloud Absensi -->
+    <script src="js/attendance-service.js?v=9.1"></script>
+    <script src="js/attendance-bootstrap.js?v=9.0"></script>
+    <!-- Live Sync Tahap 7: Cloud Master Barang -->
+    <script src="js/products-service.js?v=21.0"></script>
+    <script src="js/products-bootstrap.js?v=7.0"></script>
+    <!-- Live Sync Tahap 10: Cloud Retur compatibility -->
+    <script src="js/returns-service.js?v=10.0"></script>
+    <script src="js/returns-bootstrap.js?v=10.0"></script>
+
+    <!-- Live Sync Tahap 10: Cloud Stock Opname cache -->
+    <script src="js/stock-opname-service.js?v=10.0"></script>
+    <script src="js/stock-opname-bootstrap.js?v=10.0"></script>
+
+    <!-- Live Sync Tahap 12: Final Cloud Reporting Authority -->
+    <script src="js/reporting-service.js?v=27.7.1"></script>
+    <script src="js/dashboard-report-source.js?v=27.7.2"></script>
+    <script src="js/reporting-bootstrap.js?v=25.2.1"></script>
+<style id="ldmCompactRangeAndSalesAssistantStyle">
+    /* Rentang tanggal selalu satu baris; form dipindahkan ke modal ringkas. */
+    #dashboardRangeFilter{
+        padding:0;
+        margin-bottom:12px;
+        border-radius:12px;
+        overflow:hidden;
+    }
+    #dashboardRangeFilter .dashboard-range-trigger{
+        width:100%;
+        min-height:40px;
+        padding:6px 9px;
+        display:flex;
+        align-items:center;
+        gap:7px;
+        border:0;
+        background:transparent;
+        color:var(--text-color);
+        text-align:left;
+        cursor:pointer;
+    }
+    #dashboardRangeFilter .dashboard-range-trigger:hover{background:rgba(2,132,199,.06)}
+    #dashboardRangeFilter .dashboard-range-trigger-icon{
+        width:28px;
+        height:28px;
+        display:grid;
+        place-items:center;
+        flex:0 0 28px;
+        border-radius:8px;
+        background:rgba(2,132,199,.12);
+        font-size:.85rem;
+    }
+    #dashboardRangeFilter .dashboard-range-trigger-label{
+        color:var(--heading-color);
+        font-size:.68rem;
+        font-weight:800;
+    }
+    #dashboardRangeFilter .dashboard-range-status{
+        min-width:0;
+        max-width:100%;
+        overflow:hidden;
+        text-overflow:ellipsis;
+        padding:4px 7px;
+        font-size:.58rem;
+        white-space:nowrap;
+    }
+    #dashboardRangeFilter .dashboard-range-edit-label{
+        margin-left:auto;
+        padding:4px 7px;
+        border-radius:7px;
+        background:rgba(15,157,88,.1);
+        color:#0f9d58;
+        font-size:.58rem;
+        font-weight:800;
+        white-space:nowrap;
+    }
+    .dashboard-range-modal{
+        position:fixed;
+        inset:0;
+        z-index:1450;
+        display:none;
+        align-items:center;
+        justify-content:center;
+        padding:16px;
+    }
+    .dashboard-range-modal.open{display:flex}
+    .dashboard-range-modal-backdrop{
+        position:absolute;
+        inset:0;
+        background:rgba(15,23,42,.5);
+        backdrop-filter:blur(2px);
+    }
+    .dashboard-range-modal-panel{
+        position:relative;
+        z-index:1;
+        width:min(420px,100%);
+        padding:13px;
+        border:1px solid var(--border-color);
+        border-radius:15px;
+        background:var(--bg-primary);
+        color:var(--text-color);
+        box-shadow:0 20px 55px rgba(15,23,42,.28);
+    }
+    .dashboard-range-modal-header{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:10px;
+        margin-bottom:11px;
+    }
+    .dashboard-range-modal-header strong{display:block;color:var(--heading-color);font-size:.76rem}
+    .dashboard-range-modal-header small{display:block;margin-top:2px;color:#64748b;font-size:.58rem}
+    .dashboard-range-modal-close{
+        width:32px;
+        height:32px;
+        flex:0 0 32px;
+        border:1px solid var(--border-color);
+        border-radius:8px;
+        background:var(--bg-secondary);
+        color:var(--text-color);
+        cursor:pointer;
+    }
+    .dashboard-range-modal .dashboard-range-controls{
+        display:grid;
+        grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+        align-items:end;
+        gap:7px;
+    }
+    .dashboard-range-modal .dashboard-range-field{
+        width:auto;
+        min-width:0;
+        gap:3px;
+    }
+    .dashboard-range-modal .dashboard-range-field label{font-size:.6rem}
+    .dashboard-range-modal .dashboard-range-field input{
+        width:100%;
+        min-height:36px;
+        padding:6px 7px;
+        border:1px solid var(--border-color);
+        border-radius:8px;
+        background:var(--input-bg);
+        color:var(--text-color);
+        font-size:.68rem;
+    }
+    .dashboard-range-modal .dashboard-range-actions{
+        grid-column:1/-1;
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:6px;
+        margin-top:3px;
+    }
+    .dashboard-range-modal .dashboard-range-btn{
+        width:100%;
+        min-height:36px;
+        padding:6px 9px;
+        border-radius:8px;
+        font-size:.65rem;
+        white-space:nowrap;
+    }
+    .dashboard-range-modal-note{
+        margin:8px 1px 0;
+        color:#64748b;
+        font-size:.55rem;
+        line-height:1.4;
+    }
+    body.dashboard-range-modal-open{overflow:hidden}
+    /* Pesan validasi selalu tampil di atas panel rentang tanggal. */
+    .modal-alert{z-index:1600}
+    #dashboardRangeFilter .dashboard-range-note,
+    #dashboardRangeFilter .dashboard-range-chart{display:none !important}
+
+    .sales-assistant-fab{
+        position:fixed;
+        right:22px;
+        bottom:22px;
+        z-index:1350;
+        display:none;
+        align-items:center;
+        gap:7px;
+        min-height:44px;
+        padding:9px 14px;
+        border:0;
+        border-radius:999px;
+        background:linear-gradient(135deg,#0d2240,#0f9d58);
+        color:#fff;
+        box-shadow:0 12px 28px rgba(13,34,64,.28);
+        font-size:.72rem;
+        font-weight:800;
+        cursor:pointer;
+    }
+    .sales-assistant-fab.show{display:inline-flex}
+    .sales-assistant-fab span:first-child{font-size:1rem}
+    .sales-assistant-overlay{
+        position:fixed;
+        inset:0;
+        z-index:1390;
+        display:none;
+        background:rgba(15,23,42,.46);
+        backdrop-filter:blur(2px);
+    }
+    .sales-assistant-overlay.open{display:block}
+    .sales-assistant-drawer{
+        position:fixed;
+        top:0;
+        right:-440px;
+        z-index:1400;
+        width:min(420px,100vw);
+        height:100dvh;
+        display:flex;
+        flex-direction:column;
+        background:var(--bg-primary);
+        color:var(--text-color);
+        border-left:1px solid var(--border-color);
+        box-shadow:-14px 0 42px rgba(15,23,42,.2);
+        transition:right .25s ease;
+    }
+    .sales-assistant-drawer.open{right:0}
+    .sales-assistant-head{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:12px;
+        padding:15px 16px;
+        background:var(--nav-desktop-bg);
+        color:#fff;
+    }
+    .sales-assistant-head-main{display:flex;align-items:center;gap:10px;min-width:0}
+    .sales-assistant-head-icon{
+        width:38px;
+        height:38px;
+        display:grid;
+        place-items:center;
+        flex:0 0 38px;
+        border-radius:10px;
+        background:rgba(255,193,7,.16);
+        color:#ffc107;
+    }
+    .sales-assistant-head strong{display:block;font-size:.82rem}
+    .sales-assistant-head small{display:block;margin-top:2px;color:#cbd5e1;font-size:.6rem}
+    .sales-assistant-close{
+        width:34px;
+        height:34px;
+        border:0;
+        border-radius:8px;
+        background:rgba(255,255,255,.14);
+        color:#fff;
+        cursor:pointer;
+    }
+    .sales-assistant-body{flex:1;overflow:auto;padding:13px}
+    .sales-assistant-period{
+        display:flex;
+        justify-content:space-between;
+        gap:9px;
+        margin-bottom:10px;
+        padding:9px 10px;
+        border:1px solid var(--border-color);
+        border-radius:10px;
+        background:var(--bg-secondary);
+        font-size:.65rem;
+    }
+    .sales-assistant-period strong{color:var(--heading-color)}
+    .sales-assistant-quick{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px}
+    .sales-assistant-quick button{
+        min-height:38px;
+        padding:7px 8px;
+        border:1px solid var(--border-color);
+        border-radius:9px;
+        background:var(--bg-secondary);
+        color:var(--text-color);
+        font-size:.64rem;
+        font-weight:700;
+        text-align:left;
+        cursor:pointer;
+    }
+    .sales-assistant-quick button:hover{border-color:#0f9d58;color:#0f9d58}
+    .sales-assistant-output{display:flex;flex-direction:column;gap:8px}
+    .sales-assistant-welcome,
+    .sales-assistant-card{
+        padding:11px;
+        border:1px solid var(--border-color);
+        border-radius:11px;
+        background:var(--bg-secondary);
+    }
+    .sales-assistant-welcome strong,
+    .sales-assistant-card strong{display:block;color:var(--heading-color);font-size:.72rem}
+    .sales-assistant-welcome p,
+    .sales-assistant-card p{margin:4px 0 0;color:#64748b;font-size:.65rem;line-height:1.5}
+    body.dark-mode .sales-assistant-welcome p,
+    body.dark-mode .sales-assistant-card p{color:#94a3b8}
+    .sales-assistant-card{border-left:4px solid #0284c7}
+    .sales-assistant-card.good{border-left-color:#16a34a}
+    .sales-assistant-card.warn{border-left-color:#d97706}
+    .sales-assistant-card.danger{border-left-color:#dc2626}
+    .sales-assistant-stats{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px}
+    .sales-assistant-stat{
+        padding:9px;
+        border:1px solid var(--border-color);
+        border-radius:9px;
+        background:var(--bg-secondary);
+    }
+    .sales-assistant-stat span{display:block;color:#64748b;font-size:.58rem}
+    .sales-assistant-stat b{display:block;margin-top:2px;color:var(--heading-color);font-size:.76rem}
+    .sales-assistant-compose{
+        display:flex;
+        gap:7px;
+        padding:10px 12px;
+        border-top:1px solid var(--border-color);
+        background:var(--bg-secondary);
+    }
+    .sales-assistant-compose input{
+        flex:1;
+        min-width:0;
+        min-height:39px;
+        padding:8px 10px;
+        border:1px solid var(--border-color);
+        border-radius:9px;
+        background:var(--input-bg);
+        color:var(--text-color);
+        font-size:.69rem;
+    }
+    .sales-assistant-compose button{
+        min-width:42px;
+        border:0;
+        border-radius:9px;
+        background:#0f9d58;
+        color:#fff;
+        font-weight:800;
+        cursor:pointer;
+    }
+    .sales-assistant-footnote{padding:0 12px 10px;background:var(--bg-secondary);color:#64748b;font-size:.56rem;line-height:1.4}
+    @media(max-width:760px){
+        .dashboard-range-modal{align-items:flex-end;padding:0}
+        .dashboard-range-modal-panel{
+            width:100%;
+            padding:14px 12px max(14px,env(safe-area-inset-bottom));
+            border-width:1px 0 0;
+            border-radius:17px 17px 0 0;
+            animation:ldmRangeSheetIn .2s ease-out;
+        }
+        .sales-assistant-fab{right:14px;bottom:18px}
+    }
+    @keyframes ldmRangeSheetIn{
+        from{transform:translateY(18px);opacity:.75}
+        to{transform:translateY(0);opacity:1}
+    }
+    @media(max-width:430px){
+        #dashboardRangeFilter .dashboard-range-trigger-label{display:none}
+        #dashboardRangeFilter .dashboard-range-status{font-size:.56rem}
+        .dashboard-range-modal .dashboard-range-field label{font-size:.57rem}
+        .dashboard-range-modal .dashboard-range-field input{font-size:.63rem;padding:5px}
+        .sales-assistant-drawer{width:100vw}
+    }
+</style>
+<script src="js/license-v2-config.js?v=27.4.0"></script>
+<script src="js/license-v2-client.js?v=27.4.0"></script>
+<script defer src="js/license-v2-guard.js?v=27.4.0"></script>
 </head>
 <body>
 
@@ -3129,6 +3631,9 @@ body.dark-mode
             <a href="eod.html" class="nav-item" data-permission="endofday.view"><span>🌙</span> End of Day</a>
             <a href="pengeluaran.html" class="nav-item" data-permission="pengeluaran.view"><span>💸</span> Pengeluaran</a>
             <a href="backup%20%26%20restore.html" class="nav-item" data-permission="backup.view"><span>💾</span> Backup & Restore</a>
+            <a href="pwa-settings.html" class="nav-item"><span>📲</span> Aplikasi & Update</a>
+            <a href="recovery-center.html" class="nav-item"><span>🛟</span> Recovery Center</a>
+            <a href="qa-security-performance.html" class="nav-item" id="navStage19QA"><span>🧪</span> QA & Security</a>
         </div>
 
         <!-- Area Konten Utama -->
@@ -3147,11 +3652,27 @@ body.dark-mode
                 </div>
                 <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
                     <!-- Tombol Edit Akun (Hanya muncul jika ROLE OWNER) -->
-                    <button class="btn-header-action" id="btnEditAkunOwner" onclick="bukaModalEditAkun()" style="display: none; background: #16a34a;">👤 Edit Akun</button>
+                    <button class="btn-header-action" id="btnEditAkunOwner" onclick="bukaModalEditAkun()" style="display: none; background: #16a34a;">👤 Manage Account</button>
                     <button class="btn-header-action" id="btnEditHeader" onclick="bukaModalHeader()">🎨 Tema</button>
                     <button class="btn-header-action btn-header-logout" onclick="konfirmasiLogout()">🚪 Log out</button>
                 </div>
             </div>
+
+            <!-- MODE OPERASIONAL TOKO: compact dropdown, Owner dapat mengubah -->
+            <section class="ldm-mode-control" id="ldmModeControl" aria-label="Mode Operasional Toko">
+                <div class="ldm-mode-control-main">
+                    <span class="ldm-mode-control-icon" id="ldmModeIcon">🛒</span>
+                    <div class="ldm-mode-control-text">
+                        <strong>Mode Operasional Toko</strong>
+                        <span id="ldmModeDescription">Toko Ritel · kontrol stok ketat.</span>
+                    </div>
+                </div>
+                <select id="ldmModeSelect" class="ldm-mode-select" aria-label="Pilih Mode Operasional">
+                    <option value="cafe">☕ Kafe</option>
+                    <option value="warung">🍜 Warung</option>
+                    <option value="retail">🛒 Toko Ritel</option>
+                </select>
+            </section>
 
             <!-- Banner Hitung Mundur Reset WITA -->
             <div class="reset-timer-box">
@@ -3168,17 +3689,53 @@ body.dark-mode
                 </div>
             </div>
 
-            <!-- ACTION BAR: TOMBOL TRANSFER DATA KASIR/OWNER & EKSPOR -->
-            <div class="action-bar-container">
+            <!-- FILTER RENTANG TANGGAL LAPORAN (OWNER) -->
+            <section class="dashboard-range-filter" id="dashboardRangeFilter" aria-label="Rentang tanggal laporan">
+                <button type="button" class="dashboard-range-trigger" id="dashboardRangeTrigger" aria-controls="dashboardRangeModal" aria-expanded="false" onclick="bukaModalRentangDashboard()">
+                    <span class="dashboard-range-trigger-icon">📅</span>
+                    <span class="dashboard-range-trigger-label">Periode</span>
+                    <span class="dashboard-range-status" id="dashboardRangeStatus">Hari ini · 1 hari</span>
+                    <span class="dashboard-range-edit-label">Ubah</span>
+                </button>
+                <div class="dashboard-range-note" id="dashboardRangeNote">Maksimal 90 hari. Perhitungan menggunakan tanggal bisnis WITA dan kedua tanggal ikut dihitung.</div>
+                <div class="dashboard-range-chart" id="dashboardRangeChartBox">
+                    <canvas id="dashboardRangeChart"></canvas>
+                </div>
+            </section>
+
+            <div class="dashboard-range-modal" id="dashboardRangeModal" aria-hidden="true">
+                <div class="dashboard-range-modal-backdrop" onclick="tutupModalRentangDashboard()"></div>
+                <div class="dashboard-range-modal-panel" role="dialog" aria-modal="true" aria-labelledby="dashboardRangeModalTitle">
+                    <div class="dashboard-range-modal-header">
+                        <div>
+                            <strong id="dashboardRangeModalTitle">Pilih Periode Laporan</strong>
+                            <small>Maksimal 90 hari · waktu WITA</small>
+                        </div>
+                        <button type="button" class="dashboard-range-modal-close" onclick="tutupModalRentangDashboard()" aria-label="Tutup pemilih tanggal">✕</button>
+                    </div>
+                    <div class="dashboard-range-controls">
+                        <div class="dashboard-range-field">
+                            <label for="inputTanggalDari">Dari</label>
+                            <input type="date" id="inputTanggalDari">
+                        </div>
+                        <div class="dashboard-range-field">
+                            <label for="inputTanggalSampai">Sampai</label>
+                            <input type="date" id="inputTanggalSampai">
+                        </div>
+                        <div class="dashboard-range-actions">
+                            <button type="button" class="dashboard-range-btn apply" onclick="terapkanRentangTanggal()">Tampilkan</button>
+                            <button type="button" class="dashboard-range-btn light" onclick="tampilkanHariIniRentang()">Hari Ini</button>
+                        </div>
+                    </div>
+                    <p class="dashboard-range-modal-note">Kedua tanggal ikut dihitung. Data dashboard akan diperbarui setelah menekan Tampilkan.</p>
+                </div>
+            </div>
+
+            <!-- TAHAP 15: OWNER CLOUD DEVICE MANAGEMENT -->
+            <div class="action-bar-container" id="cloudDeviceActionBar" style="display:none;">
                 <div class="btn-action-group">
-                    <!-- Tombol dikirim oleh Admin/Kasir atau Owner agar data dua arah sinkron -->
-                    <button type="button" class="btn-transfer-owner" id="btnKirimOwner" onclick="kirimDataKeOwner()">
-                        <span>📲</span> Transfer Data
-                    </button>
-                    
-                    <!-- Tombol ditarik oleh Owner / Admin -->
-                    <button type="button" class="btn-pull-owner" id="btnTarikKasir" onclick="bukaModalTarikData()" style="display: none;">
-                        <span>📥</span> Tarik Data
+                    <button type="button" class="btn-transfer-owner" onclick="window.location.href='device-management.html'">
+                        <span>🔗</span> Tautkan Perangkat
                     </button>
                 </div>
             </div>
@@ -4262,7 +4819,7 @@ body.dark-mode
     <div class="modal" id="modalEditAkun">
         <div class="modal-content" style="max-width: 580px;">
             <div class="modal-header-title">
-                <span>👤 Kelola & Edit Akun Pengguna</span>
+                <span>🗃️ Legacy Account Cache (Tidak Dipakai untuk Auth)</span>
                 <button type="button" class="btn-header-action" onclick="tutupModalEditAkun()" style="background: #ef4444;">✕</button>
             </div>
 
@@ -4301,48 +4858,6 @@ body.dark-mode
 
             <div class="modal-footer">
                 <button class="btn-modal btn-modal-cancel" onclick="tutupModalEditAkun()">Tutup</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL POP-UP KODE P2P SINKRONISASI -->
-    <div class="modal-alert" id="modalKodeKasir">
-        <div class="modal-alert-content">
-            <div class="modal-alert-icon">📲</div>
-            <div class="modal-alert-title">Kode Sinkronisasi P2P</div>
-            <div class="status-badge-p2p">
-                <span class="status-pulse"></span> Sinyal P2P Siap Berbagi Data Otomatis
-            </div>
-            <div class="modal-alert-msg" style="margin-bottom: 8px;">
-                Berikan Kode ID ini ke perangkat lain (Admin/Owner) agar data transaksi kedua belah pihak langsung menyatu otomatis:
-            </div>
-            
-            <div class="code-display-box">
-                <span id="txtKodeKasir">pos-ldm-XXXX</span>
-                <button class="btn-copy-code" onclick="salinKodeKasir()">📋 Salin</button>
-            </div>
-
-            <button class="btn-modal-ok" id="btnOkKodeKasir" onclick="tutupModalKodeKasir()">Selesai / Tutup</button>
-        </div>
-    </div>
-
-    <!-- MODAL POP-UP INPUT KODE P2P SINKRONISASI -->
-    <div class="modal-alert" id="modalInputOwner">
-        <div class="modal-alert-content">
-            <div class="modal-alert-icon">📥</div>
-            <div class="modal-alert-title">Tarik & Satukan Data</div>
-            <div class="modal-alert-msg" style="margin-bottom: 12px;">
-                Masukkan Kode Peer ID Perangkat Lain untuk melakukan sinkronisasi dua arah secara otomatis:
-            </div>
-            
-            <div style="margin-bottom: 18px;">
-                <input type="text" id="inputTargetPeerId" placeholder="Contoh: pos-ldm-1234" 
-                       style="width:100%; padding: 10px; border: 2px solid var(--border-color); border-radius: 8px; font-family: monospace; font-size: 0.95rem; text-align: center; outline: none; background: var(--input-bg); color: var(--text-color);">
-            </div>
-
-            <div style="display: flex; gap: 8px;">
-                <button type="button" class="btn-modal-ok" style="background:#e2e8f0; color:#475569;" onclick="tutupModalInputOwner()">Batal</button>
-                <button type="button" class="btn-modal-ok" id="btnSubmitInputOwner" style="background:#16a34a;" onclick="prosesTarikDataP2P()">Hubungkan & Sinkronkan</button>
             </div>
         </div>
     </div>
@@ -4467,6 +4982,47 @@ body.dark-mode
         </div>
     </div>
 
+    <!-- RINGKASAN STRATEGI PENJUALAN - OWNER -->
+    <button type="button" class="sales-assistant-fab" id="salesAssistantFab" aria-controls="salesAssistantDrawer" aria-expanded="false">
+        <span>📈</span><span>Insight Penjualan</span>
+    </button>
+    <div class="sales-assistant-overlay" id="salesAssistantOverlay"></div>
+    <aside class="sales-assistant-drawer" id="salesAssistantDrawer" aria-hidden="true" aria-labelledby="salesAssistantTitle">
+        <div class="sales-assistant-head">
+            <div class="sales-assistant-head-main">
+                <div class="sales-assistant-head-icon">📈</div>
+                <div>
+                    <strong id="salesAssistantTitle">Analisis Penjualan</strong>
+                    <small>Ringkasan berdasarkan data penjualan toko</small>
+                </div>
+            </div>
+            <button type="button" class="sales-assistant-close" id="salesAssistantClose" aria-label="Tutup Analisis">✕</button>
+        </div>
+        <div class="sales-assistant-body">
+            <div class="sales-assistant-period">
+                <span>Periode analisis</span>
+                <strong id="salesAssistantPeriod">Hari Ini</strong>
+            </div>
+            <div class="sales-assistant-quick">
+                <button type="button" data-sales-question="summary">📊 Ringkasan strategi</button>
+                <button type="button" data-sales-question="top">🏆 Produk terlaris</button>
+                <button type="button" data-sales-question="slow">🐢 Produk lambat</button>
+                <button type="button" data-sales-question="stock">📦 Rencana stok & promo</button>
+            </div>
+            <div class="sales-assistant-output" id="salesAssistantOutput" aria-live="polite">
+                <div class="sales-assistant-welcome">
+                    <strong>Ringkasan penjualan siap digunakan</strong>
+                    <p>Pilih pertanyaan cepat atau ketik pertanyaan tentang omzet, produk, stok, dan promo.</p>
+                </div>
+            </div>
+        </div>
+        <form class="sales-assistant-compose" id="salesAssistantForm">
+            <input id="salesAssistantInput" type="text" maxlength="160" autocomplete="off" placeholder="Contoh: produk apa yang perlu dipromosikan?" aria-label="Pertanyaan strategi penjualan">
+            <button type="submit" aria-label="Analisis">➤</button>
+        </form>
+        <div class="sales-assistant-footnote">Gunakan hasil analisis sebagai bahan evaluasi sebelum mengubah harga, stok, atau promo.</div>
+    </aside>
+
     <!-- Modal Alert Custom -->
     <div class="modal-alert" id="customAlertModal">
         <div class="modal-alert-content">
@@ -4481,15 +5037,154 @@ body.dark-mode
     </div>
 
     <script>
-        let peer = null;
-        let myPeerId = "";
-        let activePeerConn = null;
-
         let isModeKemarin = false;
         let selectedDateCustom = null;
+        let selectedDateRange = null;
+        let dateRangeChartInstance = null;
         let monthlyChartInstance = null;
         let tempLogoBase64 = null;
         let backupConfigBeforeEdit = null;
+
+        // Tahap 27.7.2: Dashboard Reporting Authority.
+        // localStorage hanya cache cepat; grafik authoritative memakai Cloud/IndexedDB.
+        const dashboardReportState = {
+            rangeKey: "",
+            rows: null,
+            source: "local",
+            loadedAt: 0,
+            loading: null,
+            requestId: 0
+        };
+        const dashboardMonthlyReportState = new Map();
+
+        function dashboardFastReportCache() {
+            for (const key of ["laporan", "dataLaporan", "riwayatTransaksi", "laporanHistory"]) {
+                try {
+                    const rows = JSON.parse(localStorage.getItem(key) || "[]");
+                    if (Array.isArray(rows) && rows.length) return rows;
+                } catch (_) {}
+            }
+            return [];
+        }
+
+        function dashboardRangeKey(range) {
+            return `${range?.start || ""}|${range?.end || ""}`;
+        }
+
+        function getDashboardPeriodRows() {
+            const range = getActiveDateRange();
+            const key = dashboardRangeKey(range);
+            if (dashboardReportState.rangeKey === key && Array.isArray(dashboardReportState.rows)) {
+                return dashboardReportState.rows;
+            }
+            return dashboardFastReportCache();
+        }
+
+        function getDashboardMonthlyRows(targetMonth) {
+            const state = dashboardMonthlyReportState.get(String(targetMonth || ""));
+            if (state && Array.isArray(state.rows)) return state.rows;
+            return dashboardFastReportCache();
+        }
+
+        function dashboardReportSourceLabel(source) {
+            if (source === "cloud") return "Cloud Supabase";
+            if (source === "indexeddb") return "IndexedDB offline";
+            return "cache cepat";
+        }
+
+        function invalidateDashboardReportData() {
+            dashboardReportState.rangeKey = "";
+            dashboardReportState.rows = null;
+            dashboardReportState.loadedAt = 0;
+            dashboardReportState.requestId += 1;
+            dashboardMonthlyReportState.clear();
+        }
+
+        async function refreshDashboardPeriodData(force = false) {
+            if (!window.LDMDashboardReports) return;
+            const role = String(localStorage.getItem("userRole") || "").toLowerCase();
+            if (role !== "owner") return;
+
+            const range = getActiveDateRange();
+            const key = dashboardRangeKey(range);
+            const now = Date.now();
+            if (!force && dashboardReportState.rangeKey === key && Array.isArray(dashboardReportState.rows) && (now - dashboardReportState.loadedAt) < 30000) {
+                return;
+            }
+            if (dashboardReportState.loading && dashboardReportState.loading.key === key) {
+                return dashboardReportState.loading.promise;
+            }
+
+            const requestId = ++dashboardReportState.requestId;
+            const promise = window.LDMDashboardReports.loadRange({
+                fromDate: range.start,
+                toDate: range.end,
+                preferCloud: true
+            }).then(result => {
+                if (requestId !== dashboardReportState.requestId) return;
+                dashboardReportState.rangeKey = key;
+                dashboardReportState.rows = Array.isArray(result?.rows) ? result.rows : [];
+                dashboardReportState.source = result?.source || "local";
+                dashboardReportState.loadedAt = Date.now();
+                renderOwner({ skipDataRefresh: true });
+            }).catch(error => {
+                console.warn("Dashboard gagal memuat transaksi periode:", error);
+            }).finally(() => {
+                if (dashboardReportState.loading?.promise === promise) dashboardReportState.loading = null;
+            });
+
+            dashboardReportState.loading = { key, promise };
+            return promise;
+        }
+
+        async function refreshDashboardMonthlyData(targetMonth, force = false) {
+            if (!window.LDMDashboardReports || !/^\d{4}-\d{2}$/.test(String(targetMonth || ""))) return;
+            const role = String(localStorage.getItem("userRole") || "").toLowerCase();
+            if (role !== "owner") return;
+
+            const month = String(targetMonth);
+            const current = dashboardMonthlyReportState.get(month);
+            if (!force && current?.rows && (Date.now() - Number(current.loadedAt || 0)) < 30000) return;
+            if (current?.loading) return current.loading;
+
+            const [year, monthNumber] = month.split("-").map(Number);
+            const totalDays = new Date(year, monthNumber, 0).getDate();
+            const fromDate = `${month}-01`;
+            const toDate = `${month}-${String(totalDays).padStart(2, "0")}`;
+
+            const promise = window.LDMDashboardReports.loadRange({
+                fromDate,
+                toDate,
+                preferCloud: true
+            }).then(result => {
+                dashboardMonthlyReportState.set(month, {
+                    rows: Array.isArray(result?.rows) ? result.rows : [],
+                    source: result?.source || "local",
+                    loadedAt: Date.now(),
+                    loading: null
+                });
+                const input = document.getElementById("inputBulan");
+                if (input && input.value === month) {
+                    renderStatistikBulanan({ skipDataRefresh: true });
+                }
+            }).catch(error => {
+                console.warn("Dashboard gagal memuat statistik bulanan:", error);
+                dashboardMonthlyReportState.set(month, {
+                    rows: current?.rows || null,
+                    source: current?.source || "local",
+                    loadedAt: current?.loadedAt || 0,
+                    loading: null
+                });
+            });
+
+            dashboardMonthlyReportState.set(month, {
+                rows: current?.rows || null,
+                source: current?.source || "local",
+                loadedAt: current?.loadedAt || 0,
+                loading: promise
+            });
+            return promise;
+        }
 
         // =====================================================
 // SECURITY GUARD - DASHBOARD
@@ -4652,11 +5347,16 @@ function logout() {
             proteksiHalamanKasir();
             populateFontSelectors();
             startCountdownWITA();
-            initPeerJS();
             
             const tglSkg = getTanggalWITA();
             const inputTgl = document.getElementById("inputTanggalLaporan");
             if(inputTgl) inputTgl.value = tglSkg;
+
+            const inputDari = document.getElementById("inputTanggalDari");
+            const inputSampai = document.getElementById("inputTanggalSampai");
+            if (inputDari) inputDari.value = tglSkg;
+            if (inputSampai) inputSampai.value = tglSkg;
+            updateRentangTanggalUI();
 
             muatDashboard();
         });
@@ -4669,14 +5369,6 @@ function logout() {
         function tutupMenuNavigasi() {
             document.getElementById("navSidebar").classList.remove("active");
             document.getElementById("navOverlay").classList.remove("active");
-        }
-
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('Service Worker terdaftar!', reg))
-                    .catch(err => console.log('Gagal mendaftarkan Service Worker', err));
-            });
         }
 
         const fontCollection = [
@@ -4748,20 +5440,6 @@ function logout() {
                     e.preventDefault();
                     const primaryBtn = customAlertModal.querySelector(".btn-modal-ok");
                     if (primaryBtn) primaryBtn.click();
-                    return;
-                }
-
-                const modalKodeKasir = document.getElementById("modalKodeKasir");
-                if (modalKodeKasir && modalKodeKasir.style.display === "flex") {
-                    e.preventDefault();
-                    tutupModalKodeKasir();
-                    return;
-                }
-
-                const modalInputOwner = document.getElementById("modalInputOwner");
-                if (modalInputOwner && modalInputOwner.style.display === "flex") {
-                    e.preventDefault();
-                    prosesTarikDataP2P();
                     return;
                 }
 
@@ -4875,30 +5553,223 @@ function logout() {
 }
 
         function getTanggalWITA(dateObj = new Date()) {
-            const utcTime = dateObj.getTime() + (dateObj.getTimezoneOffset() * 60000);
-            const witaTime = new Date(utcTime + (3600000 * 8));
-            const year = witaTime.getFullYear();
-            const month = String(witaTime.getMonth() + 1).padStart(2, '0');
-            const day = String(witaTime.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
+            return window.LDMLocalTime.dateKey(dateObj);
         }
 
         function getTanggalKemarinWITA() {
-            const now = new Date();
-            const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000);
-            const witaTime = new Date(utcTime + (3600000 * 8));
-            witaTime.setDate(witaTime.getDate() - 1);
-            
-            const year = witaTime.getFullYear();
-            const month = String(witaTime.getMonth() + 1).padStart(2, '0');
-            const day = String(witaTime.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
+            return window.LDMLocalTime.previousDateKey();
         }
 
         function getTargetDateToFilter() {
+            if (selectedDateRange && selectedDateRange.end) return selectedDateRange.end;
             if (selectedDateCustom) return selectedDateCustom;
             if (isModeKemarin) return getTanggalKemarinWITA();
             return getTanggalWITA();
+        }
+
+        function dateKeyToUTC(dateKey) {
+            const match = String(dateKey || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if (!match) return NaN;
+            return Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+        }
+
+        function jumlahHariInklusif(start, end) {
+            const startMs = dateKeyToUTC(start);
+            const endMs = dateKeyToUTC(end);
+            if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs < startMs) return 0;
+            return Math.floor((endMs - startMs) / 86400000) + 1;
+        }
+
+        function daftarTanggalInklusif(start, end) {
+            const result = [];
+            const startMs = dateKeyToUTC(start);
+            const endMs = dateKeyToUTC(end);
+            if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs < startMs) return result;
+            for (let value = startMs; value <= endMs; value += 86400000) {
+                result.push(window.LDMLocalTime.dateKey(value));
+            }
+            return result;
+        }
+
+        function formatTanggalRentang(dateKey) {
+            const value = dateKeyToUTC(dateKey);
+            if (!Number.isFinite(value)) return String(dateKey || "-");
+            return new Intl.DateTimeFormat("id-ID", {
+                timeZone: "UTC",
+                day: "2-digit",
+                month: "short",
+                year: "numeric"
+            }).format(new Date(value));
+        }
+
+        function getActiveDateRange() {
+            if (selectedDateRange?.start && selectedDateRange?.end) {
+                return { start: selectedDateRange.start, end: selectedDateRange.end, customRange: true };
+            }
+            const target = selectedDateCustom || (isModeKemarin ? getTanggalKemarinWITA() : getTanggalWITA());
+            return { start: target, end: target, customRange: false };
+        }
+
+        function tanggalMasukPeriode(dateKey) {
+            const range = getActiveDateRange();
+            const value = String(dateKey || "").slice(0, 10);
+            return value >= range.start && value <= range.end;
+        }
+
+        function dataMasukPeriode(item) {
+            return tanggalMasukPeriode(parseTanggalData(item));
+        }
+
+        function getLabelPeriodeAktif() {
+            const range = getActiveDateRange();
+            if (selectedDateRange) {
+                if (range.start === range.end) return `Tanggal ${formatTanggalRentang(range.start)}`;
+                return `${formatTanggalRentang(range.start)} – ${formatTanggalRentang(range.end)}`;
+            }
+            if (selectedDateCustom) return `Tanggal ${formatTanggalRentang(selectedDateCustom)}`;
+            return isModeKemarin ? "Kemarin" : "Hari Ini";
+        }
+
+        function updateRentangTanggalUI() {
+            const startInput = document.getElementById("inputTanggalDari");
+            const endInput = document.getElementById("inputTanggalSampai");
+            const status = document.getElementById("dashboardRangeStatus");
+            const today = getTanggalWITA();
+            if (startInput) {
+                startInput.max = today;
+                if (!startInput.value) startInput.value = selectedDateRange?.start || today;
+            }
+            if (endInput) {
+                endInput.max = today;
+                if (!endInput.value) endInput.value = selectedDateRange?.end || today;
+            }
+            if (status) {
+                const range = getActiveDateRange();
+                const days = jumlahHariInklusif(range.start, range.end) || 1;
+                status.textContent = `${getLabelPeriodeAktif()} · ${days} hari`;
+            }
+        }
+
+        function terapkanRentangTanggal() {
+            const start = document.getElementById("inputTanggalDari")?.value || "";
+            const end = document.getElementById("inputTanggalSampai")?.value || "";
+            const today = getTanggalWITA();
+            if (!start || !end) {
+                tampilkanAlertCustom("Tanggal Belum Lengkap", "Pilih Dari Tanggal dan Sampai Tanggal terlebih dahulu.", "warning");
+                return;
+            }
+            if (end < start) {
+                tampilkanAlertCustom("Rentang Tidak Valid", "Sampai Tanggal tidak boleh lebih awal dari Dari Tanggal.", "warning");
+                return;
+            }
+            if (end > today) {
+                tampilkanAlertCustom("Tanggal Tidak Valid", "Sampai Tanggal tidak boleh melewati tanggal hari ini dalam WITA.", "warning");
+                return;
+            }
+            const totalDays = jumlahHariInklusif(start, end);
+            if (totalDays > 90) {
+                tampilkanAlertCustom("Rentang Terlalu Panjang", "Pilih rentang maksimal 90 hari agar dashboard tetap ringan.", "warning");
+                return;
+            }
+            selectedDateRange = { start, end };
+            selectedDateCustom = null;
+            isModeKemarin = false;
+            const legacyInput = document.getElementById("inputTanggalLaporan");
+            if (legacyInput) legacyInput.value = end;
+            const oldButton = document.getElementById("btnBeralihPendapatan");
+            if (oldButton) oldButton.innerHTML = "Pendapatan Kemarin 🕒";
+            updateRentangTanggalUI();
+            if (typeof window.LDMCollapseRangeFilter === "function") {
+                window.LDMCollapseRangeFilter();
+            }
+            muatDashboard();
+        }
+
+        function tampilkanHariIniRentang() {
+            const today = getTanggalWITA();
+            selectedDateRange = null;
+            selectedDateCustom = null;
+            isModeKemarin = false;
+            const startInput = document.getElementById("inputTanggalDari");
+            const endInput = document.getElementById("inputTanggalSampai");
+            if (startInput) startInput.value = today;
+            if (endInput) endInput.value = today;
+            const oldButton = document.getElementById("btnBeralihPendapatan");
+            if (oldButton) oldButton.innerHTML = "Pendapatan Kemarin 🕒";
+            updateRentangTanggalUI();
+            if (typeof window.LDMCollapseRangeFilter === "function") {
+                window.LDMCollapseRangeFilter();
+            }
+            muatDashboard();
+        }
+
+        function resetRentangTanggal() {
+            tampilkanHariIniRentang();
+        }
+
+        function renderGrafikRentangTanggal(laporanAll) {
+            const box = document.getElementById("dashboardRangeChartBox");
+            const canvas = document.getElementById("dashboardRangeChart");
+            if (!box || !canvas) return;
+            if (!selectedDateRange || typeof Chart === "undefined") {
+                box.style.display = "none";
+                if (dateRangeChartInstance) {
+                    dateRangeChartInstance.destroy();
+                    dateRangeChartInstance = null;
+                }
+                return;
+            }
+            const dates = daftarTanggalInklusif(selectedDateRange.start, selectedDateRange.end);
+            const totals = Object.fromEntries(dates.map(date => [date, 0]));
+            (Array.isArray(laporanAll) ? laporanAll : []).forEach(transaction => {
+                const date = parseTanggalData(transaction);
+                if (Object.prototype.hasOwnProperty.call(totals, date)) {
+                    let nominal = getNominalTransaksi(transaction);
+                    if (nominal === 0) {
+                        nominal = getDaftarItem(transaction).reduce((sum, item) => {
+                            const qty = Number(item.qty || item.jumlah || 1);
+                            const price = Number(item.harga || item.hargaJual || item.price || 0);
+                            return sum + (Number(item.subtotal) || (price * qty));
+                        }, 0);
+                    }
+                    totals[date] += nominal;
+                }
+            });
+            if (dateRangeChartInstance) dateRangeChartInstance.destroy();
+            box.style.display = "block";
+            const styles = getComputedStyle(document.body);
+            const textColor = styles.getPropertyValue("--text-color").trim() || "#334155";
+            const borderColor = styles.getPropertyValue("--border-color").trim() || "#e2e8f0";
+            dateRangeChartInstance = new Chart(canvas.getContext("2d"), {
+                type: "line",
+                data: {
+                    labels: dates.map(date => date.slice(8, 10) + "/" + date.slice(5, 7)),
+                    datasets: [{
+                        label: "Omzet Harian",
+                        data: dates.map(date => totals[date]),
+                        borderColor: "#0f9d58",
+                        backgroundColor: "rgba(15,157,88,.14)",
+                        pointBackgroundColor: "#0f9d58",
+                        pointRadius: dates.length > 45 ? 1.5 : 3,
+                        borderWidth: 2,
+                        fill: true,
+                        tension: .25
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: "index", intersect: false },
+                    plugins: {
+                        legend: { labels: { color: textColor, boxWidth: 12 } },
+                        tooltip: { callbacks: { label: context => `Omzet: Rp ${Number(context.raw || 0).toLocaleString("id-ID")}` } }
+                    },
+                    scales: {
+                        x: { ticks: { color: textColor, autoSkip: true, maxTicksLimit: 15 }, grid: { color: borderColor } },
+                        y: { beginAtZero: true, ticks: { color: textColor, callback: value => "Rp " + Number(value).toLocaleString("id-ID") }, grid: { color: borderColor } }
+                    }
+                }
+            });
         }
 
         function parseTanggalData(item) {
@@ -5204,13 +6075,8 @@ function escapeHtml(value) {
 }
 
         function bukaModalEditAkun() {
-            const role = localStorage.getItem("userRole") || "admin";
-            if (role !== "owner") {
-                tampilkanAlertCustom("Akses Ditolak", "Hanya pengguna dengan ROLE OWNER yang dapat mengakses menu Edit Akun!", "danger");
-                return;
-            }
-            renderListAkunModal();
-            document.getElementById("modalEditAkun").style.display = "flex";
+            window.location.href =
+                "account-management.html";
         }
 
         function tutupModalEditAkun() {
@@ -5483,7 +6349,7 @@ function escapeHtml(value) {
 
 }
 
-        function tambahAkunBaru() {
+        async function tambahAkunBaru() {
 
     const usernameInput =
         document.getElementById(
@@ -5654,6 +6520,8 @@ function escapeHtml(value) {
             : null;
 
 
+    const passwordHash = await hashPassword(password);
+
     akunList.push({
 
         id:
@@ -5675,8 +6543,8 @@ function escapeHtml(value) {
                 ? employee.nikKaryawan
                 : "",
 
-        password:
-            password,
+        passwordHash:
+            passwordHash,
 
         role:
             role
@@ -6192,42 +7060,49 @@ function hapusAkun(idx) {
         function toggleTampilanHari() {
             isModeKemarin = !isModeKemarin;
             selectedDateCustom = null;
+            selectedDateRange = null;
             const btn = document.getElementById("btnBeralihPendapatan");
             btn.innerHTML = isModeKemarin ? "⬅️ Kembali (Hari Ini)" : "Pendapatan Kemarin 🕒";
+            const target = isModeKemarin ? getTanggalKemarinWITA() : getTanggalWITA();
+            const inputDari = document.getElementById("inputTanggalDari");
+            const inputSampai = document.getElementById("inputTanggalSampai");
+            if (inputDari) inputDari.value = target;
+            if (inputSampai) inputSampai.value = target;
+            updateRentangTanggalUI();
             muatDashboard();
         }
 
         function pilihTanggalHarianOwner(val) {
             if (!val) return;
             selectedDateCustom = val;
+            selectedDateRange = null;
             isModeKemarin = false;
             document.getElementById("btnBeralihPendapatan").innerHTML = "Pendapatan Kemarin 🕒";
+            const inputDari = document.getElementById("inputTanggalDari");
+            const inputSampai = document.getElementById("inputTanggalSampai");
+            if (inputDari) inputDari.value = val;
+            if (inputSampai) inputSampai.value = val;
+            updateRentangTanggalUI();
             muatDashboard();
         }
 
         function startCountdownWITA() {
+            let activeBusinessDate = window.LDMLocalTime.dateKey();
+
             function updateTimer() {
                 const now = new Date();
-                const utcNow = now.getTime() + (now.getTimezoneOffset() * 60000);
-                const witaNow = new Date(utcNow + (3600000 * 8));
+                const currentBusinessDate = window.LDMLocalTime.dateKey(now);
 
-                const witaNextReset = new Date(witaNow);
-                witaNextReset.setHours(24, 0, 0, 0);
-
-                const diffMs = witaNextReset - witaNow;
-
-                if (diffMs <= 0) {
+                if (currentBusinessDate !== activeBusinessDate) {
+                    activeBusinessDate = currentBusinessDate;
                     isModeKemarin = false;
                     selectedDateCustom = null;
-
+                    selectedDateRange = null;
+                    updateRentangTanggalUI();
                     muatDashboard();
-
-                    setTimeout(() => {
-                        updateTimer();
-                    }, 1000);
-
-                    return;
                 }
+
+                const diffMs = window.LDMLocalTime.millisecondsUntilNextMidnight(now);
 
                 const hours = Math.floor(diffMs / (1000 * 60 * 60));
                 const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
@@ -6247,15 +7122,19 @@ function hapusAkun(idx) {
         }
 
         function aturTombolTransfer() {
-            const role = localStorage.getItem("userRole") || "admin";
-            const btnTarik = document.getElementById("btnTarikKasir");
+            const role = String(localStorage.getItem("userRole") || "").toLowerCase();
             const inputTgl = document.getElementById("inputTanggalLaporan");
+            const deviceBar = document.getElementById("cloudDeviceActionBar");
+            const rangeFilter = document.getElementById("dashboardRangeFilter");
 
-            if (btnTarik) {
-                btnTarik.style.display = (role === "owner") ? "inline-flex" : "none";
+            if (deviceBar) {
+                deviceBar.style.display = (role === "owner") ? "block" : "none";
             }
             if (inputTgl) {
-                inputTgl.style.display = (role === "owner") ? "inline-block" : "none";
+                inputTgl.style.display = "none";
+            }
+            if (rangeFilter) {
+                rangeFilter.style.display = (role === "owner") ? "flex" : "none";
             }
         }
 
@@ -6870,6 +7749,11 @@ function renderOwnerPendingNotifications(
 
     aturTombolTransfer();
 
+    // Tahap 15: Akun Cloud tersedia untuk Owner/Admin/Kasir dengan hak berbeda.
+    if (btnEditAkunOwner && ["owner", "admin", "kasir"].includes(role)) {
+        btnEditAkunOwner.style.display = "inline-flex";
+    }
+
 
     // =========================================
     // OWNER
@@ -7042,7 +7926,6 @@ function batasiTampilanOmzetDashboard() {
             return [];
         }
 
-
         /* =====================================================
            5 ITEM TERLARIS
            ===================================================== */
@@ -7058,6 +7941,9 @@ function batasiTampilanOmzetDashboard() {
 
 
         function getTopSellingLabelTanggal() {
+            if (selectedDateRange) {
+                return getLabelPeriodeAktif();
+            }
             if (selectedDateCustom) {
                 return `Tanggal ${selectedDateCustom}`;
             }
@@ -7151,34 +8037,7 @@ function batasiTampilanOmzetDashboard() {
 
 
         function hitungTopSellingItems() {
-            let laporanAll = [];
-
-            try {
-                laporanAll =
-                    JSON.parse(
-                        localStorage.getItem(
-                            "laporan"
-                        )
-                    ) ||
-                    JSON.parse(
-                        localStorage.getItem(
-                            "dataLaporan"
-                        )
-                    ) ||
-                    [];
-            }
-
-            catch (error) {
-                console.error(
-                    "Gagal membaca laporan untuk item terlaris:",
-                    error
-                );
-
-                laporanAll = [];
-            }
-
-            const targetDate =
-                getTargetDateToFilter();
+            const laporanAll = getDashboardPeriodRows();
 
             const mapItem =
                 new Map();
@@ -7186,10 +8045,7 @@ function batasiTampilanOmzetDashboard() {
 
             laporanAll
                 .filter(
-                    transaksi =>
-                        parseTanggalData(
-                            transaksi
-                        ) === targetDate
+                    transaksi => dataMasukPeriode(transaksi)
                 )
                 .forEach(
                     transaksi => {
@@ -7356,31 +8212,7 @@ function batasiTampilanOmzetDashboard() {
         function hitungTopSellingItemsBulanan(
             targetMonth
         ) {
-            let laporanAll = [];
-
-            try {
-                laporanAll =
-                    JSON.parse(
-                        localStorage.getItem(
-                            "laporan"
-                        )
-                    ) ||
-                    JSON.parse(
-                        localStorage.getItem(
-                            "dataLaporan"
-                        )
-                    ) ||
-                    [];
-            }
-
-            catch (error) {
-                console.error(
-                    "Gagal membaca laporan untuk item terlaris bulanan:",
-                    error
-                );
-
-                laporanAll = [];
-            }
+            const laporanAll = getDashboardMonthlyRows(targetMonth);
 
             const mapItem =
                 new Map();
@@ -7986,37 +8818,7 @@ function batasiTampilanOmzetDashboard() {
                 return getTanggalWITA();
             }
 
-            const now =
-                new Date();
-
-            const utc =
-                now.getTime() +
-                (
-                    now.getTimezoneOffset() *
-                    60000
-                );
-
-            const wita =
-                new Date(
-                    utc +
-                    8 * 60 * 60 * 1000
-                );
-
-            return [
-                wita.getFullYear(),
-                String(
-                    wita.getMonth() + 1
-                ).padStart(
-                    2,
-                    "0"
-                ),
-                String(
-                    wita.getDate()
-                ).padStart(
-                    2,
-                    "0"
-                )
-            ].join("-");
+            return window.LDMLocalTime.dateKey();
         }
 
 
@@ -9283,13 +10085,12 @@ function batasiTampilanOmzetDashboard() {
 
         function hapusOperasional(indexDalamTanggal) {
             const operasionalAll = JSON.parse(localStorage.getItem("operasional")) || [];
-            const targetDate = getTargetDateToFilter();
 
             let countIndex = 0;
             let indexAsli = -1;
 
             for (let i = 0; i < operasionalAll.length; i++) {
-                if (parseTanggalData(operasionalAll[i]) === targetDate) {
+                if (dataMasukPeriode(operasionalAll[i])) {
                     if (countIndex === indexDalamTanggal) {
                         indexAsli = i;
                         break;
@@ -9306,29 +10107,37 @@ function batasiTampilanOmzetDashboard() {
             }
         }
 
-        function renderOwner() {
-            const laporanAll = JSON.parse(localStorage.getItem("laporan")) || JSON.parse(localStorage.getItem("dataLaporan")) || [];
+        function renderOwner(options = {}) {
+            const laporanAll = getDashboardPeriodRows();
             const operasionalAll = JSON.parse(localStorage.getItem("operasional")) || [];
             const masterBarang = JSON.parse(localStorage.getItem("dataBarang")) || [];
-            const targetDate = getTargetDateToFilter();
 
-            let txtJudulLabel = "Hari Ini";
-            if (selectedDateCustom) {
-                txtJudulLabel = `Tanggal (${selectedDateCustom})`;
-            } else if (isModeKemarin) {
-                txtJudulLabel = "Kemarin";
-            }
+            const txtJudulLabel = getLabelPeriodeAktif();
 
             document.getElementById("lblOwnerOmzet").innerText = `Total Omzet ${txtJudulLabel}`;
             document.getElementById("lblOmzetBox").innerText = `🛒 Ringkasan Omzet ${txtJudulLabel}`;
             
             const formOpContainer = document.getElementById("formOperasionalContainer");
             if (formOpContainer) {
-                formOpContainer.style.display = "block";
+                formOpContainer.style.display = selectedDateRange ? "none" : "block";
             }
 
-            const laporan = laporanAll.filter(t => parseTanggalData(t) === targetDate);
-            const operasional = operasionalAll.filter(op => parseTanggalData(op) === targetDate);
+            const laporan = laporanAll.filter(dataMasukPeriode);
+            const operasional = operasionalAll.filter(dataMasukPeriode);
+            updateRentangTanggalUI();
+            renderGrafikRentangTanggal(laporanAll);
+            const rangeNote = document.getElementById("dashboardRangeNote");
+            if (rangeNote) {
+                const range = getActiveDateRange();
+                const days = jumlahHariInklusif(range.start, range.end) || 1;
+                const activeKey = dashboardRangeKey(range);
+                const source = dashboardReportState.rangeKey === activeKey
+                    ? dashboardReportSourceLabel(dashboardReportState.source)
+                    : "cache cepat (sedang sinkron)";
+                rangeNote.textContent = selectedDateRange
+                    ? `Menampilkan ${laporan.length} transaksi selama ${days} hari. Sumber: ${source}. Form biaya operasional disembunyikan saat mode agregasi agar tidak salah tanggal.`
+                    : `Maksimal 90 hari. Perhitungan menggunakan tanggal bisnis WITA. Sumber: ${source}.`;
+            }
 
             const mapModalBarang = {};
             masterBarang.forEach(b => {
@@ -9365,7 +10174,7 @@ function batasiTampilanOmzetDashboard() {
                 items.forEach(item => {
                     const nama = item.nama || item.namaBarang || item.title || "";
                     const qty = Number(item.qty || item.jumlah || 1);
-                    
+
                     let modalSatuan = Number(item.hargaBeli || item.modal || item.hpp || 0);
                     if (modalSatuan === 0 && mapModalBarang[nama.toLowerCase().trim()]) {
                         modalSatuan = mapModalBarang[nama.toLowerCase().trim()];
@@ -9454,9 +10263,13 @@ function batasiTampilanOmzetDashboard() {
 
             document.getElementById("listOmzet").innerHTML = listOmzetHTML;
             document.getElementById("listModal").innerHTML = listModalHTML;
+
+            if (!options.skipDataRefresh) {
+                setTimeout(() => refreshDashboardPeriodData(false), 0);
+            }
         }
 
-        function renderStatistikBulanan() {
+        function renderStatistikBulanan(options = {}) {
             const inputBulan = document.getElementById("inputBulan");
             if (!inputBulan) return;
 
@@ -9469,7 +10282,7 @@ function batasiTampilanOmzetDashboard() {
             const [yearStr, monthStr] = targetMonth.split("-");
             const totalDays = new Date(Number(yearStr), Number(monthStr), 0).getDate();
 
-            const laporanAll = JSON.parse(localStorage.getItem("laporan")) || JSON.parse(localStorage.getItem("dataLaporan")) || [];
+            const laporanAll = getDashboardMonthlyRows(targetMonth);
             const operasionalAll = JSON.parse(localStorage.getItem("operasional")) || [];
             const masterBarang = JSON.parse(localStorage.getItem("dataBarang")) || [];
 
@@ -9513,7 +10326,7 @@ function batasiTampilanOmzetDashboard() {
                 items.forEach(item => {
                     const nama = item.nama || item.namaBarang || item.title || "Lainnya";
                     const qty = Number(item.qty || item.jumlah || 1);
-                    
+
                     let modalSatuan = Number(item.hargaBeli || item.modal || item.hpp || 0);
                     if (modalSatuan === 0 && mapModalBarang[nama.toLowerCase().trim()]) {
                         modalSatuan = mapModalBarang[nama.toLowerCase().trim()];
@@ -9589,6 +10402,10 @@ function batasiTampilanOmzetDashboard() {
             );
 
             renderChartBulanan(totalDays, omzetPerHari);
+
+            if (!options.skipDataRefresh) {
+                setTimeout(() => refreshDashboardMonthlyData(targetMonth, false), 0);
+            }
         }
 
         function renderChartBulanan(totalDays, omzetPerHari) {
@@ -9640,156 +10457,6 @@ function batasiTampilanOmzetDashboard() {
                         }
                     }
                 }
-            });
-        }
-
-        /* ----------------------------------------------------
-           LOGIKA REVISI P2P: SINKRONISASI TRANSFER & TARIK DATA
-        ---------------------------------------------------- */
-        function initPeerJS() {
-            if (peer) return;
-            const randomCode = Math.floor(1000 + Math.random() * 9000);
-            myPeerId = "pos-ldm-" + randomCode;
-
-            peer = new Peer(myPeerId);
-
-            peer.on('open', function(id) {
-                myPeerId = id;
-                const txtKode = document.getElementById("txtKodeKasir");
-                if (txtKode) txtKode.innerText = id;
-            });
-
-            peer.on('connection', function(conn) {
-                activePeerConn = conn;
-                setupConnectionListeners(conn);
-            });
-
-            peer.on('error', function(err) {
-                console.error("PeerJS Error:", err);
-            });
-        }
-
-        function setupConnectionListeners(conn) {
-            conn.on('data', function(data) {
-                if (data.type === "REQUEST_DATA") {
-                    const localData = getSemuaDataLokal();
-                    conn.send({
-                        type: "SYNC_DATA_RESPONSE",
-                        payload: localData
-                    });
-                } else if (data.type === "SYNC_DATA_RESPONSE" || data.type === "PUSH_DATA") {
-                    gabungkanDataMasuk(data.payload);
-                    tampilkanAlertCustom("Berhasil Sinkronisasi", "Data berhasil ditarik dan disatukan!", "success");
-                    muatDashboard();
-                }
-            });
-        }
-
-        function getSemuaDataLokal() {
-            return {
-                laporan: JSON.parse(localStorage.getItem("laporan")) || JSON.parse(localStorage.getItem("dataLaporan")) || [],
-                operasional: JSON.parse(localStorage.getItem("operasional")) || [],
-                dataBarang: JSON.parse(localStorage.getItem("dataBarang")) || []
-            };
-        }
-
-        function gabungkanDataMasuk(remoteData) {
-            if (!remoteData) return;
-
-            if (Array.isArray(remoteData.laporan)) {
-                let localLaporan = JSON.parse(localStorage.getItem("laporan")) || JSON.parse(localStorage.getItem("dataLaporan")) || [];
-                const mergedLaporan = [...localLaporan];
-
-                remoteData.laporan.forEach(itemRemote => {
-                    const idx = mergedLaporan.findIndex(l => l.id && l.id === itemRemote.id);
-                    if (idx === -1) {
-                        mergedLaporan.push(itemRemote);
-                    } else {
-                        mergedLaporan[idx] = itemRemote;
-                    }
-                });
-
-                localStorage.setItem("laporan", JSON.stringify(mergedLaporan));
-                localStorage.setItem("dataLaporan", JSON.stringify(mergedLaporan));
-            }
-
-            if (Array.isArray(remoteData.operasional)) {
-                let localOperasional = JSON.parse(localStorage.getItem("operasional")) || [];
-                const mergedOp = [...localOperasional];
-
-                remoteData.operasional.forEach(itemRemote => {
-                    const idx = mergedOp.findIndex(o => o.id && o.id === itemRemote.id);
-                    if (idx === -1) {
-                        mergedOp.push(itemRemote);
-                    }
-                });
-
-                localStorage.setItem("operasional", JSON.stringify(mergedOp));
-            }
-
-            if (Array.isArray(remoteData.dataBarang) && remoteData.dataBarang.length > 0) {
-                let localBarang = JSON.parse(localStorage.getItem("dataBarang")) || [];
-                const mergedBarang = [...localBarang];
-
-                remoteData.dataBarang.forEach(itemRemote => {
-                    const idx = mergedBarang.findIndex(b => (b.id && b.id === itemRemote.id) || (b.nama && itemRemote.nama && b.nama.toLowerCase().trim() === itemRemote.nama.toLowerCase().trim()));
-                    if (idx === -1) {
-                        mergedBarang.push(itemRemote);
-                    } else {
-                        mergedBarang[idx] = itemRemote;
-                    }
-                });
-
-                localStorage.setItem("dataBarang", JSON.stringify(mergedBarang));
-            }
-        }
-
-        function kirimDataKeOwner() {
-            document.getElementById("modalKodeKasir").style.display = "flex";
-        }
-
-        function salinKodeKasir() {
-            const txtKode = document.getElementById("txtKodeKasir").innerText;
-            navigator.clipboard.writeText(txtKode).then(() => {
-                tampilkanAlertCustom("Tersalin", "Kode ID P2P berhasil disalin!", "success");
-            });
-        }
-
-        function tutupModalKodeKasir() {
-            document.getElementById("modalKodeKasir").style.display = "none";
-        }
-
-        function bukaModalTarikData() {
-            document.getElementById("modalInputOwner").style.display = "flex";
-        }
-
-        function tutupModalInputOwner() {
-            document.getElementById("modalInputOwner").style.display = "none";
-        }
-
-        function prosesTarikDataP2P() {
-            const targetId = document.getElementById("inputTargetPeerId").value.trim();
-            if (!targetId) {
-                tampilkanAlertCustom("Peringatan", "Masukkan Kode ID Perangkat Lawan!", "warning");
-                return;
-            }
-
-            if (targetId === myPeerId) {
-                tampilkanAlertCustom("Peringatan", "Kode ID tidak boleh sama dengan perangkat sendiri!", "warning");
-                return;
-            }
-
-            const conn = peer.connect(targetId);
-
-            conn.on('open', function() {
-                activePeerConn = conn;
-                setupConnectionListeners(conn);
-                conn.send({ type: "REQUEST_DATA" });
-                tutupModalInputOwner();
-            });
-
-            conn.on('error', function(err) {
-                tampilkanAlertCustom("Gagal Hubung", "Gagal menghubungkan ke Peer ID lawan. Pastikan lawan terhubung!", "danger");
             });
         }
 
@@ -10672,18 +11339,22 @@ window.addEventListener(
         "absensi.html":["owner","admin","kasir"],
         "kasir.html":["owner","admin","kasir"],
         "retur.html":["owner","admin","kasir"],
-        "barang.html":["owner","admin"],
+        "barang.html":["owner","admin","kasir"],
         "supplier.html":["owner","admin"],
         "Purchase-Order.html":["owner","admin"],
         "goods.receipt.html":["owner","admin"],
         "kartu-stok.html":["owner","admin","kasir"],
         "stock-opname.html":["owner","admin","kasir"],
+        "multi-store.html":["owner","admin"],
         "laporan.html":["owner","admin","kasir"],
         "shift-closing.html":["owner","admin"],
         "eod.html":["owner","admin"],
         "pengeluaran.html":["owner","admin"],
         "backup%20%26%20restore.html":["owner","admin"],
-        "backup & restore.html":["owner","admin"]
+        "backup & restore.html":["owner","admin"],
+        "recovery-center.html":["owner","admin","kasir"],
+        "qa-security-performance.html":["owner"],
+        "panduan.html":["owner","admin","kasir"]
     };
 
     function baseName(value){
@@ -10744,9 +11415,10 @@ window.addEventListener(
         {page:"kasir.html", icon:"💵", label:"Kasir", group:"Utama", roles:["owner","admin","kasir"], quick:true},
         {page:"retur.html", icon:"↩️", label:"Retur", group:"Keuangan & Laporan", roles:["owner","admin","kasir"]},
 
-        {page:"barang.html", icon:"📦", label:"Barang", group:"Inventori", roles:["owner","admin"], badge:"navBadge"},
+        {page:"barang.html", icon:"📦", label:"Barang", group:"Inventori", roles:["owner","admin","kasir"], badge:"navBadge"},
         {page:"kartu-stok.html", icon:"📒", label:"Kartu Stok", group:"Inventori", roles:["owner","admin","kasir"]},
         {page:"stock-opname.html", icon:"📋", label:"Stock Opname", group:"Inventori", roles:["owner","admin","kasir"]},
+        {page:"multi-store.html", icon:"⇄", label:"Multi-Toko & Transfer", group:"Inventori", roles:["owner","admin"], quick:true},
 
         {page:"supplier.html", icon:"🏢", label:"Supplier", group:"Supplier & Pembelian", roles:["owner","admin"]},
         {page:"Purchase-Order.html", icon:"🛒", label:"Purchase Order", group:"Supplier & Pembelian", roles:["owner","admin"], badge:"pendingPOBadge"},
@@ -10757,7 +11429,12 @@ window.addEventListener(
 
         {page:"shift-closing.html", icon:"🔒", label:"Closing Shift", group:"Closing & Data", roles:["owner","admin"]},
         {page:"eod.html", icon:"🌙", label:"End of Day", group:"Closing & Data", roles:["owner","admin"]},
-        {page:"backup%20%26%20restore.html", icon:"💾", label:"Backup & Restore", group:"Closing & Data", roles:["owner","admin"]}
+        {page:"backup%20%26%20restore.html", icon:"💾", label:"Backup & Restore", group:"Closing & Data", roles:["owner","admin"]},
+
+        {page:"pwa-settings.html", icon:"📲", label:"Aplikasi & Update", group:"Sistem", roles:["owner","admin","kasir"]},
+        {page:"recovery-center.html", icon:"🛟", label:"Recovery Center", group:"Sistem", roles:["owner","admin","kasir"]},
+        {page:"qa-security-performance.html", icon:"🧪", label:"QA & Security", group:"Sistem", roles:["owner"]},
+        {page:"panduan.html", icon:"📘", label:"Panduan & Bantuan", group:"Sistem", roles:["owner","admin","kasir"]}
     ];
 
     const GROUP_META={
@@ -10765,7 +11442,8 @@ window.addEventListener(
         "Inventori":"📦",
         "Supplier & Pembelian":"🏢",
         "Keuangan & Laporan":"📑",
-        "Closing & Data":"🔐"
+        "Closing & Data":"🔐",
+        "Sistem":"⚙️"
     };
 
     function getSession(){
@@ -10843,16 +11521,19 @@ window.addEventListener(
     }
 
     function buildMegaMenu(){
-        if(document.getElementById("ldmMegaNavShell"))return;
+        if(document.getElementById("ldmMegaNavShell")){
+            document.documentElement.classList.add("ldm-mega-ready");
+            return true;
+        }
 
         const app=document.querySelector(".app-layout");
         const main=document.querySelector(".main-content");
-        if(!app || !main)return;
+        if(!app || !main)return false;
 
         const session=getSession();
         const role=normalizeRole(session?.role);
 
-        if(!role)return;
+        if(!role)return false;
 
         const visible=ROUTES.filter(route=>routeAllowed(route,role));
         const current=currentPage();
@@ -10942,6 +11623,7 @@ window.addEventListener(
         `;
 
         app.insertBefore(shell,main);
+        document.documentElement.classList.add("ldm-mega-ready");
 
         const trigger=shell.querySelector("#ldmMegaTrigger");
         const close=shell.querySelector("#ldmMegaClose");
@@ -11012,6 +11694,8 @@ window.addEventListener(
                 attributeFilter:["style","class"]
             });
         });
+
+        return true;
     }
 
     function syncBadges(){
@@ -11039,21 +11723,25 @@ window.addEventListener(
         });
     }
 
-    if(document.readyState==="loading"){
-        document.addEventListener(
-            "DOMContentLoaded",
-            ()=>{
-                buildMegaMenu();
-                setTimeout(syncBadges,250);
-                setTimeout(syncBadges,900);
-            },
-            {once:true}
-        );
-    }else{
+    function bootMegaMenu(){
         buildMegaMenu();
+        setTimeout(buildMegaMenu,250);
+        setTimeout(buildMegaMenu,900);
+        setTimeout(buildMegaMenu,2200);
         setTimeout(syncBadges,250);
         setTimeout(syncBadges,900);
     }
+
+    if(document.readyState==="loading"){
+        document.addEventListener("DOMContentLoaded",bootMegaMenu,{once:true});
+    }else{
+        bootMegaMenu();
+    }
+
+    window.addEventListener("storage",event=>{
+        if(event.key==="userRole" || event.key==="role")buildMegaMenu();
+    });
+    window.addEventListener("ldm-cloud-session-ready",buildMegaMenu);
 })();
 </script>
 
@@ -11070,15 +11758,7 @@ window.addEventListener(
     }
 
     function witaDate(value){
-        const source=value instanceof Date?value:new Date(value??Date.now());
-        const time=isNaN(source)?Date.now():source.getTime();
-        const d=new Date(time+(8*60*60*1000));
-
-        return (
-            d.getUTCFullYear()+"-"+
-            String(d.getUTCMonth()+1).padStart(2,"0")+"-"+
-            String(d.getUTCDate()).padStart(2,"0")
-        );
+        return window.LDMLocalTime.dateKey(value);
     }
 
     function recordDate(item){
@@ -11275,6 +11955,524 @@ window.addEventListener(
             sync();
         }
     },2000);
+})();
+</script>
+
+
+<script id="ldmStage12DashboardCloudOverride">
+(function(){
+    "use strict";
+
+    window.tambahOperasional = async function(){
+        const ketInput = document.getElementById("ketOperasional");
+        const nominalInput = document.getElementById("nominalOperasional");
+        const ket = String(ketInput?.value || "").trim();
+        const nominal = Number(nominalInput?.value || 0);
+
+        if(selectedDateRange){
+            tampilkanAlertCustom(
+                "Mode Rentang Aktif",
+                "Kembali ke tampilan satu hari sebelum menambahkan biaya operasional agar tanggal pencatatan tidak salah.",
+                "warning"
+            );
+            return;
+        }
+
+        if(!ket){
+            tampilkanAlertCustom("Peringatan","Silakan isi keterangan operasional!","warning");
+            return;
+        }
+        if(!(nominal > 0)){
+            tampilkanAlertCustom("Peringatan","Masukkan nominal operasional yang valid!","warning");
+            return;
+        }
+        if(!window.LDMReporting){
+            tampilkanAlertCustom("Cloud Reporting Belum Siap","reporting-service.js belum termuat.","danger");
+            return;
+        }
+
+        try{
+            await window.LDMReporting.saveExpense({
+                businessDate:getTargetDateToFilter(),
+                description:ket,
+                category:"Operasional",
+                target:"",
+                reference:"Dashboard",
+                amount:nominal,
+                receiptDataURL:"",
+                receiptName:"",
+                receiptOriginalSize:0
+            });
+
+            ketInput.value = "";
+            nominalInput.value = "";
+            renderOwner();
+            renderStatistikBulanan();
+        }catch(error){
+            tampilkanAlertCustom("Pengeluaran Gagal",error?.message || String(error),"danger");
+        }
+    };
+
+    window.hapusOperasional = async function(indexDalamTanggal){
+        const all = JSON.parse(localStorage.getItem("operasional") || "[]");
+        const rows = all.filter(dataMasukPeriode);
+        const target = rows[indexDalamTanggal];
+        if(!target) return;
+
+        if(!target.cloudId){
+            tampilkanAlertCustom(
+                "Pengeluaran Legacy",
+                "Data ini belum dimigrasikan ke cloud Tahap 12.",
+                "warning"
+            );
+            return;
+        }
+
+        try{
+            await window.LDMReporting.deleteExpense(target.cloudId);
+            renderOwner();
+            renderStatistikBulanan();
+        }catch(error){
+            tampilkanAlertCustom("Hapus Pengeluaran Gagal",error?.message || String(error),"danger");
+        }
+    };
+
+    window.addEventListener("ldm-reporting-cache-updated",function(){
+        invalidateDashboardReportData();
+        const role = String(localStorage.getItem("userRole") || "").toLowerCase();
+        if(role === "owner" && typeof renderOwner === "function"){
+            renderOwner();
+            if(typeof renderStatistikBulanan === "function") renderStatistikBulanan();
+        }else if(role === "admin" && typeof renderAdmin === "function"){
+            renderAdmin();
+        }else if(role === "kasir" && typeof renderKasir === "function"){
+            renderKasir();
+        }
+    });
+})();
+</script>
+
+<script id="ldmResponsiveDashboardRange">
+(function(){
+    "use strict";
+
+    let previousFocus = null;
+
+    function openModal(){
+        const modal = document.getElementById("dashboardRangeModal");
+        const trigger = document.getElementById("dashboardRangeTrigger");
+        if(!modal)return;
+
+        previousFocus = document.activeElement;
+        if(typeof window.updateRentangTanggalUI === "function"){
+            window.updateRentangTanggalUI();
+        }
+        modal.classList.add("open");
+        modal.setAttribute("aria-hidden", "false");
+        trigger?.setAttribute("aria-expanded", "true");
+        document.body.classList.add("dashboard-range-modal-open");
+
+        window.setTimeout(function(){
+            document.getElementById("inputTanggalDari")?.focus();
+        }, 40);
+    }
+
+    function closeModal(){
+        const modal = document.getElementById("dashboardRangeModal");
+        const trigger = document.getElementById("dashboardRangeTrigger");
+        if(!modal)return;
+
+        modal.classList.remove("open");
+        modal.setAttribute("aria-hidden", "true");
+        trigger?.setAttribute("aria-expanded", "false");
+        document.body.classList.remove("dashboard-range-modal-open");
+
+        if(previousFocus && typeof previousFocus.focus === "function"){
+            previousFocus.focus();
+        }
+        previousFocus = null;
+    }
+
+    document.addEventListener("keydown", function(event){
+        if(event.key === "Escape")closeModal();
+    });
+
+    window.bukaModalRentangDashboard = openModal;
+    window.tutupModalRentangDashboard = closeModal;
+    window.LDMCollapseRangeFilter = closeModal;
+
+    window.addEventListener("pagehide", function(){
+        document.body.classList.remove("dashboard-range-modal-open");
+    });
+
+    if(document.readyState !== "loading"){
+        const modal = document.getElementById("dashboardRangeModal");
+        if(modal)modal.setAttribute("aria-hidden", "true");
+    }
+})();
+</script>
+
+<script id="ldmLocalSalesStrategyAssistant">
+(function(){
+    "use strict";
+
+    const $=id=>document.getElementById(id);
+    let currentQuestion="summary";
+
+    function readArray(key){
+        try{
+            const value=JSON.parse(localStorage.getItem(key)||"[]");
+            return Array.isArray(value)?value:[];
+        }catch(error){
+            return [];
+        }
+    }
+
+    function reports(){
+        const primary=readArray("laporan");
+        return primary.length?primary:readArray("dataLaporan");
+    }
+
+    function products(){
+        return readArray("dataBarang").filter(item=>item&&item.deleted_at==null&&item.active!==false);
+    }
+
+    function safeNumber(value){
+        const number=Number(value||0);
+        return Number.isFinite(number)?number:0;
+    }
+
+    function itemName(item){
+        return String(item?.nama||item?.namaBarang||item?.title||item?.productName||"Barang Tanpa Nama").trim();
+    }
+
+    function productName(item){
+        return String(item?.nama||item?.namaBarang||item?.title||"Barang Tanpa Nama").trim();
+    }
+
+    function normalize(value){
+        return String(value||"").trim().toLowerCase();
+    }
+
+    function money(value){
+        return "Rp "+Math.round(safeNumber(value)).toLocaleString("id-ID");
+    }
+
+    function isoDate(value){
+        return window.LDMLocalTime.dateKey(value);
+    }
+
+    function activeRange(){
+        if(typeof getActiveDateRange==="function")return getActiveDateRange();
+        const today=typeof getTanggalWITA==="function"?getTanggalWITA():window.LDMLocalTime.dateKey();
+        return{start:today,end:today,customRange:false};
+    }
+
+    function previousRange(range){
+        const start=Date.parse(range.start+"T00:00:00Z");
+        const end=Date.parse(range.end+"T00:00:00Z");
+        const days=Math.max(1,Math.floor((end-start)/86400000)+1);
+        const previousEnd=start-86400000;
+        const previousStart=previousEnd-((days-1)*86400000);
+        return{start:isoDate(previousStart),end:isoDate(previousEnd),days};
+    }
+
+    function dateOf(item){
+        return typeof parseTanggalData==="function"?parseTanggalData(item):String(item?.tanggal||"").slice(0,10);
+    }
+
+    function inRange(item,range){
+        const date=dateOf(item);
+        return date>=range.start&&date<=range.end;
+    }
+
+    function transactionItems(transaction){
+        if(typeof getDaftarItem==="function")return getDaftarItem(transaction);
+        return transaction?.items||transaction?.cart||transaction?.keranjang||[];
+    }
+
+    function transactionTotal(transaction){
+        let total=typeof getNominalTransaksi==="function"?getNominalTransaksi(transaction):safeNumber(transaction?.total||transaction?.grandTotal);
+        if(total===0){
+            total=transactionItems(transaction).reduce((sum,item)=>{
+                const qty=Math.max(0,safeNumber(item?.qty||item?.jumlah||item?.quantity||1));
+                const price=safeNumber(item?.harga||item?.hargaJual||item?.price);
+                return sum+(safeNumber(item?.subtotal)||price*qty);
+            },0);
+        }
+        return total;
+    }
+
+    function summarize(rows,productRows,expenseRows){
+        const productByName=new Map();
+        productRows.forEach(product=>productByName.set(normalize(productName(product)),product));
+        const itemMap=new Map(),daily=new Map();
+        let revenue=0,cost=0,qty=0;
+
+        rows.forEach(transaction=>{
+            const total=transactionTotal(transaction);
+            revenue+=total;
+            const date=dateOf(transaction);
+            daily.set(date,(daily.get(date)||0)+total);
+
+            transactionItems(transaction).forEach(item=>{
+                const name=itemName(item),key=normalize(name);
+                const amount=Math.max(0,safeNumber(item?.qty||item?.jumlah||item?.quantity||1));
+                const subtotal=safeNumber(item?.subtotal||item?.subTotal||item?.lineSubtotal)||safeNumber(item?.harga||item?.hargaJual||item?.price)*amount;
+                const product=productByName.get(key);
+                const unitCost=safeNumber(item?.hargaBeli||item?.modal||item?.hpp||product?.hargaBeli||product?.modal||product?.hpp);
+                const existing=itemMap.get(key)||{name,qty:0,revenue:0,cost:0};
+                existing.qty+=amount;existing.revenue+=subtotal;existing.cost+=unitCost*amount;
+                itemMap.set(key,existing);qty+=amount;cost+=unitCost*amount;
+            });
+        });
+
+        const expenses=expenseRows.reduce((sum,item)=>sum+safeNumber(item?.nominal||item?.amount),0);
+        const items=[...itemMap.values()].sort((a,b)=>b.qty-a.qty||b.revenue-a.revenue);
+        const soldKeys=new Set(itemMap.keys());
+        const slow=productRows.filter(product=>safeNumber(product?.stok)>0&&!soldKeys.has(normalize(productName(product)))).sort((a,b)=>safeNumber(b?.stok)-safeNumber(a?.stok));
+        const lowStock=productRows.filter(product=>safeNumber(product?.stok)<=9).sort((a,b)=>safeNumber(a?.stok)-safeNumber(b?.stok));
+        const peak=[...daily.entries()].sort((a,b)=>b[1]-a[1])[0]||null;
+        return{transactions:rows.length,revenue,cost,expenses,profit:revenue-cost-expenses,qty,items,slow,lowStock,peak,daily};
+    }
+
+    function analysis(){
+        const range=activeRange(),before=previousRange(range),allReports=reports(),allProducts=products(),allExpenses=readArray("operasional");
+        const currentRows=allReports.filter(item=>inRange(item,range));
+        const previousRows=allReports.filter(item=>inRange(item,before));
+        const currentExpenses=allExpenses.filter(item=>inRange(item,range));
+        const previousExpenses=allExpenses.filter(item=>inRange(item,before));
+        const current=summarize(currentRows,allProducts,currentExpenses);
+        const previous=summarize(previousRows,allProducts,previousExpenses);
+        const growth=previous.revenue>0?((current.revenue-previous.revenue)/previous.revenue)*100:null;
+        const days=typeof jumlahHariInklusif==="function"?jumlahHariInklusif(range.start,range.end):before.days;
+        return{range,before,current,previous,growth,days:Math.max(1,days||1)};
+    }
+
+    function clearOutput(){
+        const output=$("salesAssistantOutput");
+        if(output)output.replaceChildren();
+        return output;
+    }
+
+    function addStats(output,data){
+        const grid=document.createElement("div");grid.className="sales-assistant-stats";
+        [["Omzet",money(data.current.revenue)],["Transaksi",String(data.current.transactions)],["Item terjual",String(data.current.qty)],["Estimasi profit",money(data.current.profit)]].forEach(([label,value])=>{
+            const box=document.createElement("div");box.className="sales-assistant-stat";
+            const span=document.createElement("span");span.textContent=label;
+            const strong=document.createElement("b");strong.textContent=value;
+            box.append(span,strong);grid.appendChild(box);
+        });
+        output.appendChild(grid);
+    }
+
+    function addCard(output,title,message,type="info"){
+        const card=document.createElement("div");card.className="sales-assistant-card "+type;
+        const heading=document.createElement("strong");heading.textContent=title;
+        const text=document.createElement("p");text.textContent=message;
+        card.append(heading,text);output.appendChild(card);
+    }
+
+    function fullRecommendations(output,data){
+        if(data.current.transactions===0){
+            addCard(output,"Belum ada data penjualan",`Tidak ditemukan transaksi pada ${data.days} hari yang dipilih. Coba perluas periode atau pastikan laporan cloud sudah tersinkron.`,"warn");
+            return;
+        }
+
+        if(data.growth===null){
+            addCard(output,"Perbandingan periode",`Omzet periode ini ${money(data.current.revenue)}. Belum ada data cukup pada periode sebelumnya untuk menghitung pertumbuhan.`,"info");
+        }else if(data.growth>=5){
+            addCard(output,"Tren penjualan meningkat",`Omzet naik ${Math.abs(data.growth).toFixed(1)}% dibanding ${data.days} hari sebelumnya. Pertahankan ketersediaan produk terlaris dan pola promo yang sedang berjalan.`,"good");
+        }else if(data.growth<=-5){
+            addCard(output,"Tren penjualan menurun",`Omzet turun ${Math.abs(data.growth).toFixed(1)}% dibanding ${data.days} hari sebelumnya. Periksa hari sepi, ketersediaan stok, dan tampilkan promo pada produk yang jarang bergerak.`,"warn");
+        }else{
+            addCard(output,"Tren penjualan stabil",`Perubahan omzet ${data.growth.toFixed(1)}% dibanding periode sebelumnya. Fokus pada peningkatan nilai transaksi melalui bundling yang relevan.`,"info");
+        }
+
+        const top=data.current.items[0];
+        if(top)addCard(output,"Produk terlaris",`${top.name} terjual ${top.qty} unit dengan kontribusi ${money(top.revenue)}. Pastikan stoknya cukup sebelum hari penjualan berikutnya.`,"good");
+
+        const slow=data.current.slow.slice(0,3).map(product=>productName(product)).join(", ");
+        if(slow)addCard(output,"Produk belum bergerak",`${slow} belum tercatat terjual pada periode ini. Periksa penempatan barang, harga, dan peluang bundling tanpa langsung menurunkan harga.`,"warn");
+
+        const low=data.current.lowStock.slice(0,3).map(product=>`${productName(product)} (${safeNumber(product?.stok)})`).join(", ");
+        if(low)addCard(output,"Perhatian stok saat ini",`${low}. Prioritaskan pemeriksaan fisik dan pemesanan ulang terutama jika termasuk produk terlaris.`,"danger");
+
+        if(top&&data.current.slow[0])addCard(output,"Ide bundling",`Uji paket ${top.name} + ${productName(data.current.slow[0])} dalam jumlah kecil. Bandingkan jumlah transaksi sebelum dan sesudah promo agar keputusan tetap berbasis data.`,"info");
+
+        if(data.current.peak)addCard(output,"Hari omzet tertinggi",`${formatTanggalRentang(data.current.peak[0])} menghasilkan ${money(data.current.peak[1])}. Jadwalkan stok dan tenaga operasional lebih siap pada pola hari serupa.`,"good");
+    }
+
+    function render(question="summary"){
+        currentQuestion=question;const data=analysis(),output=clearOutput();if(!output)return;
+        $("salesAssistantPeriod").textContent=typeof getLabelPeriodeAktif==="function"?getLabelPeriodeAktif():`${data.range.start} – ${data.range.end}`;
+        addStats(output,data);
+
+        if(question==="top"){
+            if(!data.current.items.length){addCard(output,"Belum ada produk terjual","Tidak ada detail item penjualan pada periode yang dipilih.","warn");return;}
+            data.current.items.slice(0,5).forEach((item,index)=>addCard(output,`${index+1}. ${item.name}`,`${item.qty} unit terjual · kontribusi ${money(item.revenue)}.`,index===0?"good":"info"));
+            return;
+        }
+
+        if(question==="slow"){
+            if(!data.current.slow.length){addCard(output,"Pergerakan produk baik","Semua produk berstok tercatat memiliki penjualan pada periode ini.","good");return;}
+            data.current.slow.slice(0,6).forEach(product=>addCard(output,productName(product),`Belum terjual pada periode ini · stok saat ini ${safeNumber(product?.stok)} ${product?.satuan||"unit"}.`,"warn"));
+            return;
+        }
+
+        if(question==="stock"){
+            const top=data.current.items[0],slow=data.current.slow[0];
+            if(data.current.lowStock.length){data.current.lowStock.slice(0,5).forEach(product=>addCard(output,productName(product),`Stok saat ini ${safeNumber(product?.stok)} ${product?.satuan||"unit"}. Cocokkan dengan penjualan sebelum melakukan pemesanan.`,"danger"));}
+            else addCard(output,"Stok kritis tidak ditemukan","Tidak ada produk dengan stok 9 atau kurang pada data saat ini.","good");
+            if(top&&slow)addCard(output,"Saran promo uji coba",`Pertimbangkan bundling ${top.name} dengan ${productName(slow)}. Mulai dari periode pendek dan ukur perubahan transaksi.`,"info");
+            return;
+        }
+
+        fullRecommendations(output,data);
+    }
+
+    function classifyQuestion(value){
+        const text=normalize(value);
+        if(/terlaris|paling laku|laris/.test(text))return"top";
+        if(/lambat|tidak laku|belum terjual|sepi/.test(text))return"slow";
+        if(/stok|restock|pemesanan|promo|bundl|diskon/.test(text))return"stock";
+        return"summary";
+    }
+
+    function open(){
+        const drawer=$("salesAssistantDrawer"),overlay=$("salesAssistantOverlay"),fab=$("salesAssistantFab");
+        drawer?.classList.add("open");overlay?.classList.add("open");drawer?.setAttribute("aria-hidden","false");fab?.setAttribute("aria-expanded","true");document.body.style.overflow="hidden";render(currentQuestion);
+    }
+
+    function close(){
+        const drawer=$("salesAssistantDrawer"),overlay=$("salesAssistantOverlay"),fab=$("salesAssistantFab");
+        drawer?.classList.remove("open");overlay?.classList.remove("open");drawer?.setAttribute("aria-hidden","true");fab?.setAttribute("aria-expanded","false");document.body.style.overflow="";fab?.focus();
+    }
+
+    function syncVisibility(){
+        const role=normalize(localStorage.getItem("userRole"));
+        $("salesAssistantFab")?.classList.toggle("show",role==="owner");
+        if(role!=="owner")close();
+    }
+
+    function init(){
+        $("salesAssistantFab")?.addEventListener("click",open);
+        $("salesAssistantClose")?.addEventListener("click",close);
+        $("salesAssistantOverlay")?.addEventListener("click",close);
+        document.querySelectorAll("[data-sales-question]").forEach(button=>button.addEventListener("click",()=>render(button.dataset.salesQuestion)));
+        $("salesAssistantForm")?.addEventListener("submit",event=>{event.preventDefault();const input=$("salesAssistantInput");const value=String(input?.value||"").trim();render(classifyQuestion(value));if(input)input.value="";});
+        document.addEventListener("keydown",event=>{if(event.key==="Escape"&&$("salesAssistantDrawer")?.classList.contains("open"))close();});
+        window.addEventListener("storage",event=>{if(event.key==="userRole")syncVisibility();});
+        window.addEventListener("ldm-reporting-cache-updated",()=>{if($("salesAssistantDrawer")?.classList.contains("open"))render(currentQuestion);});
+        syncVisibility();
+    }
+
+    window.LDMSalesAssistant={open,close,refresh:()=>render(currentQuestion),analyze:analysis};
+    if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init,{once:true});else init();
+})();
+</script>
+<script src="js/user-guide.js?v=24.2"></script>
+<script src="js/global-system-navigation.js?v=27.4"></script>
+
+<script>
+(function(){
+    "use strict";
+
+    const select = document.getElementById("ldmModeSelect");
+    const control = document.getElementById("ldmModeControl");
+    const icon = document.getElementById("ldmModeIcon");
+    const desc = document.getElementById("ldmModeDescription");
+
+    function modeApi(){ return window.LDMStoreMode || null; }
+
+    function setStockElementVisible(id, visible, closestSelector){
+        const el=document.getElementById(id);
+        if(!el) return;
+        const target=closestSelector ? el.closest(closestSelector) : el;
+        if(target) target.style.display=visible ? "" : "none";
+    }
+
+    function applyDashboardMode(mode){
+        const api=modeApi();
+        const cfg=api ? api.getConfig(mode) : {icon:"🛒",label:"Mode Toko Ritel",description:"Kontrol stok ketat."};
+        const isRetail=String(mode||"retail")==="retail";
+
+        if(select) select.value=mode||"retail";
+        if(icon) icon.textContent=cfg.icon||"🛒";
+        if(desc) desc.textContent=cfg.description||"";
+
+        ["adminStokKritis","adminStokHabis","kasirStokKritis","ownerStokKritis","ownerStokHabis"].forEach(id=>{
+            setStockElementVisible(id,isRetail,".card");
+        });
+        ["adminOpsStokKritis","adminOpsStokHabis"].forEach(id=>{
+            setStockElementVisible(id,isRetail,".dashboard-ops-card");
+        });
+        setStockElementVisible("kasirStockList",isRetail,".dashboard-mini-board");
+
+        // Badge stok pada navigasi tidak relevan untuk Kafe/Warung.
+        const navBadge=document.getElementById("navBadge");
+        if(navBadge && !isRetail) navBadge.style.display="none";
+
+        // Penamaan ringan agar konteks Kafe/Warung terasa berbeda tanpa mengubah struktur laporan.
+        const modeLabel = mode === "cafe" ? "Kafe" : (mode === "warung" ? "Warung" : "Toko Ritel");
+        if(control) control.setAttribute("data-active-mode", mode||"retail");
+        document.title = `Dashboard ${modeLabel} - LocDailyMar POS`;
+    }
+
+    function updatePermission(){
+        if(!select) return;
+        const role=String(localStorage.getItem("userRole")||localStorage.getItem("role")||"").toLowerCase();
+        const canEdit=role==="owner";
+        select.disabled=!canEdit;
+        select.title=canEdit ? "Ubah mode operasional toko" : "Hanya Owner yang dapat mengubah mode operasional";
+    }
+
+    async function initialLoad(){
+        const api=modeApi();
+        updatePermission();
+        if(!api){ applyDashboardMode("retail"); return; }
+        applyDashboardMode(api.getMode());
+        const result=await api.refreshFromCloud({silent:true});
+        applyDashboardMode(result && result.mode ? result.mode : api.getMode());
+    }
+
+    if(select){
+        select.addEventListener("change", async function(){
+            const api=modeApi();
+            if(!api) return;
+            const previous=api.getMode();
+            const next=this.value;
+            control && control.classList.add("ldm-mode-saving");
+            try{
+                await api.setMode(next);
+                applyDashboardMode(next);
+                if(typeof window.tampilkanAlertModal === "function"){
+                    window.tampilkanAlertModal("Mode Disimpan", `${api.getConfig(next).label} sekarang aktif untuk toko ini.`, "✅");
+                }
+            }catch(error){
+                this.value=previous;
+                applyDashboardMode(previous);
+                const message=(error && error.message) ? error.message : String(error);
+                if(typeof window.tampilkanAlertModal === "function"){
+                    window.tampilkanAlertModal("Mode Belum Tersimpan", message + "\n\nJika kolom operational_mode belum ada, jalankan SQL-INSTALASI-LENGKAP-3-MODE-MULTISTORE-STORAGE.sql yang disertakan.", "⚠️");
+                }else{
+                    alert(message);
+                }
+            }finally{
+                control && control.classList.remove("ldm-mode-saving");
+            }
+        });
+    }
+
+    window.addEventListener("ldm-store-mode-change", event=>{
+        applyDashboardMode(event.detail && event.detail.mode ? event.detail.mode : "retail");
+    });
+    window.addEventListener("ldm-cloud-session-ready", ()=>{
+        updatePermission();
+        initialLoad();
+    });
+    if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",initialLoad,{once:true});
+    else initialLoad();
 })();
 </script>
 
